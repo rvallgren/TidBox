@@ -1,0 +1,1096 @@
+# Format:F
+# This file is generated, do not edit
+# Creator: Tidbox
+
+[LOG]
+2013-09-24 07:44 Started logging
+2013-09-24 07:44 ------ Started tidbox ------
+2013-09-24 07:44 Log rotated
+2013-09-24 07:44 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-24 07:44 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 07:44 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-24 07:44 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-24 07:44 Loaded 3054 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-24 07:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-24 07:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\log.txt
+2013-09-24 07:44 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-24 07:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 07:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-24 07:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-24 08:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 08:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-24 09:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-24 09:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 09:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 10:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 11:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 12:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 13:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 14:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 15:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 16:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:24 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-24 17:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-24 17:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-24 17:24 ------ Ended tidbox ------
+2013-09-25 07:55 ------ Started tidbox ------
+2013-09-25 07:55 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-25 07:55 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 07:55 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-25 07:55 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-25 07:55 Loaded 3063 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 07:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-25 07:55 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-25 08:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 08:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 08:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 09:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 09:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 10:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 10:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 10:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 11:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-25 12:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-25 12:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:21 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 12:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 12:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 12:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 13:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 14:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 14:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 15:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:43 ------ Ended tidbox ------
+2013-09-25 16:48 ------ Started tidbox ------
+2013-09-25 16:48 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-25 16:48 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 16:48 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-25 16:48 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-25 16:48 Loaded 3075 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 16:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-25 16:48 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-25 16:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 16:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:57 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 17:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 17:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:57 ------ Ended tidbox ------
+2013-09-25 17:58 ------ Started tidbox ------
+2013-09-25 17:58 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-25 17:58 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 17:58 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-25 17:58 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-25 17:58 Loaded 3077 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 17:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-25 17:58 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-25 18:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 18:05 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 18:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-25 18:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-25 18:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-25 18:05 ------ Ended tidbox ------
+2013-09-26 08:36 ------ Started tidbox ------
+2013-09-26 08:36 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-26 08:36 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 08:36 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-26 08:36 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-26 08:36 Loaded 3077 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-26 08:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-26 08:36 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-26 08:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 08:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-26 08:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 08:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 09:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 10:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 11:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 12:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:15 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-26 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-26 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:15 ------ Ended tidbox ------
+2013-09-26 13:16 ------ Started tidbox ------
+2013-09-26 13:16 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-26 13:16 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:16 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-26 13:16 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-26 13:16 Loaded 3083 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-26 13:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-26 13:16 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-26 13:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-26 13:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 13:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:31 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-26 14:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-26 14:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-26 14:31 ------ Ended tidbox ------
+2013-09-27 08:25 ------ Started tidbox ------
+2013-09-27 08:25 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-27 08:25 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 08:25 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-27 08:25 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-27 08:25 Loaded 3085 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-27 08:25 Saved H:\.tidbox\lock.dat
+2013-09-27 08:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-27 08:25 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-27 08:29 Saved H:\.tidbox\config.dat
+2013-09-27 08:29 Saved H:\.tidbox\eventcfg.dat
+2013-09-27 08:29 Saved H:\.tidbox\supervision.dat
+2013-09-27 08:29 Saved H:\.tidbox\times.dat
+2013-09-27 08:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-27 08:30 Saved H:\.tidbox\session.dat
+2013-09-27 08:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 08:37 Saved H:\.tidbox\session.dat
+2013-09-27 08:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 08:44 Saved H:\.tidbox\session.dat
+2013-09-27 08:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 08:51 Saved H:\.tidbox\session.dat
+2013-09-27 08:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 08:58 Saved H:\.tidbox\session.dat
+2013-09-27 08:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:05 Saved H:\.tidbox\session.dat
+2013-09-27 09:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:12 Saved H:\.tidbox\session.dat
+2013-09-27 09:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:19 Saved H:\.tidbox\session.dat
+2013-09-27 09:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:26 Saved H:\.tidbox\session.dat
+2013-09-27 09:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:33 Saved H:\.tidbox\session.dat
+2013-09-27 09:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:40 Saved H:\.tidbox\session.dat
+2013-09-27 09:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:47 Saved H:\.tidbox\session.dat
+2013-09-27 09:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 09:54 Saved H:\.tidbox\session.dat
+2013-09-27 09:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:01 Saved H:\.tidbox\session.dat
+2013-09-27 10:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:08 Saved H:\.tidbox\session.dat
+2013-09-27 10:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:15 Saved H:\.tidbox\session.dat
+2013-09-27 10:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:22 Saved H:\.tidbox\session.dat
+2013-09-27 10:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:29 Saved H:\.tidbox\session.dat
+2013-09-27 10:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:36 Saved H:\.tidbox\session.dat
+2013-09-27 10:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:43 Saved H:\.tidbox\session.dat
+2013-09-27 10:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:50 Saved H:\.tidbox\session.dat
+2013-09-27 10:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 10:57 Saved H:\.tidbox\session.dat
+2013-09-27 10:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:04 Saved H:\.tidbox\session.dat
+2013-09-27 11:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:11 Saved H:\.tidbox\session.dat
+2013-09-27 11:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:18 Saved H:\.tidbox\session.dat
+2013-09-27 11:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:25 Saved H:\.tidbox\session.dat
+2013-09-27 11:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:32 Saved H:\.tidbox\session.dat
+2013-09-27 11:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:34 Saved H:\.tidbox\times.dat
+2013-09-27 11:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-27 11:39 Saved H:\.tidbox\session.dat
+2013-09-27 11:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:46 Saved H:\.tidbox\session.dat
+2013-09-27 11:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 11:53 Saved H:\.tidbox\session.dat
+2013-09-27 11:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:00 Saved H:\.tidbox\session.dat
+2013-09-27 12:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:04 Saved H:\.tidbox\times.dat
+2013-09-27 12:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-27 12:07 Saved H:\.tidbox\session.dat
+2013-09-27 12:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:09 Saved H:\.tidbox\config.dat
+2013-09-27 12:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-27 12:14 Saved H:\.tidbox\session.dat
+2013-09-27 12:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:21 Saved H:\.tidbox\session.dat
+2013-09-27 12:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:28 Saved H:\.tidbox\session.dat
+2013-09-27 12:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:35 Saved H:\.tidbox\session.dat
+2013-09-27 12:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:35 Saved H:\.tidbox\config.dat
+2013-09-27 12:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-27 12:40 Saved H:\.tidbox\config.dat
+2013-09-27 12:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-27 12:42 Saved H:\.tidbox\session.dat
+2013-09-27 12:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:49 Saved H:\.tidbox\session.dat
+2013-09-27 12:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 12:56 Saved H:\.tidbox\session.dat
+2013-09-27 12:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:03 Saved H:\.tidbox\session.dat
+2013-09-27 13:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:10 Saved H:\.tidbox\session.dat
+2013-09-27 13:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:17 Saved H:\.tidbox\session.dat
+2013-09-27 13:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:24 Saved H:\.tidbox\session.dat
+2013-09-27 13:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:31 Saved H:\.tidbox\session.dat
+2013-09-27 13:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:38 Saved H:\.tidbox\session.dat
+2013-09-27 13:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:45 Saved H:\.tidbox\session.dat
+2013-09-27 13:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:52 Saved H:\.tidbox\session.dat
+2013-09-27 13:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 13:59 Saved H:\.tidbox\session.dat
+2013-09-27 13:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:06 Saved H:\.tidbox\session.dat
+2013-09-27 14:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:13 Saved H:\.tidbox\session.dat
+2013-09-27 14:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:20 Saved H:\.tidbox\session.dat
+2013-09-27 14:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:27 Saved H:\.tidbox\session.dat
+2013-09-27 14:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:34 Saved H:\.tidbox\session.dat
+2013-09-27 14:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:41 Saved H:\.tidbox\session.dat
+2013-09-27 14:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:48 Saved H:\.tidbox\session.dat
+2013-09-27 14:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 14:55 Saved H:\.tidbox\session.dat
+2013-09-27 14:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 15:02 Saved H:\.tidbox\session.dat
+2013-09-27 15:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 15:08 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-27 15:08 Saved H:\.tidbox\archive.dat
+2013-09-27 15:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-27 15:08 Saved H:\.tidbox\session.dat
+2013-09-27 15:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-27 15:08 ------ Ended tidbox ------
+2013-09-30 08:09 ------ Started tidbox ------
+2013-09-30 08:09 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-30 08:09 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:09 Loaded 90 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-30 08:09 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-09-30 08:09 Loaded 3098 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-30 08:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-09-30 08:09 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-09-30 08:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 08:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 09:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 10:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 11:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-30 12:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-09-30 12:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-09-30 12:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:43 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-30 12:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-09-30 12:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 12:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 13:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-09-30 14:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-09-30 14:43 ------ Ended tidbox ------
+2013-10-01 08:09 ------ Started tidbox ------
+2013-10-01 08:09 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-01 08:09 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:09 Loaded 95 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-01 08:09 Loaded 8 lines from H:\.tidbox\supervision.dat
+2013-10-01 08:09 Loaded 3096 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 08:09 Saved H:\.tidbox\lock.dat
+2013-10-01 08:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-01 08:09 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-01 08:13 Saved H:\.tidbox\config.dat
+2013-10-01 08:13 Saved H:\.tidbox\eventcfg.dat
+2013-10-01 08:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-01 08:14 Saved H:\.tidbox\session.dat
+2013-10-01 08:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:14 Saved H:\.tidbox\times.dat
+2013-10-01 08:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 08:21 Saved H:\.tidbox\session.dat
+2013-10-01 08:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:28 Saved H:\.tidbox\session.dat
+2013-10-01 08:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:35 Saved H:\.tidbox\session.dat
+2013-10-01 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:42 Saved H:\.tidbox\session.dat
+2013-10-01 08:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:49 Saved H:\.tidbox\session.dat
+2013-10-01 08:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 08:56 Saved H:\.tidbox\session.dat
+2013-10-01 08:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:03 Saved H:\.tidbox\session.dat
+2013-10-01 09:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:10 Saved H:\.tidbox\session.dat
+2013-10-01 09:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:10 Saved H:\.tidbox\times.dat
+2013-10-01 09:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 09:17 Saved H:\.tidbox\session.dat
+2013-10-01 09:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:24 Saved H:\.tidbox\session.dat
+2013-10-01 09:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:31 Saved H:\.tidbox\session.dat
+2013-10-01 09:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:33 Saved H:\.tidbox\times.dat
+2013-10-01 09:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 09:38 Saved H:\.tidbox\session.dat
+2013-10-01 09:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:45 Saved H:\.tidbox\session.dat
+2013-10-01 09:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:52 Saved H:\.tidbox\session.dat
+2013-10-01 09:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 09:59 Saved H:\.tidbox\session.dat
+2013-10-01 09:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:06 Saved H:\.tidbox\session.dat
+2013-10-01 10:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:13 Saved H:\.tidbox\session.dat
+2013-10-01 10:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:20 Saved H:\.tidbox\session.dat
+2013-10-01 10:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:27 Saved H:\.tidbox\session.dat
+2013-10-01 10:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:34 Saved H:\.tidbox\session.dat
+2013-10-01 10:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:41 Saved H:\.tidbox\session.dat
+2013-10-01 10:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:48 Saved H:\.tidbox\session.dat
+2013-10-01 10:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 10:55 Saved H:\.tidbox\session.dat
+2013-10-01 10:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:02 Saved H:\.tidbox\session.dat
+2013-10-01 11:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:09 Saved H:\.tidbox\session.dat
+2013-10-01 11:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:16 Saved H:\.tidbox\session.dat
+2013-10-01 11:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:23 Saved H:\.tidbox\session.dat
+2013-10-01 11:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:30 Saved H:\.tidbox\session.dat
+2013-10-01 11:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:32 Saved H:\.tidbox\times.dat
+2013-10-01 11:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 11:37 Saved H:\.tidbox\session.dat
+2013-10-01 11:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:44 Saved H:\.tidbox\session.dat
+2013-10-01 11:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:51 Saved H:\.tidbox\session.dat
+2013-10-01 11:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 11:58 Saved H:\.tidbox\session.dat
+2013-10-01 11:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:05 Saved H:\.tidbox\session.dat
+2013-10-01 12:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:12 Saved H:\.tidbox\session.dat
+2013-10-01 12:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:12 Saved H:\.tidbox\times.dat
+2013-10-01 12:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 12:19 Saved H:\.tidbox\session.dat
+2013-10-01 12:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:26 Saved H:\.tidbox\session.dat
+2013-10-01 12:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:33 Saved H:\.tidbox\session.dat
+2013-10-01 12:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:40 Saved H:\.tidbox\session.dat
+2013-10-01 12:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:47 Saved H:\.tidbox\session.dat
+2013-10-01 12:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 12:54 Saved H:\.tidbox\session.dat
+2013-10-01 12:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:01 Saved H:\.tidbox\session.dat
+2013-10-01 13:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:08 Saved H:\.tidbox\session.dat
+2013-10-01 13:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:15 Saved H:\.tidbox\session.dat
+2013-10-01 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:22 Saved H:\.tidbox\session.dat
+2013-10-01 13:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:29 Saved H:\.tidbox\session.dat
+2013-10-01 13:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:36 Saved H:\.tidbox\session.dat
+2013-10-01 13:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:43 Saved H:\.tidbox\session.dat
+2013-10-01 13:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:50 Saved H:\.tidbox\session.dat
+2013-10-01 13:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 13:57 Saved H:\.tidbox\session.dat
+2013-10-01 13:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:04 Saved H:\.tidbox\session.dat
+2013-10-01 14:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:11 Saved H:\.tidbox\session.dat
+2013-10-01 14:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:18 Saved H:\.tidbox\session.dat
+2013-10-01 14:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:25 Saved H:\.tidbox\session.dat
+2013-10-01 14:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:30 Saved H:\.tidbox\config.dat
+2013-10-01 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-01 14:30 Saved H:\.tidbox\times.dat
+2013-10-01 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-01 14:30 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-01 14:30 Saved H:\.tidbox\archive.dat
+2013-10-01 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-01 14:30 Saved H:\.tidbox\session.dat
+2013-10-01 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-01 14:30 ------ Ended tidbox ------
+2013-10-03 08:10 ------ Started tidbox ------
+2013-10-03 08:10 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-03 08:10 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:10 Loaded 95 lines from H:\.tidbox\eventcfg.dat
+2013-10-03 08:10 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-03 08:10 Loaded 3103 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-03 08:10 Saved H:\.tidbox\lock.dat
+2013-10-03 08:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-03 08:10 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-03 08:14 Saved H:\.tidbox\config.dat
+2013-10-03 08:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-03 08:14 Saved H:\.tidbox\supervision.dat
+2013-10-03 08:15 Saved H:\.tidbox\session.dat
+2013-10-03 08:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:16 Saved H:\.tidbox\times.dat
+2013-10-03 08:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-03 08:22 Saved H:\.tidbox\session.dat
+2013-10-03 08:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:29 Saved H:\.tidbox\session.dat
+2013-10-03 08:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:36 Saved H:\.tidbox\session.dat
+2013-10-03 08:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:43 Saved H:\.tidbox\session.dat
+2013-10-03 08:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 08:50 Saved H:\.tidbox\session.dat
+2013-10-03 08:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:02 Saved H:\.tidbox\session.dat
+2013-10-03 09:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:09 Saved H:\.tidbox\session.dat
+2013-10-03 09:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:16 Saved H:\.tidbox\session.dat
+2013-10-03 09:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:23 Saved H:\.tidbox\session.dat
+2013-10-03 09:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:30 Saved H:\.tidbox\session.dat
+2013-10-03 09:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:37 Saved H:\.tidbox\session.dat
+2013-10-03 09:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:44 Saved H:\.tidbox\session.dat
+2013-10-03 09:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 09:51 Saved H:\.tidbox\session.dat
+2013-10-03 09:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 10:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 11:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 12:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 13:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:25 Saved H:\.tidbox\session.dat
+2013-10-03 14:30 Saved H:\.tidbox\session.dat
+2013-10-03 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:33 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-03 14:33 Saved H:\.tidbox\archive.dat
+2013-10-03 14:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-03 14:33 Saved H:\.tidbox\log.txt
+2013-10-03 14:33 Saved H:\.tidbox\session.dat
+2013-10-03 14:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-03 14:33 ------ Ended tidbox ------
+2013-10-07 08:23 ------ Started tidbox ------
+2013-10-07 08:23 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-07 08:23 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:23 Loaded 95 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-07 08:23 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-07 08:23 Loaded 3111 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 08:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-07 08:23 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-07 08:23 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-07 08:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-07 08:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:23 ------ Ended tidbox ------
+2013-10-07 08:24 ------ Started tidbox ------
+2013-10-07 08:24 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-07 08:24 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:24 Loaded 95 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-07 08:24 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-07 08:24 Loaded 3112 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 08:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-07 08:24 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-07 08:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-07 08:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 08:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 09:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 10:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 10:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 11:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 11:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 12:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 13:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-07 14:35 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-07 14:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-07 14:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-07 14:35 ------ Ended tidbox ------
+2013-10-08 08:00 ------ Started tidbox ------
+2013-10-08 08:00 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-08 08:00 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:00 Loaded 95 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-08 08:00 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-08 08:00 Loaded 3117 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-08 08:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-08 08:00 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-08 08:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 08:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 09:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-08 09:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 10:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-08 11:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-08 11:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-08 11:46 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-08 11:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-08 11:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-08 11:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 11:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 12:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 13:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-08 14:41 ------ Ended tidbox ------
+2013-10-09 08:08 ------ Started tidbox ------
+2013-10-09 08:08 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-09 08:08 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:08 Loaded 100 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-09 08:08 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-09 08:08 Loaded 3123 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 08:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-09 08:08 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-09 08:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 08:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 09:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 09:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 10:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-09 11:55 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-09 11:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-09 11:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-09 11:55 ------ Ended tidbox ------
+2013-10-10 07:59 ------ Started tidbox ------
+2013-10-10 07:59 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-10 07:59 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 07:59 Loaded 100 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-10 07:59 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-10 07:59 Loaded 3129 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-10 07:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-10 07:59 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-10 08:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-10 08:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:25 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:32 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:39 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:46 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 08:53 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:00 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:07 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:14 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 09:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 10:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 11:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 12:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:26 Loaded 24443 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-10 13:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\archive.dat
+2013-10-10 13:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-10 13:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-10 13:26 ------ Ended tidbox ------
+2013-10-11 08:16 ------ Started tidbox ------
+2013-10-11 08:16 Loaded 20 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-11 08:16 Loaded 18 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:16 Loaded 100 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\eventcfg.dat
+2013-10-11 08:16 Loaded 8 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\supervision.dat
+2013-10-11 08:16 Loaded 3133 lines from C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-11 08:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\lock.dat
+2013-10-11 08:16 Command C:\Program Files\Tidbox\Aktiv\tidbox.pl
+2013-10-11 08:21 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:35 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-11 08:42 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:49 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 08:56 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:03 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:10 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:17 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:24 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:31 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:38 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:45 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:52 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 09:59 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:06 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:13 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:20 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:27 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:34 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:41 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:48 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 10:55 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:02 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:09 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:16 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:23 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:30 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:37 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:44 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:51 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 11:58 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:05 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:12 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:19 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:26 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:33 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:40 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:47 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 12:54 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:01 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:08 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:15 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:22 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-11 13:28 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-11 13:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:29 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\times.dat
+2013-10-11 13:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\config.dat
+2013-10-11 13:36 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:43 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:50 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 13:57 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 14:04 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 14:11 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat
+2013-10-11 14:18 Saved C:\Users\vallgrol\AppData\Roaming\Tidbox\session.dat

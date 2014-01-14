@@ -1,0 +1,8 @@
+# Format:F
+# This file is generated, do not edit
+# Creator: Tidbox
+
+[SUPERVISION SETTINGS]
+sup_enable=0
+start_date=2012-04-01
+sup_event=125106,02.01,Normal -SE,Sup: RBSSW_TOOLS deliver to DW2

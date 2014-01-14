@@ -1,0 +1,100 @@
+# Format:F
+# This file is generated, do not edit
+# Creator: Tidbox
+
+[EVENT CONFIGURATION]
+0000-00-00
+Project:d:6
+Task:D:6
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;Res=>Travelling I /paid -SE-Overtime;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Sem=>Vacation -SE
+Details:.:24
+2012-01-01
+Project:R:?=>?;WRAP=>111448;Adm=>74151;Frånv=>66438;Fack=>69204;;P=>PMA;33Mp07=>111305;33To15.01=>111249;17Sy10.07=>111035;17Iv01.22=>111577
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fled=>Parental Leave -SE
+Details:.:40
+2012-04-09
+Project:R:?=>?;Ants=>125106;Wrap=>126082;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fled=>Parental Leave -SE
+Details:.:40
+2012-05-07
+Project:R:?=>?;Ants=>125106;Wrap=>126082;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;;Doc=>Doctor Visit -SE;Sjuk=>Sick Leave -SE;Vab=>Care of child Leave -SE;Fled=>Parental Leave -SE
+Details:.:40
+2012-05-14
+Project:R:?=>?;Ants=>125106;Wrap=>126082;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;;Doc=>Doctor Visit -SE;Sju=>Sick Leave -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-06-25
+Project:R:?=>?;Ants=>125106;Wrap=>126082;To=>125465;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;;Doc=>Doctor Visit -SE;Sju=>Sick Leave -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-07-09
+Project:R:?=>?;Ants=>127646;Wrap=>128800;To=>125465;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;;Doc=>Doctor Visit -SE;Sju=>Sick Leave -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-08-06
+Project:R:?=>?;Ants=>127646;Wrap=>128800;To=>127620;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE-Overtime;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;;Doc=>Doctor Visit -SE;Sju=>Sick Leave -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-08-20
+Project:R:?=>?;Ants=>127646;Wrap=>128800;To=>127620;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-10-01
+Project:R:?=>?;Diamonds=>127647;To=>Tools;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-12-30
+Project:R:?=>?;Diamonds=>127647;To=>Tools;Adm=>74151;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2012-12-31
+Project:R:?=>?;Polaris=>133012;To=>Tools;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-03-25
+Project:R:?=>?;RnD=>136378;Tass=>137158;Polaris=>133012;To=>Tools;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-04-01
+Project:R:?=>?;Polaris=>142480;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-04-29
+Project:R:?=>?;Polaris=>142480;RnD=>136378;To=>Tools;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-06-24
+Project:R:?=>?;v26=>142385;Polaris=>144303;RnD=>136378;To=>Tools;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-07-29
+Project:R:?=>?;Polaris=>144303;RnD=>136378;To=>Tools;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-09-30
+Project:R:?=>?;Polaris=>147735;PolQ3=>144303;RnD=>136378;Adm=>135974;Utb=>135940;Frånv=>66438
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
+2013-10-07
+Project:R:?=>?;Obe=>135108;Utb=>135095;Räkn=>136627;Frånv=>66438;Polaris=>147735
+Task:D:8
+Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
+Details:.:40
