@@ -1,5 +1,5 @@
 /**
- * 
+ * Licens
  */
 package se.roland.tidbox;
 
@@ -16,11 +16,23 @@ import java.util.TimerTask;
 
 
 /**
+ * <p>
+ * Running clock</p>
+ * <p>
+ * Timer ticks once a second.</p>
+ * <p>
+ * Date and time is available for simple access.</p>
+ * <p>
+ * Second events are subscribable.</p>
+ * 
  * @author Roland Vallgren
- *
  */
 //public class Clock extends GregorianCalendar {
 //public class Clock implements ActionListener {
+/**
+ * @author vallgrol
+ *
+ */
 public class Clock extends TimerTask {
 	
 //	private GregorianCalendar calendar;
@@ -37,11 +49,17 @@ public class Clock extends TimerTask {
 
 //	setMinimumIntegerDigits
 
-	
+	/**
+	 * 
+	 * @return millis Time in milliseconds of last clock tick
+	 */
 	public long getLastTimeMillis() {
 		return lastTimeMillis;
 	}
 
+	/**
+	 * Constructor
+	 */
 	public Clock() {
 		this.swedishLocale = new Locale("sv", "SE");
 		Locale.setDefault(this.swedishLocale);
@@ -53,6 +71,11 @@ public class Clock extends TimerTask {
 		nf.setGroupingUsed(false);
 	}
 
+	/**
+	 * Create Clock with defined start time
+	 * 
+	 * @param millis Time in milliseconds to start clock in
+	 */
 	public Clock(long millis) {
 		this();
 		this.calendar.setTimeInMillis(millis);
@@ -123,6 +146,9 @@ public class Clock extends TimerTask {
 		return this.getDate() + " " + this.getTime() + ":" + this.getSecond();
 	}
 
+	/**
+	 * Start timer to activate a clock ticke once a second 
+	 */
 	public void start() {
 //		clockTimer = new Timer(1000, this);
 //		clockTimer = new Timer(6000, this);
@@ -136,12 +162,21 @@ public class Clock extends TimerTask {
 //		tick();
 //	}
 	
+	/**
+	 * Tick clock and set time in calendar
+	 * 
+	 * @param s Time in seconds to set
+	 */
 	public void tick(int s) {
 		this.calendar.add(Calendar.SECOND, s);
 		ticked();
 	}
 
 	// TODO: Keep timer running even though work takes a long time Own thread? How do I do that?
+	/**
+	 * Called when timer runs out and registers time now
+	 * Should be called once a second
+	 */
 	public void tick() {
 		long s = System.currentTimeMillis();
 		this.calendar.setTimeInMillis(System.currentTimeMillis());
@@ -149,6 +184,11 @@ public class Clock extends TimerTask {
 		lastTimeMillis  = System.currentTimeMillis() - s;
 	}
 	
+	
+	/**
+	 * Tasks to be performed when clock was ticked
+	 * Call subscriptions for new second events
+	 */
 	private void ticked() {
 		int s = calendar.get(Calendar.SECOND);
 		if (s != second) {
@@ -160,6 +200,10 @@ public class Clock extends TimerTask {
 	}
 
 //	public synchronized void timerSecond(ClockEventMethod e) {
+	/**
+	 * Add a new subscription for second events 
+	 * @param e
+	 */
 	public void timerSecond(ClockEventMethod e) {
 		this.secondTimers.add(e);
 	}
@@ -173,11 +217,17 @@ public class Clock extends TimerTask {
 		return d.substring(0, 1).toUpperCase() + d.substring(1);
 	}
 
+	/**
+	 * Stop timer when program is ended
+	 */
 	public void stop() {
 //		clockTimer.stop();
 		clockTimer.cancel();
 	}
 
+	/* (non-Javadoc)
+	 * @see java.util.TimerTask#run()
+	 */
 	@Override
 	public void run() {
 		tick();

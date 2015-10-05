@@ -2,6 +2,7 @@ package se.roland.tidbox.data;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import org.junit.Test;
 
@@ -231,8 +232,19 @@ public class TimesTest {
 			assertTrue("Saved content should be the same as original at " + i + " " +  x.get(i).toString() + " != " + y.get(i).toString(), 
 					x.get(i).toString().equals(y.get(i).toString()));
 		}
-		
 
 	}
 
+	@Test
+	public void fileName() throws Exception
+	{
+		String fileDir = System.getenv("TEMP");
+		String fileName = "test_times.dat";
+		String filePath = fileDir + File.separator + fileName;
+		File testFile = new File(filePath);
+		testFile.delete();
+		Times t = new Times(fileDir, fileName);
+		t.add(new Event("2015-10-05", "17:15", Event.EVENT, "Save with filename " + filePath));
+		assertTrue("It should be possible to create times file with name \"test_times.dat\"", t.save());
+	}
 }

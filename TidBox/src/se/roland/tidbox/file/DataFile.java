@@ -2,6 +2,7 @@ package se.roland.tidbox.file;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -45,12 +46,15 @@ public class DataFile {
 
 	public static boolean append(String fileName, String line) {
 		boolean saved = false;
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
-			bw.write(line);
-			bw.write('\n');
-			saved = true;
-		} catch (IOException e) {
-			e.printStackTrace();
+		File fn = new File(fileName);
+		if (fn.exists()) {
+			try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true))) {
+				bw.write(line);
+				bw.write('\n');
+				saved = true;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return saved;
 	}

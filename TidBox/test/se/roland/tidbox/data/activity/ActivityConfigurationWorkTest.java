@@ -25,7 +25,7 @@ public class ActivityConfigurationWorkTest {
 		// Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
 		// Details:.:40
 		ActivityConfigurationItem cfg = new ActivityConfigurationItem(4);
-		// Load activities from file
+		// TODO: Load activities from file
 		// activityConfiguration splits line
 		String l1 = "1177,01.02,Normal -SE,Detaljer för aktivitet, komma är tillåtet";
 		Matcher m = cfg.match(l1);

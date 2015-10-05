@@ -2,6 +2,7 @@ package se.roland.tidbox.data;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,13 +18,35 @@ public class Times implements DataFileSave, DataFileLoad {
 	private ArrayList<Event> times;
 	private UndoEvent undo;
 	private boolean dirty;
+	private String fileName;
 
-	public Times() {
+	
+
+	/**
+	 * Set filename
+	 * @param fileName
+	 */
+	public Times(String fileDir, String fileName) {
+		this.fileName = fileDir + File.separator + fileName;
 //		TODO: List list = Collections.synchronizedList(new ArrayList(...));
 		this.times = new ArrayList<Event>();
 		this.undo = new UndoEvent();
 		this.dirty = false;
 	}
+	
+	/**
+	 * Set filename
+	 * @param fileName
+	 */
+	public Times(String fileDir) {
+		this(fileDir, Times.FILE_NAME);
+	}
+
+
+	public Times() {
+		this(".");
+	}
+	
 
 	/*
 	 * Get all registrations for the specified date
@@ -44,20 +67,24 @@ public class Times implements DataFileSave, DataFileLoad {
 		this.undo.add(event);
 		if (! this.dirty) {
 			// TODO Event should have an approptiate method to store a string in a times.dat file
+			boolean a = false;
 			String i = event.getActivity();
 			if (i != null) {
-				DataFile.append(Times.FILE_NAME,
+				a = DataFile.append(this.fileName,
 						event.getDate() + "," +
 						event.getTime() + "," +
 						event.getState() + "," +
 					    i
 					    );
 			} else {
-				DataFile.append(Times.FILE_NAME,
+				a = DataFile.append(this.fileName,
 						event.getDate() + "," +
 						event.getTime() + "," +
 						event.getState() + ","
 						);
+			}
+			if (! a) {
+				this.dirty = true;
 			}
 		}
 		return true;
@@ -151,7 +178,7 @@ public class Times implements DataFileSave, DataFileLoad {
 	public boolean save() {
 		if (dirty) {
 			this.dirty = false;
-			return DataFile.save(Times.FILE_NAME, Times.FILE_TAG, this);
+			return DataFile.save(this.fileName, Times.FILE_TAG, this);
 		} else {
 			return false;
 		}
@@ -159,7 +186,7 @@ public class Times implements DataFileSave, DataFileLoad {
 
 	public boolean load() {
 		this.dirty = false;
-		return DataFile.load(Times.FILE_NAME, Times.FILE_TAG, this);
+		return DataFile.load(this.fileName, Times.FILE_TAG, this);
 	}
 
 

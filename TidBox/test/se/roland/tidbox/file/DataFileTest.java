@@ -99,7 +99,12 @@ public class DataFileTest implements DataFileSave, DataFileLoad {
 	}
 
 	@Test
-	public void AppendToFile() throws Exception {
+	public void appendToFile() throws Exception {
+		File testFile = new File(af);
+		testFile.delete();
+		boolean n = DataFile.append(af, testAppend);
+		assertFalse("Append should fail if file does not exist", n);
+
 		boolean r = DataFile.save(af, tag, this);
 		assertTrue("File should be saved OK", r);
 		

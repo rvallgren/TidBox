@@ -2,6 +2,10 @@ package se.roland.tidbox.data;
 
 import java.util.HashMap;
 
+/**
+ * @author vallgrol
+ *
+ */
 public class Event implements Comparable<Event>, Cloneable {
 
 	/**
@@ -16,6 +20,7 @@ public class Event implements Comparable<Event>, Cloneable {
 	
 	private static final HashMap<String, String> showStrings = new HashMap<String, String>();
 	{
+		// TODO This should be class common data???
 		showStrings.put(BEGINWORK, "Börja arbetsdagen"); 
 		showStrings.put(WORKEND, "Sluta arbetsdagen"); 
 		showStrings.put(PAUSE, "Börja paus"); 
@@ -46,12 +51,7 @@ public class Event implements Comparable<Event>, Cloneable {
 	 * @param state
 	 */
 	public Event(String date, String time, String state) {
-		this.date = date;
-		this.time = time;
-		this.state = state;
-		if (state.equals(Event.EVENT)) {
-			this.activity = "";
-		}
+		this(date, time, state, "");
 	}
 
 	/**
@@ -62,8 +62,12 @@ public class Event implements Comparable<Event>, Cloneable {
 	 * @param event activity
 	 */
 	public Event(String date, String time, String state, String activity) {
-		this(date, time, state);
-		this.activity = activity;
+		this.date = date;
+		this.time = time;
+		this.state = state;
+		if (state.equals(Event.EVENT)) {
+			this.activity = activity;
+		}
 	}
 
 	public String getDate() {
@@ -86,6 +90,9 @@ public class Event implements Comparable<Event>, Cloneable {
 		return state;
 	}
 
+	/**
+	 * @param state
+	 */
 	public void setState(String state) {
 		if ( ! this.state.equals(state)) {
 			if (state.equals(EVENT)) {
