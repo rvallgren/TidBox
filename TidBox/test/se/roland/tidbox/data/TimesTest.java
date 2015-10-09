@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.junit.Test;
 
 /**
@@ -232,6 +234,19 @@ public class TimesTest {
 			assertTrue("Saved content should be the same as original at " + i + " " +  x.get(i).toString() + " != " + y.get(i).toString(), 
 					x.get(i).toString().equals(y.get(i).toString()));
 		}
+		
+		// Verify fetching all items, one at a time, sort before read
+		Iterator<Event> itr = a.iterator();
+//		System.out.println("List times from file");
+//		while(itr.hasNext()){
+//			System.out.println(itr.next());
+//		}
+		a.sort();
+		itr = a.iterator();
+		while(itr.hasNext()){
+			assertEquals("Not same date on all events", "2013-11-28", itr.next().getDate());
+		}
+
 
 	}
 
@@ -244,6 +259,11 @@ public class TimesTest {
 		File testFile = new File(filePath);
 		testFile.delete();
 		Times t = new Times(fileDir, fileName);
+		
+		// Try to load a non existing file
+		assertFalse("Load should return false when file does not exist", t.load());
+		
+		// Try to save as a new file
 		t.add(new Event("2015-10-05", "17:15", Event.EVENT, "Save with filename " + filePath));
 		assertTrue("It should be possible to create times file with name \"test_times.dat\"", t.save());
 	}

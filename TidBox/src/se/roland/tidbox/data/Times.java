@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 import se.roland.tidbox.file.DataFile;
 import se.roland.tidbox.file.DataFileLoad;
@@ -18,6 +19,7 @@ public class Times implements DataFileSave, DataFileLoad {
 	private ArrayList<Event> times;
 	private UndoEvent undo;
 	private boolean dirty;
+	// TODO private boolean loaded;
 	private String fileName;
 
 	
@@ -192,7 +194,8 @@ public class Times implements DataFileSave, DataFileLoad {
 
 	@Override
 	public boolean saveData(BufferedWriter bw) throws IOException {
-		Collections.sort(times);
+//		Collections.sort(times);
+		this.sort();
 		String i;
 		for (Event e : times) {
 			// TODO Event should implement this in "toString()"
@@ -240,6 +243,18 @@ public class Times implements DataFileSave, DataFileLoad {
 
 	public int size() {
 		return times.size();
+	}
+
+	/**
+	 * Get an iterator over times data
+	 * @return Event
+	 */
+	public Iterator<Event> iterator() {
+		return times.iterator();
+	}
+
+	public void sort() {
+		Collections.sort(times);		
 	}
 
 //	public Event getItem(int i) {
