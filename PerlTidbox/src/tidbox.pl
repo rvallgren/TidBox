@@ -1,17 +1,16 @@
-#!/app/perl/5.8.7/bin/perl   --  # Carriage return?
 #----------------------------------------------------------------------------
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.5   Created: 2013-05-27
+#   Version:  4.6   Created: 2015-10-07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.5';
-my $DATEVER = '2013-05-27';
+my $VERSION = '4.6';
+my $DATEVER = '2015-10-07';
 
 #----------------------------------------------------------------------------
 #
@@ -31,13 +30,15 @@ my $DATEVER = '2013-05-27';
 #      Errors and warnings are logged
 # 4.5  2013-05-21  Roland Vallgren
 #      Added call of session lock dialog in Main
+# 4.6  2015-08-10  Roland Vallgren
+#      Perl Tk installation directory for Solaris/Linux not predefined
+#      Show version information in log
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-#use lib "/app/perl/5.8.4/modules/Tk/804.027/lib";
 
 # Use Pragma
 use strict;
@@ -566,7 +567,7 @@ my $date = $clock->getDate();
 $fsv->load($date, $time);
 
 # Set starttime
-$fsv->start($date, $time, $args);
+$fsv->start($date, $time, $args, $tool_info{version});
 
 # Setup main GUI
 $main_win->display();
@@ -695,7 +696,7 @@ Roland Vallgren
 This program is copyrighted by Roland Vallgren
 All Rights Reserved.
 
-    Copyright (c) 2013-05-27 Roland Vallgren All rights reserved
+    Copyright (c) 2015-10-07 Roland Vallgren All rights reserved
     This program is free software. It may be used, redistributed
     and/or modified under the same terms as Perl itself
 

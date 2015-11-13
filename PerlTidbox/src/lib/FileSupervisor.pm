@@ -2,14 +2,15 @@
 package FileSupervisor;
 #
 #   Document: Handle all files
-#   Version:  2.0   Created: 2013-05-18 20:00
+#   Version:  2.1   Created: 2015-11-04 10:51
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileSupervisor.pmx
 #
 
-my $VERSION = '2.0';
+my $VERSION = '2.1';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -19,13 +20,18 @@ my $VERSION = '2.0';
 #      not_set_start => start_operation :  none, workday, event, end pause
 # 2.0  2012-09-10  Roland Vallgren
 #      Added session lock
+# 2.1  2015-08-10  Roland Vallgren
+#      Added configurations needed by Settings
+#      Moved check lock for start session in Times to Times.pm
+#      Show version information in log
+#      Added supervision of backup
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
+use base TidBase;
 
 use strict;
 use warnings;
@@ -47,7 +53,7 @@ use Archive;
   use Version qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
-                   -date    => '2013-05-18',
+                   -date    => $DATEVER,
                   );
 }
 
@@ -95,10 +101,18 @@ sub new($$) {
               -archive     => new Archive(),
 
              };
+
+  # Backup check data
+  my $backup = {
+                files => [],
+                file_states => {},
+               };
+
   my $self = {
-              order => $order,
-              extra => $extra,
-              files => $files,
+              order  => $order,
+              extra  => $extra,
+              files  => $files,
+              backup => $backup,
              };
   bless($self, $class);
   return $self;
@@ -129,8 +143,10 @@ sub configure($%) {
       configure(
                 -cfg         => $files->{-cfg},
                 -lock        => $files->{-lock},
-                -clock       => $args{-clock},
+                -event_cfg   => $files->{-event_cfg},
                 -log         => $files->{-log},
+                -clock       => $args{-clock},
+                -earlier     => $args{-earlier},
                 -error_popup => $args{-error_popup},
                );
 
@@ -170,6 +186,7 @@ sub configure($%) {
   $files->{-times} ->
       configure(
                 -cfg         => $files->{-cfg},
+                -event_cfg   => $files->{-event_cfg},
                 -session     => $files->{-session},
                 -calculate   => $args{-calculate},
                 -edit        => $args{-edit},
@@ -260,6 +277,7 @@ sub load($$$) {
   for my $k (@{$self->{order}}, @{$self->{extra}}) {
     $files->{$k}->startAuto();
     $files->{-cfg}->impacted($files->{$k});
+    $self->{backup}{file_states}{$k} = undef;
   } # for #
 
   return 0;
@@ -296,20 +314,21 @@ sub getRef($$) {
 #  - Date
 #  - Time
 #  - Call string of the program
+#  - Version information for logging
 # Returns:
 #  -
 
 sub start($$$$) {
   # parameters
   my $self = shift;
-  my ($date, $time, $args) = @_;
+  my ($date, $time, $args, $title) = @_;
 
 
   my $files = $self->{files};
 
   # Start logging
   $files->{-log}->start();
-  $files->{-log}->log('------ Started tidbox', '------');
+  $files->{-log}->log('------', 'Started', $title, '------');
   $files->{-log}->log('Command', $args->{-call_string}, @{$args->{-argv}});
 
   # Set start time
@@ -317,14 +336,16 @@ sub start($$$$) {
 
   $files->{-session}->start($date, $time);
 
-  $files->{-times}->startSession($date, $time, $files->{-event_cfg})
-      unless ($files->{-cfg}->isLocked($date));
+  $files->{-times}->startSession($date, $time);
 
   Version->register_locked_session($files->{-lock}->get());
 
 
   # Setup supervision
   $files->{-supervision}->setup();
+
+  # Start supervision of backup directory
+  $self->startAuto();
 
 
   return 0;
@@ -391,6 +412,14 @@ sub end($;$) {
     $r->save();
   } # for #
 
+  # Check if any backup need an update
+  while (my ($file_key, $val) = each(%{$self->{backup}{file_states}})) {
+    unless (defined($val)) {
+      $self->callback($message);
+      $val = $files->{$file_key}->copyBackup();
+    } # unless #
+  } # while #
+
   # Turn of logging of errors and warnings
   for my $ref (@{$self->{error_warning}}) {
     $ref->{handler} = undef;
@@ -406,6 +435,126 @@ sub end($;$) {
 
   return 0;
 } # Method end
+
+#----------------------------------------------------------------------------
+#
+# Method:      startAuto
+#
+# Description: Start autosave timer
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub startAuto($) {
+  # parameters
+  my $self = shift;
+
+
+  # Set backup state to started
+  my $backup = $self->{backup};
+  $backup->{state} = 0;
+  $backup->{timer} = 3;
+  $self->{-clock}->repeat(-minute => [$self => 'autoCheckBackup']);
+
+  return 1;
+} # Method startAuto
+
+#----------------------------------------------------------------------------
+#
+# Method:      autoCheckBackup
+#
+# Description: Check if backup directory is in place and make
+#              sure the backup is up to date
+#              Backup state:
+#                0 - Started, backup check pending
+#                1 - Timer running, wait for timeout
+#               -1 - Backup not found or not active
+#                2 - Backup detected, start verification sequence
+#                3 - Verify backup
+#                9 - Backup OK
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  0 - if success
+
+sub autoCheckBackup($) {
+  # parameters
+  my $self = shift;
+
+
+  my $files = $self->{files};
+  my $backup = $self->{backup};
+
+  return 1
+      if ($files->{-lock}->isLocked());
+
+  return 1
+      if (--$backup->{timer} > 0);
+
+  my $backupDir = $files->{-cfg}->filename('bak');
+
+  if (defined($backupDir)) {
+
+    # Backup directory exists, handle it
+    if ($backup->{state} <= 1) {
+      # Started or not existing before
+      # Initialize backup check
+      $backup->{timer} = 1;
+      $backup->{state} = 2;
+
+      # Check that all backups are up to date
+      @{$backup->{files}} = keys(%{$backup->{file_states}});
+
+      # Check logging on backup
+      $files->{-log}->checkBackup();
+      $files->{-log}->log('Initialize backup OK check');
+
+    } elsif ($backup->{state} == 2) {
+      if (@{$backup->{files}}) {
+        # Perform check that backup is OK
+        my $file_key = pop(@{$backup->{files}});
+        $backup->{file_states}{$file_key} = 
+             $files->{$file_key}->copyBackup();
+        $files->{-log}->log('Verified backup for', $file_key);
+        $backup->{timer} = 1;
+
+      } else {
+        # All backups checked: Schedule next check
+        $files->{-log}->log('Backup check done, schedule next check');
+        $backup->{state} = 9;
+        $backup->{timer} = 10 * $files->{-cfg}->get('save_threshold');
+      } # if #
+
+    } elsif ($backup->{state} == 9) {
+      # Restart backup check sequence
+      $backup->{state} = 0;
+      $backup->{timer} = 1;
+
+    } # if #
+
+  } else {
+
+    # Backup directory not found
+
+    if ($backup->{state} <= 0) {
+      # Started or backup check pending: Reset timer
+      $backup->{timer} = $files->{-cfg}->get('save_threshold');
+
+    } else {
+      # Backup did exist, but was lost, reset backup check
+      for my $file_state (values(%{$backup->{file_states}})) {
+        $file_state = undef;
+      } # for #
+      $backup->{state} = -1;
+      $files->{-log}->log('Backup directory was lost');
+    } # if #
+  } # if #
+
+  return 0;
+} # Method autoCheckBackup
 
 1;
 __END__

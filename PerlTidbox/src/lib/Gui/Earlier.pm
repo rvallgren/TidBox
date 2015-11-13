@@ -2,15 +2,15 @@
 package Gui::Earlier;
 #
 #   Document: Gui::Earlier
-#   Version:  1.2   Created: 2011-04-01 14:25
+#   Version:  1.3   Created: 2015-11-04 14:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Earlier.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2011-04-01';
+my $VERSION = '1.3';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -20,13 +20,15 @@ my $DATEVER = '2011-04-01';
 #      Use Exco %+ to use same source to register version
 # 1.2  2011-04-01  Roland Vallgren
 #      Return reference to button widget on create and prevButt
+# 1.3  2015-11-04  Roland Vallgren
+#      getSortedRefs joins expression
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
+use base TidBase;
 
 use strict;
 use warnings;
@@ -288,13 +290,15 @@ sub build($$) {
   my $previous_c = 0;
   %{$self->{previous}} = ();
   for my $ref (reverse(
-               $times->getSortedRefs(join(',', $DATE, $TIME, $BEGINEVENT))
+               $times->getSortedRefs($DATE, $TIME, $BEGINEVENT)
               )) {
     if ($$ref =~ /^$DATE,$TIME,$BEGINEVENT,(.+)$/o) {
-      next if exists($self->{previous}{$1});
+      next
+          if exists($self->{previous}{$1});
       $self->{previous}{$1} = $previous_c;
       $previous_c++;
-      last if $previous_c >= $self->{-cfg}->get('earlier_menu_size');
+      last
+          if $previous_c >= $self->{-cfg}->get('earlier_menu_size');
     } # if #
   } # for #
 

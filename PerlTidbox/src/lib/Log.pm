@@ -2,23 +2,26 @@
 package Log;
 #
 #   Document: Log to file
-#   Version:  1.2   Created: 2012-12-12 15:53
+#   Version:  1.3   Created: 2015-11-04 10:05
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Log.pmx
 #
 
-my $VERSION = '1.2';
+my $VERSION = '1.3';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
+# 1.3  2015-10-08  Roland Vallgren
+#      Minor correction.
+#      Log should not be rotated when locked
+#      Improved handling of log in backup
 # 1.2  2012-12-12  Roland Vallgren
 #      Perl 5.16
-#
 # 1.1  2012-09-05  Roland Vallgren
 #      Do not try to rotate backupfile if not used
-#
 # 1.0  2011-03-13  Roland Vallgren
 #      First issue.
 #
@@ -27,8 +30,8 @@ my $VERSION = '1.2';
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -39,7 +42,7 @@ use integer;
   use Version qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
-                   -date    => '2012-12-12',
+                   -date    => $DATEVER,
                   );
 }
 
@@ -193,6 +196,9 @@ sub _rotate($) {
   my $self = shift;
 
 
+  return undef
+      if ($self->{-cfg}->isSessionLocked());
+
   my ($fs, $bs) = (0, 0);
   my ($file, $bak);
 
@@ -208,7 +214,7 @@ sub _rotate($) {
   } # if #
 
   return $fs
-      unless ($fs > 100000);
+      unless ($fs > 200000);
 
   rename $file, $file . '.rotate';
   rename $bak,  $bak  . '.rotate'
@@ -237,7 +243,10 @@ sub start($) {
   my $self = shift;
 
 
-  $self->_rotate();
+  return undef
+      unless (defined($self->_rotate()));
+
+  $self->{loaded} = 1;
 
   for my $typ ('bak', 'dir') {
 
@@ -253,12 +262,39 @@ sub start($) {
 
   } # for #
 
-  $self->{loaded} = 1;
   $self->save();
   $self->{started} = 1;
 
   return 1;
 } # Method start
+
+#----------------------------------------------------------------------------
+#
+# Method:      checkBackup
+#
+# Description: Check that log on backup is OK
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  0 - if log on backup is OK
+
+sub checkBackup($) {
+  # parameters
+  my $self = shift;
+
+
+  return 0
+      unless ($self->{'bak_dirty'});
+
+  my $bak  = $self->{-cfg}->filename('bak', $self->{-name});
+  $self->_saveFile($bak)
+      unless (-e $bak);
+  $self->dirty(1, 'bak');
+  $self->log('-----', 'Backup detected, log initialized', '-----');
+
+  return 1;
+} # Method checkBackup
 
 #----------------------------------------------------------------------------
 #
@@ -284,6 +320,7 @@ sub log($@) {
                   $self->{-clock}->getTime(),
                   @_,
                  );
+
     while (my $v = shift(@{$self->{log}})) {
       $self->append($v);
     } # while #

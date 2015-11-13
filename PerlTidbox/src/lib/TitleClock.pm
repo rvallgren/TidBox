@@ -2,15 +2,15 @@
 package TitleClock;
 #
 #   Document: Running clock for timing and visible clock
-#   Version:  1.7   Created: 2013-05-27 19:35
+#   Version:  1.8   Created: 2015-11-04 09:57
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TitleClock.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2013-05-27';
+my $VERSION = '1.8';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -29,13 +29,16 @@ my $DATEVER = '2013-05-27';
 #      Use Exco %+ to use same source to register version
 # 1.7  2013-05-18  Roland Vallgren
 #      Show session lock instead of time
+# 1.8  2015-09-23  Roland Vallgren
+#      Added detection and subscription of sleep
+#      Added quit method to stop sending repeat messages
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
+use base TidBase;
 
 use strict;
 use warnings;
@@ -59,6 +62,7 @@ use integer;
 #
 # Private data
 #
+#  systime     Time in seconds since epoch
 #  wt          Array with last time read from localtime
 #  second      Current second         0..59
 #  minute      Current minute         0..59
@@ -72,14 +76,16 @@ use integer;
 #  week        Current week number    1..53
 #  weekday     Current day in week    0..6
 #  weekdaytxt  Current day name       Måndag .. Söndag
+#  sleep       Time in seconds since last tick was registered
 #  locked      Session locked
 #
 #  -display    Hash with displays were the clock is displayed
 #              'name' => Reference to Tk widget to display in
 #  -repeat     Hash with running timers
-#              -day     List of timers to run every midnight
-#              -hour    List of timers to run once an new hour
-#              -minute  List of timers to run once a minute
+#              -date    List of timers to run every midnight
+#              -hour    List of timers to run every new hour
+#              -minute  List of timers to run every new minute
+#              -sleep   List of timers to run whenever a sleep is detected
 
 #############################################################################
 #
@@ -103,9 +109,10 @@ sub new($) {
   $class = ref($class) || $class;
 
   my $self = {
-              date   => 0,
-              hour   => 0,
-              minute => 0,
+              systime => time(),
+              date    => 0,
+              hour    => 0,
+              minute  => 0,
              };
 
   bless($self, $class);
@@ -179,7 +186,20 @@ sub tick($) {
   my $self = shift;
 
 
-  my @wt = localtime(time);
+  my $systime = time();
+  my $sleep = $systime - $self->{systime};
+  $self->{sleep} = $sleep;
+  $self->{systime} = $systime;
+  if ($sleep > 60) {
+    # More than one minute since last invocation of tick
+    # A possible sleep or hibernation has occured
+    # Make sure the clock gets correct information
+    $self->{date}   = 0;
+    $self->{hour}   = 0;
+    $self->{minute} = 0;
+  } # if #
+
+  my @wt = localtime($systime);
   @{$self->{wt}} = @wt;
   my ($sec, $min) = ($wt[0], $wt[1]);
   $sec = '0' . $sec if $sec < 10;
@@ -222,6 +242,13 @@ sub tick($) {
       $self->callback($ref);
     } # for #
 
+  } # if #
+
+  if ($sleep > 60) {
+    # Handle action due to sleep or hibernation longer than 60 seconds
+    for my $ref (@{$self->{-repeat}{-sleep}}) {
+      $self->callback($ref);
+    } # for #
   } # if #
 
   if ($self->{-display}) {
@@ -424,6 +451,42 @@ sub getWeekday($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      getSystime
+#
+# Description: Get system time of last tick
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub getSystime($) {
+  # parameters
+  my $self = shift;
+
+  return $self->{systime};
+} # Method getSystime
+
+#----------------------------------------------------------------------------
+#
+# Method:      getSleep
+#
+# Description: Get sleep time in seconds
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub getSleep($) {
+  # parameters
+  my $self = shift;
+
+  return $self->{sleep};
+} # Method getSleep
+
+#----------------------------------------------------------------------------
+#
 # Method:      setLocked
 #
 # Description: Set session locked
@@ -441,6 +504,27 @@ sub setLocked($$) {
 
   $self->{locked} = $locked;
 } # Method setLocked
+
+#----------------------------------------------------------------------------
+#
+# Method:      quit
+#
+# Description: Stop sending of subscriptions
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub quit($) {
+  # parameters
+  my $self = shift;
+
+  for my $key (keys(%{$self->{-repeat}})) {
+    $self->{-repeat}{$key} = undef;
+  } # for #
+  return 0;
+} # Method quit
 
 1;
 __END__

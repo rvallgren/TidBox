@@ -1,7 +1,7 @@
 #
 package Version;
 #
-#   Version:  1.5   Created: 2013-05-27
+#   Version:  1.5   Created: 2015-11-10
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,10 +9,9 @@ package Version;
 #
 
 my $VERSION = '1.5';
-my $DATEVER = '2013-05-27';
+my $DATEVER = '2015-11-10';
 
 # Register version information
-sub register_version(%);
 {
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
@@ -70,9 +69,9 @@ my %components;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2013-05-27',
+    date      => '2015-11-10',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.7',
+    VERSION   => '4.8',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -105,18 +104,22 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Anpassningar för Perl 5.16
-Tidbox skapar en låsfil, en andra Tidbox körs med enbart läsning
-Tidbox laddas ner från intra
+Egen händelse vid start av Tidbox kan definieras.
+Tidbox upptäcker och kan registrera händelse när datorn har varit i sömnläge.
+Hantering av säkerhetskopia förbättrad.
+Tidbox version registreras i loggen vid start.
+Kodförbättringar.
+Perl Tk för Solaris ej fördefinierat.
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Försök inte rotera loggen på backup om ingen backup används.
-Ta bort i main kontrollerar lås.
-Ändring av inställningar för händelser ej tillåtet för låsta veckor.
+Lås upp Tidbox visade datum som tid för upplåsning.
+Lägg till i fil loggades inte.
+Felhantering i inställningar rättad.
+Ändra i Redigera blinkade med Tidbox låst dialogen.
 '
 ,
 

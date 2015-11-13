@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  1.8   Created: 2013-05-18 17:35
+#   Version:  2.0   Created: 2015-11-04 15:01
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2013-05-18';
+my $VERSION = '2.0';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -36,13 +36,17 @@ my $DATEVER = '2013-05-18';
 #      EventCfg need win_r for message popup
 # 1.8  2013-05-18  Roland Vallgren
 #      Handle session lock
+# 2.0  2015-08-10  Roland Vallgren
+#      Added tab for start of Tidbox
+#      Added settings for handling of resume
+#      Improved handling of invalid values
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent Gui::Base;
+use base Gui::Base;
 
 use strict;
 use warnings;
@@ -69,11 +73,21 @@ use Gui::Confirm;
 #
 # Settings modifiable in Settings:
 #
-#  start_operation    How to register start of tidbox
+#   start_operation    How to register start of tidbox
 #                       0:  No action
 #                       1:  Register Start workday, if it is the first today
-#                       2:  Register Start Event
+#                       2:  Register Event start tidbox
 #                       3:  Register End Pause
+#                       4:  Register an own defined start Event (??? 2 ???)
+#   start_operation_event   User Event to register when Tidbox is started
+#   resume_operation    How to register resume of tidbox
+#                       0:  No action
+#                       1:  Register Start workday, if it is the first today
+#                       2:  Register Event resume tidbox
+#                       3:  Register End Pause
+#                       4:  Register an own defined resume Event (??? 2 ???)
+#   resume_operation_time    Sleep or hibernation timeout to register
+#   resume_operation_event   User Event to register when Tidbox is resumed
 #   remember_positions      Behåll skärmpositioner:
 #   save_threshold          Autospara redigeringar efter
 #   earlier_menu_size       Antal i Tidigare menyn:
@@ -106,7 +120,11 @@ use Gui::Confirm;
 
 use constant SETTABLE_CFGS =>
     qw(
-        start_operation 
+        start_operation
+        start_operation_event
+        resume_operation
+        resume_operation_time
+        resume_operation_event
         remember_positions
         save_threshold
         earlier_menu_size
@@ -161,6 +179,7 @@ sub new($%) {
               @_,
               win       => {name => 'sett'},
               condensed => 0,
+              errors    => undef,
              };
 
   $self->{-title} .= ': Inställningar';
@@ -177,7 +196,8 @@ sub new($%) {
 # Description: Tell that a not allowed value was enterd
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
+#  - List of message texts
 # Returns:
 #  -
 
@@ -185,14 +205,45 @@ sub _not_allowed($@) {
   # parameters
   my $self = shift;
 
+  my @e;
+  push @e, @{$self->{errors}}
+      if (ref($self->{errors}));
+  push @e, @_;
   $self->{win}{confirm}
        -> popup(
-                -title => $self->{-title} . ': Felaktig inmatning',
+                -title => ': Felaktig inmatning',
                 -text  => ['Ej tillåtet värde i inställningar'],
-                -data  => [join("\n", @_)],
+                -data  => [join("\n", @e)],
                );
+  $self->{errors} = undef;
   return 0;
 } # Method _not_allowed
+
+#----------------------------------------------------------------------------
+#
+# Method:      _not_allow_add
+#
+# Description: Add not allowed information in coming dialog
+#
+# Arguments:
+#  - Object reference
+#  - List of message texts
+# Returns:
+#  -
+
+sub _not_allow_add($@) {
+  # parameters
+  my $self = shift;
+
+  if (ref($self->{errors})) {
+    push @{$self->{errors}}, @_;
+
+  } else {
+    $self -> _not_allowed(@_);
+
+  } # if #
+  return 0;
+} # Method _not_allow_add
 
 #----------------------------------------------------------------------------
 #
@@ -275,6 +326,12 @@ sub _restore($) {
                          'Välj Terp mall (export.csv)',
                );
 
+  $self->{-event_cfg}
+       -> putData($self->{start_tidbox_win_r}, $self->{cfg}{start_operation_event}, 1);
+
+  $self->{-event_cfg}
+       -> putData($self->{resume_tidbox_win_r}, $self->{cfg}{resume_operation_event}, 1);
+
   # No changes registered
   $self->_discard();
   $self->{modified} = 0;
@@ -301,18 +358,45 @@ sub _apply($) {
 
   my $win_r = $self->{win};
 
+  # Check if any lock prohibits changes
+  my ($lock, $txt, $lockdate, $date) = $self->{-event_cfg}->isLocked();
+  if ($lock == 1) {
+    $win_r->{confirm}
+        -> popup(-title => 'information',
+                 -text  => ['Kan inte ändra för: '. $date,
+                            'Alla veckor till och med ' .
+                                 $lockdate . ' är låsta.'],
+                );
+    return 1;
+
+  } elsif ($lock == 2) {
+    $win_r->{confirm}
+        -> popup(-title => 'information',
+                 -text  => ['Tidbox är låst av en annan Tidbox!'],
+                );
+    return 1;
+
+  } # if #
+  
+
   # Check entries
-  my @errors;
-  push @errors, 'Tidigare menyn måste har minst en rad.'
+  $self->{errors} = [];
+  $self->_not_allow_add('Tidigare menyn måste har minst en rad.')
       if ($self->{cfg}{earlier_menu_size} <= 0);
-  push @errors, 'Tiden för "Autospara redigeringar" måste vara minst en minut.'
+  $self->_not_allow_add('Tiden för "Autospara redigeringar" måste vara minst en minut.')
       if ($self->{cfg}{save_threshold} <= 0);
-  push @errors, 'Säkerhetskopia vald för "' . $^O . '" men ingen katalog är definierad.'
+  $self->_not_allow_add('Säkerhetskopia vald för "' . $^O . '" men ingen katalog är definierad.')
       if ($self->{cfg}{BACKUP_ENA()} and not $self->{cfg}{BACKUP_DIR()});
 
+  $self->{-supervision}->getData();
 
-  if (@errors) {
-    $self->_not_allowed(@errors);
+  my $tmp_starttb_event = $self->{-event_cfg} ->
+      getData($self->{start_tidbox_win_r}, [$self => '_not_allow_add']);
+  my $tmp_resumetb_event = $self->{-event_cfg} ->
+      getData($self->{resume_tidbox_win_r}, [$self => '_not_allow_add']);
+
+  if (@{$self->{errors}} > 0) {
+    $self->_not_allowed();
     return 1;
   } # if #
 
@@ -327,6 +411,24 @@ sub _apply($) {
       } # if #
 
       $self->{mod}{event_cfg} = 0;
+
+    } # if #
+
+    # Handle start tidbox event
+    if ($self->{mod}{start_operation_event}) {
+
+      $self->{cfg}{start_operation_event} = $tmp_starttb_event;
+
+      $self->{mod}{start_operation_event} = 0;
+
+    } # if #
+
+    # Handle resume tidbox event
+    if ($self->{mod}{resume_operation_event}) {
+
+      $self->{cfg}{resume_operation_event} = $tmp_resumetb_event;
+
+      $self->{mod}{resume_operation_event} = 0;
 
     } # if #
 
@@ -412,7 +514,7 @@ sub _modified($;$) {
   $win_r->{button_ok}      -> configure(-state => $state);
   $win_r->{button_apply}   -> configure(-state => $state);
   $win_r->{button_restore} -> configure(-state => 'normal');
-  return 0;
+  return 1;
 } # Method _modified
 
 #----------------------------------------------------------------------------
@@ -543,6 +645,103 @@ sub _chooseTerpFile($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _setupClear
+#
+# Description: Clear start or resume event setup
+#
+# Arguments:
+#  - Object reference
+#  - 'start' or 'resume'
+# Returns:
+#  -
+
+sub _setupClear($$) {
+  # parameters
+  my $self = shift;
+  my ($action) = @_;
+
+  my $win_r = $self->{win};
+  $self->{-event_cfg}->clearData($self->{$action . '_tidbox_win_r'});
+  $self->callback([$self => '_modified', $action . '_tidbox']);
+
+
+  return 0;
+} # Method _setupClear
+
+#----------------------------------------------------------------------------
+#
+# Method:      _previous
+#
+# Description: Insert previous for start or resume event configuration
+#
+# Arguments:
+#  - Object reference
+#  - Reference to event to add
+#  - 'start' or 'resume'
+# Returns:
+#  -
+
+sub _previous($$$) {
+  # parameters
+  my $self = shift;
+  my ($action, $ref) = @_;
+
+  $self->{-event_cfg}->putData($self->{$action . '_tidbox_win_r'}, $$ref);
+  return 0;
+} # Method _previous
+
+#----------------------------------------------------------------------------
+#
+# Method:      _addButtonsStart
+#
+# Description: Add buttons for the start event dialog
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Area were to add
+# Returns:
+#  -
+
+sub _addButtonsStart($$) {
+  # parameters
+  my $self = shift;
+  my ($area) = @_;
+
+  my $win_r = $self->{win};
+  $self->{-earlier}->create($area, 'right', [$self => '_previous', 'start']);
+  $win_r->{set_start_clear} = $area
+      -> Button(-text => 'Rensa', -command => [$self => '_setupClear', 'start'])
+      -> pack(-side => 'right');
+  return 0;
+} # Method _addButtonsStart
+
+#----------------------------------------------------------------------------
+#
+# Method:      _addButtonsResume
+#
+# Description: Add buttons for the resume event dialog
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Area were to add
+# Returns:
+#  -
+
+sub _addButtonsResume($$) {
+  # parameters
+  my $self = shift;
+  my ($area) = @_;
+
+  my $win_r = $self->{win};
+  $self->{-earlier}->create($area, 'right', [$self => '_previous', 'resume']);
+  $win_r->{set_resume_clear} = $area
+      -> Button(-text => 'Rensa', -command => [$self => '_setupClear', 'resume'])
+      -> pack(-side => 'right');
+  return 0;
+} # Method _addButtonsResume
+
+#----------------------------------------------------------------------------
+#
 # Method:      _setup
 #
 # Description: Setup the contents of the settings window
@@ -555,6 +754,7 @@ sub _chooseTerpFile($) {
 sub _setup($) {
   # parameters
   my $self = shift;
+  my $i;
 
 
   my $win_r = $self->{win};
@@ -573,30 +773,6 @@ sub _setup($) {
   ### TAB: General settings ###
   $win_r->{general_tab} = $win_r->{notebook}
       -> add('general', -label => 'Generell');
-
-  # Set start time
-  $win_r->{set_start_time_area} = $win_r->{general_tab}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '0', -fill => 'x');
-
-  $win_r->{start_operation_lb} = $win_r->{set_start_time_area}
-      -> Label(-text => 'Registrera "Arbetsdagen börjar" när TidBox startas:')
-      -> pack(-side => 'left');
-
-  my $i = 0;
-  for my $s ("Ingen åtgärd"      ,
-             "Börja arbetsdagen" ,
-             "Börja händelse"    ,
-             "Sluta paus"        )
-  {
-    $win_r->{start_operation_choise} = $win_r->{set_start_time_area}
-        -> Radiobutton(-text => $s,
-                       -command => [$self => '_modified'],
-                       -variable => \$self->{cfg}{start_operation},
-                       -value => $i)
-        -> pack(-side => 'left');
-    $i++;
-  } # for #
 
   # Remember window positions
   $win_r->{remember_win_pos_area} = $win_r->{general_tab}
@@ -797,7 +973,7 @@ sub _setup($) {
   $self->{-supervision} ->
       setupEdit(-area     => $win_r->{status_tab},
                 -modified => [$self => '_modified', 'supervision'],
-                -invalid  => [$self => '_not_allowed'],
+                -invalid  => [$self => '_not_allow_add'],
                );
 
   ### TAB: Event configuration settings ###
@@ -809,6 +985,132 @@ sub _setup($) {
                 -modified => [ $self => '_modified', 'event_cfg'],
                 -invalid  => [$self => '_not_allowed'],
                );
+
+  ### TAB: Start Tidbox ###
+  $win_r->{start_tab} = $win_r->{notebook}
+      -> add('starttb', -label => 'Starta');
+
+  # Select action when Tidbox is started
+  $win_r->{set_start_time_area} = $win_r->{start_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'x');
+
+  $win_r->{start_operation_lb} = $win_r->{set_start_time_area}
+      -> Label(-text => 'När TidBox startas:')
+      -> pack(-side => 'left');
+
+  $i = 0;
+  for my $s ("Ingen åtgärd"      ,
+             "Börja arbetsdagen" ,
+             "Börja händelse"    ,
+             "Sluta paus"        ,
+             "Börja egen händelse" )
+  {
+    $win_r->{start_operation_choise} = $win_r->{set_start_time_area}
+        -> Radiobutton(-text => $s,
+                       -command => [$self => '_modified'],
+                       -variable => \$self->{cfg}{start_operation},
+                       -value => $i)
+        -> pack(-side => 'left');
+    $i++;
+  } # for #
+
+  # Select event to register when started
+
+  ## Area ##
+  $win_r->{set_start_event_area} = $win_r->{start_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'both');
+
+  ### Label ###
+  $win_r->{set_start_event_label} = $win_r->{set_start_event_area}
+      -> Label(-text => 'Egen händelse:')
+      -> pack(-side => 'left');
+
+  ### Event cfg ##
+  my $starttb_win_r = { name => 'StartTidBox',
+                        -area => $win_r->{set_start_event_area},
+                      };
+  $self->{start_tidbox_win_r} = $starttb_win_r;
+
+  $win_r->{set_start_event_cfg} = $self->{-event_cfg}
+      -> createArea(-win      => $starttb_win_r,
+                    -area     => $win_r->{set_start_event_area},
+                    -validate => [$self => '_modified', 'start_operation_event'],
+                    -buttons  => [$self => '_addButtonsStart'],
+                   );
+
+  # Select action when Tidbox is resumed after hibernate, sleep, etc
+  $win_r->{set_resume_time_area} = $win_r->{start_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'x');
+
+  $win_r->{resume_operation_lb} = $win_r->{set_resume_time_area}
+      -> Label(-text => 'När TidBox upptäcker återstart efter sömnläge:')
+      -> pack(-side => 'left');
+
+  $i = 0;
+  for my $s ("Ingen åtgärd"      ,
+             "Börja arbetsdagen" ,
+             "Börja händelse"    ,
+             "Sluta paus"        ,
+             "Börja egen händelse" )
+  {
+    $win_r->{resume_operation_choise} = $win_r->{set_resume_time_area}
+        -> Radiobutton(-text => $s,
+                       -command => [$self => '_modified'],
+                       -variable => \$self->{cfg}{resume_operation},
+                       -value => $i)
+        -> pack(-side => 'left');
+    $i++;
+  } # for #
+
+  # Resume detection time
+  $win_r->{set_resume_time_area} = $win_r->{start_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'both');
+
+  $win_r->{set_resume_time_lb} = $win_r->{set_resume_time_area}
+      -> Label(-text => 'Minsta tid som sömnläget varat: ')
+      -> pack(-side => 'left');
+
+  $win_r->{set_resume_time} = $win_r->{set_resume_time_area}
+      -> Entry(-width           => 3,
+               -validate        => 'key',
+               -justify         => 'center',
+               -textvariable    => \$self->{cfg}{resume_operation_time},
+               -validatecommand => [$self => '_number_entry_key'],
+              )
+      -> pack(-side => 'left');
+
+  $win_r->{set_resume_time_note} = $win_r->{set_resume_time_area}
+      -> Label(-text => 'minuter')
+      -> pack(-side => 'left');
+
+  # Select event to register when started
+
+  ## Area ##
+  $win_r->{set_resume_event_area} = $win_r->{start_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'both');
+
+  ### Label ###
+  $win_r->{set_resume_event_label} = $win_r->{set_resume_event_area}
+      -> Label(-text => 'Egen händelse:')
+      -> pack(-side => 'left');
+
+  ### Event cfg ##
+  my $resumetb_win_r = { name => 'ResumeTidBox',
+                         -area => $win_r->{set_resume_event_area},
+                       };
+  $self->{resume_tidbox_win_r} = $resumetb_win_r;
+
+  $win_r->{set_resume_event_cfg} = $self->{-event_cfg}
+      -> createArea(-win      => $resumetb_win_r,
+                    -area     => $win_r->{set_resume_event_area},
+                    -validate => [$self => '_modified', 'resume_operation_event'],
+                    -buttons  => [$self => '_addButtonsResume'],
+                   );
 
   ### TAB: Terp configuration settings ###
   $win_r->{terp_tab} = $win_r->{notebook}

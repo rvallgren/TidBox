@@ -32,7 +32,7 @@ my $DATEVER = '2011-04-05';
 #
 # Setup
 #
-use parent TidBase;
+use base TidBase;
 
 use strict;
 use warnings;

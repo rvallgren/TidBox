@@ -2,15 +2,15 @@
 package Times;
 #
 #   Document: Times data
-#   Version:  1.7   Created: 2012-08-19 17:02
+#   Version:  1.8   Created: 2015-11-04 14:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2012-08-19';
+my $VERSION = '1.8';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -32,14 +32,19 @@ my $DATEVER = '2012-08-19';
 #      Session handles starttime, uptime, etc.
 # 1.7  2012-06-04  Roland Vallgren
 #      not_set_start => start_operation :  none, workday, event, end pause
+# 1.8  2015-08-11  Roland Vallgren
+#      Use own event as start operation
+#      Added registration of end of sleep event
+#      Removed check of old setting 'not_set_start'
+#      New method joinAdd to add event data
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -562,6 +567,26 @@ sub add($$;$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      joinAdd
+#
+# Description: Join event data and add new event and add as an undo event
+#
+# Arguments:
+#  - Object reference
+#  ... Data to add
+# Returns:
+#  -
+#
+
+sub joinAdd($@) {
+  # parameters
+  my $self = shift;
+
+  return $self->add(join(',', @_));
+} # Method joinAdd
+
+#----------------------------------------------------------------------------
+#
 # Method:      change
 #
 # Description: Change times data for an entry and add an undo event
@@ -599,20 +624,18 @@ sub change($$;$) {
 # Description: Return references to events for the regexp
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
 # Optional Arguments:
-#  1 - Only return matching events
+#  ... Expression to match, Only return matching events
 # Returns:
 #  A reference to the times array
 
-sub getSortedRefs($;$) {
-  # parameters
+sub getSortedRefs($;@) {
   my $self = shift;
-  my ($match) = @_;
-
-  return map(\$_, sort grep( $_ ? /^$match/ : 0 , @{$self->{times}}))
-      if $match;
-  return map(\$_, sort grep( defined($_) , @{$self->{times}}));
+  return map(\$_, sort grep( defined($_) , @{$self->{times}}))
+      unless(defined($_[0]));
+  my $match = join(',', @_);
+  return map(\$_, sort grep( $_ ? /^$match/ : 0 , @{$self->{times}}));
 } # Method getSortedRefs
 
 #----------------------------------------------------------------------------
@@ -905,7 +928,7 @@ sub undo($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      startSession
+# Method:      _addFixedStartResume
 #
 # Description: Register start of session
 #  start_operation    How to register start of tidbox
@@ -915,33 +938,18 @@ sub undo($) {
 #                       3:  Register End Pause
 #
 # Arguments:
-#  0 - Object reference
-#  1 - Date
-#  2 - Time
-#  3 - EventCfg to get an empty event from
+#  - Object reference
+#  - Date
+#  - Time
+#  - Operation
 # Returns:
 #  -
 
-sub startSession($$$$) {
+sub _addFixedStartResume($$$$) {
   # parameters
   my $self = shift;
-  my ($date, $time, $event_cfg) = @_;
+  my ($date, $time, $op) = @_;
 
-
-  my $op = $self->{-cfg}->get('start_operation');
-
-  unless ($op) {
-    my $tmp = $self->{-cfg}->get('not_set_start');
-    if (defined($tmp)) {
-      $self->{-cfg}->delete('not_set_start');
-      $op = 1
-         unless ($tmp);
-      $self->{-cfg}->set('start_operation', $op);
-    } # if #
-  } # unless #
-
-  return 0
-      unless ($op);     # No action, just skip
 
   if ($op == 1) {
     my $notfound = 1;
@@ -952,13 +960,104 @@ sub startSession($$$$) {
       $notfound = 0;
       last;
     } # for #
-    $self->add(join(',', $date, $time, $BEGINWORKDAY, ''))
+    $self->joinAdd($date, $time, $BEGINWORKDAY, '')
       if ($notfound);
-  } elsif ($op == 2) {
-    my $ev = $event_cfg->getEmpty('Startade tidbox');
-    $self->add(join(',', $date, $time, $BEGINEVENT, $ev));
+
   } elsif ($op == 3) {
-    $self->add(join(',', $date, $time, $ENDPAUS, ''));
+    $self->joinAdd($date, $time, $ENDPAUS, '');
+
+  } # if #
+
+  return 0;
+} # Method _addFixedStartResume
+
+#----------------------------------------------------------------------------
+#
+# Method:      checkResume
+#
+# Description: Check if session was resumed and if so register resume
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub checkResume($$$$) {
+  # parameters
+  my $self = shift;
+
+
+  return 0
+      if ($self->{-clock}->getSleep() <
+          $self->{-cfg}->get('resume_operation_time') * 60);
+
+  my $time = $self->{-clock}->getTime();
+  my $date = $self->{-clock}->getDate();
+
+  return 0
+      if ($self->{-cfg}->isLocked($date));
+
+  my $op = $self->{-cfg}->get('resume_operation');
+
+
+  if ($op == 1 or $op == 3) {
+    $self->_addFixedStartResume($date, $time, $op);
+
+  } elsif ($op == 2 or $op == 4) {
+    my $sh = $self->{-calculate}->hours($self->{-clock}->getSleep() / 60);
+    my $ev;
+    $ev = $self->{-cfg}->get('resume_operation_event')
+        if ($op == 4);
+    $ev = $self->{-event_cfg}->
+            getEmpty('Återupptog tidbox efter')
+        unless ($ev);
+    $self->joinAdd($date, $time, $BEGINEVENT, $ev . ' ' . $sh . ' timmar');
+
+  } # if #
+
+  return 0;
+} # Method checkResume
+
+#----------------------------------------------------------------------------
+#
+# Method:      startSession
+#
+# Description: Register start of session
+#              Defined by configuration 'start_operation'
+#              Add resume timer
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Date
+#  2 - Time
+# Returns:
+#  -
+
+sub startSession($$$) {
+  # parameters
+  my $self = shift;
+  my ($date, $time) = @_;
+
+
+  $self->{-clock}->repeat(-sleep => [$self => 'checkResume']);
+
+  return 0
+      if ($self->{-cfg}->isLocked($date));
+
+
+  my $op = $self->{-cfg}->get('start_operation');
+
+  if ($op == 1 or $op == 3) {
+    $self->_addFixedStartResume($date, $time, $op);
+
+  } elsif ($op == 2 or $op == 4) {
+    my $ev;
+    $ev = $self->{-cfg}->get('start_operation_event')
+        if ($op == 4);
+    $ev = $self->{-event_cfg}->getEmpty('Startade tidbox')
+        unless ($ev);
+    $self->joinAdd($date, $time, $BEGINEVENT, $ev);
+
   } # if #
 
   return 0;

@@ -2,15 +2,15 @@
 package EventCfg;
 #
 #   Document: Event Configuration Data
-#   Version:  2.6   Created: 2012-09-10 18:33
+#   Version:  2.7   Created: 2015-11-04 15:29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventCfg.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2012-09-10';
+my $VERSION = '2.7';
+my $DATEVER = '2015-11-04';
 
 # History information:
 
@@ -52,14 +52,16 @@ my $DATEVER = '2012-09-10';
 #      New method getEmpty returns an emty event, like clearData
 # 2.6  2012-09-10  Roland Vallgren
 #      Not allowed to change event cfg for locked weeks
+# 2.7  2015-11-04  Roland Vallgren
+#      Configuration.pm should not have any Gui code
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -1142,6 +1144,35 @@ sub select($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      isLocked
+#
+# Description: Check if week to change configuration for is locked
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  0 if not locked
+
+sub isLocked($) {
+  # parameters
+  my $self = shift;
+
+
+  my $ref = $self->{edit};
+
+  return 0
+      unless ($ref->{modified});
+
+  my $date = $ref->{week_no}->get(1);
+
+  return 0
+      unless $date;
+
+  return ($self->{-cfg}->isLocked($date), $date);
+} # Method isLocked
+
+#----------------------------------------------------------------------------
+#
 # Method:      apply
 #
 # Description: Apply new event configuration settings
@@ -1158,16 +1189,18 @@ sub apply($) {
 
   my $ref = $self->{edit};
 
-  return 0 unless ($ref->{modified});
+  return 0
+      unless ($ref->{modified});
 
-  my $date = $ref->{week_no} -> get(1);
-
-  return 0 unless $date;
+  my $date = $ref->{week_no}->get(1);
 
   return 0
-      if ($self->{-cfg}->isLocked($date, $self->{win_r}));
+      unless $date;
 
-  $ref->{week_no} -> update(-min_date  => $date);
+  return 0
+      if ($self->{-cfg}->isLocked($date));
+
+  $ref->{week_no} -> update(-min_date => $date);
 
   if (($ref->{modified} > 1) and ($date gt $self->{date})) {
     $self->{earlier}{$self->{date}} = $self->{cfg};
@@ -1186,7 +1219,10 @@ sub apply($) {
     $self -> _replace_area($r);
   } # for #
 
-  return $ref->{modified} - 1;
+  my $return = $ref->{modified} - 1;
+  $ref->{modified} = 0;
+
+  return $return;
 } # Method apply
 
 #----------------------------------------------------------------------------
@@ -1208,11 +1244,14 @@ sub showEdit($$$) {
   my ($win, $notify_r) = @_;
 
 
+  my $ref = $self->{edit};
+
   # Copy event configuration
-  @{$self->{edit}{cfg}} = @{$self->{cfg}};
+  @{$ref->{cfg}} = @{$self->{cfg}};
 
   $self->update();
-  $self->{edit}{week_no} -> set(undef, $self->{-clock}->getDate());
+  $ref->{week_no} -> set(undef, $self->{-clock}->getDate());
+  $ref->{modified} = 0;
 
   return 0;
 } # Method showEdit

@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.6   Created: 2013-05-29 21:13
+#   Version:  2.8   Created: 2015-10-14 12:01
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2013-05-29';
+my $VERSION = '2.8';
+my $DATEVER = '2015-10-14';
 
 # History information:
 #
@@ -37,13 +37,18 @@ my $DATEVER = '2013-05-29';
 #      Remove button should check for lock
 # 2.6  2013-05-18  Roland Vallgren
 #      Handle lock of session
+# 2.7  2013-10-15  Roland Vallgren
+#      Corrected unlock time
+# 2.8  2015-09-29  Roland Vallgren
+#      Use joinAdd method in Times
+#      Stop repeat from clock when Tidbox quit
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent Gui::Base;
+use base Gui::Base;
 
 use strict;
 use warnings;
@@ -393,7 +398,6 @@ sub _enableButtons($) {
 
   my $win_r = $self->{win};
 
-
   if ($win_r->{event_modify} and not $self->{edit_event_ref}) {
     $win_r->{event_modify} -> configure(-state => 'disabled');
     $win_r->{event_delete} -> configure(-state => 'disabled');
@@ -590,7 +594,6 @@ sub _add($$;$) {
 
 
   my $line = $self->_get($action, $ref);
-
 
   return 0
       unless (defined($line));
@@ -793,7 +796,6 @@ sub _validate($$$$$$) {
     } # unless #
   } # if #
 
-
   $self->{edit_event_type} = $BEGINEVENT
       if ($self->{edit_event_ref});
 
@@ -853,10 +855,10 @@ sub _grabLock($) {
   $self->{-week_win}->update();
   Version->register_locked_session("Du låste upp Tidbox:" .
                                    "\n  Datum: " . $date .
-                                   "\n  Tid: " . $date
+                                   "\n  Tid: " . $time
                                   );
   my $ev = $self->{-event_cfg}->getEmpty('Du låste upp Tidbox');
-  $self->{-times}->add(join(',', $date, $time, $BEGINEVENT, $ev));
+  $self->{-times}->joinAdd($date, $time, $BEGINEVENT, $ev);
   return 0;
 } # Method _grabLock
 
@@ -1186,7 +1188,6 @@ sub _display($) {
   # parameters
   my $self = shift;
 
-
   return 0;
 } # Method _display
 
@@ -1243,6 +1244,8 @@ sub _quit($) {
   $win_r->{previous_add}     -> configure(-state => 'disabled');
   $win_r->{previous_show}    -> configure(-state => 'disabled');
   $win_r->{previous_prevbut} -> configure(-state => 'disabled');
+
+  $self->{-clock}->quit();
 
   $self->_msgUpdate($self->{message_text}.'Sparar.');
   $self->{-fsv}->end([$self, '_msgUpdate']);

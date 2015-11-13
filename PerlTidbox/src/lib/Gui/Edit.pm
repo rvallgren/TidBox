@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.1   Created: 2013-05-18 16:04
+#   Version:  2.2   Created: 2015-11-04 12:44
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.1';
-my $DATEVER = '2013-05-18';
+my $VERSION = '2.2';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -21,13 +21,16 @@ my $DATEVER = '2013-05-18';
 #      Listbox moved to DayList class.
 # 2.1  2013-05-18  Roland Vallgren
 #      Use isLocked to check lock
+# 2.2  2015-09-29  Roland Vallgren
+#      Time::getSortedRefs joins
+#      Configuration.pm should not have any Gui code
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent Gui::Base;
+use base Gui::Base;
 
 use strict;
 use warnings;
@@ -164,6 +167,44 @@ sub _message($$) {
 
   return 0;
 } # Method _message
+
+#----------------------------------------------------------------------------
+#
+# Method:      _isLocked
+#
+# Description: Check lock
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Date to check lock for
+# Returns:
+#  0 if not locked
+
+sub _isLocked($$) {
+  # parameters
+  my $self = shift;
+  my ($date) = @_;
+
+
+  my ($lock, $txt, $lockdate) = $self->{-cfg}->isLocked($date);
+  if ($lock == 1) {
+    $self->{win}->{confirm}
+        -> popup(-title => 'information',
+                 -text  => ['Kan inte ändra för: '. $date,
+                            'Alla veckor till och med ' .
+                                 $lockdate . ' är låsta.'],
+                );
+
+  } elsif ($lock == 2) {
+    $self->{win}->{confirm}
+        -> popup(-title => 'information',
+                 -text  => ['Tidbox är låst av en annan Tidbox!'],
+                );
+
+  } # if #
+
+  return $lock;
+} # Method _isLocked
 
 #----------------------------------------------------------------------------
 #
@@ -513,7 +554,7 @@ sub _search($;$) {
 
   if ($back) {
     for my $ref (reverse($self->{-times}
-        -> getSortedRefs(join(',',$DATE,$TIME,$BEGINEVENT,$search_text))
+        -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
                 ))
     {
       next
@@ -524,7 +565,7 @@ sub _search($;$) {
 
   } else {
     for my $ref ($self->{-times}
-        -> getSortedRefs(join(',',$DATE,$TIME,$BEGINEVENT,$search_text))
+        -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
                 )
     {
       next
@@ -633,7 +674,7 @@ sub _add($) {
 
   my ($line, $action_text, $date) = $self->_get([$self, '_message']);
   if ($line) {
-    if ($self->{-cfg}->isLocked($date, $win_r)) {
+    if ($self->_isLocked($date)) {
       # The date is locked, can not complete operation
 
     } elsif ($date eq $self->{date}) {
@@ -721,8 +762,8 @@ sub _change($) {
     if ($line) {
       # One of from or to date is locked, can not complete operation
       return 0
-          if ($self->{-cfg}->isLocked($date, $win_r) or
-              $self->{-cfg}->isLocked($self->{date}, $win_r));
+          if ($self->_isLocked($date) or
+              $self->_isLocked($self->{date}));
 
       if (${$event_ref} ne $line) {
 
@@ -778,7 +819,7 @@ sub _delete($) {
   if (ref($event_ref)) {
 
     return 0
-        if ($self->{-cfg}->isLocked($self->{date}, $win_r));
+        if ($self->_isLocked($self->{date}));
 
     $self->{-times}->change($event_ref);
 

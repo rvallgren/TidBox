@@ -22,8 +22,8 @@ my $DATEVER = '2011-03-27';
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;

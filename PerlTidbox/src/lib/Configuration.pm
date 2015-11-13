@@ -2,15 +2,15 @@
 package Configuration;
 #
 #   Document: Configuration class
-#   Version:  2.5   Created: 2013-05-27 19:29
+#   Version:  2.6   Created: 2015-11-04 12:06
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Configuration.pmx
 #
 
-my $VERSION = '2.5';
-my $DATEVER = '2013-05-27';
+my $VERSION = '2.6';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -31,15 +31,18 @@ my $DATEVER = '2013-05-27';
 # 2.4  2012-09-09  Roland Vallgren
 #      main_show_daylist default on
 # 2.5  2013-03-27  Roland Vallgren
-#      Stöd för sessionslås tillagt
+#      Added support for lock of session
+# 2.6  2015-09-23  Roland Vallgren
+#      Added resume operation and time
+#      Configuration.pm should not have any Gui code
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -78,6 +81,14 @@ use constant BACKUP_DIR => $^O . '_backup_directory';
 #                       1:  Register Start workday, if it is the first today
 #                       2:  Register Start Event
 #                       3:  Register End Pause
+#                       4:  Register Start Event selected by user
+#  resume_operation   How to register resume of tidbox
+#                       0:  No action
+#                       1:  Register Start workday, if it is the first today
+#                       2:  Register Start Event
+#                       3:  Register End Pause
+#                       4:  Register Start Event selected by user
+#  resume_operation_time  Time to sleep before resume is registered
 #  show_data          Set what to show in status area
 #                       0:  Show ongoing activity            (Default)
 #                       1:  Show worktime for current day
@@ -101,18 +112,20 @@ use constant BACKUP_DIR => $^O . '_backup_directory';
 #
 
 my %DEFAULTS = (
-    last_version         => '',
-    start_operation      => 0,
-    show_data            => 0,
-    earlier_menu_size    => 14,
-    show_reg_date        => 1,
-    archive_date         => NO_DATE,
-    lock_date            => NO_DATE,
-    save_threshold       => 5,
-    adjust_level         => 6,
-    terp_normal_worktime => 40,
-    show_message_timeout => 5,
-    main_show_daylist    => 1,
+    last_version          => '',
+    start_operation       => 0,
+    resume_operation      => 0,
+    resume_operation_time => 60,
+    show_data             => 0,
+    earlier_menu_size     => 14,
+    show_reg_date         => 1,
+    archive_date          => NO_DATE,
+    lock_date             => NO_DATE,
+    save_threshold        => 5,
+    adjust_level          => 6,
+    terp_normal_worktime  => 40,
+    show_message_timeout  => 5,
+    main_show_daylist     => 1,
    );
 
 
@@ -231,12 +244,13 @@ sub new($$%) {
 # Arguments:
 #  0 - Object reference
 #  1 - Type: 'dir' or 'bak'
+# Optional Arguments:
 #  2 - Filename
 # Returns:
 #  Full path if available
 #  undef otherwise
 
-sub filename($$$) {
+sub filename($$;$) {
   # parameters
   my $self = shift;
   my ($typ, $name) = @_;
@@ -255,11 +269,16 @@ sub filename($$$) {
 
   unless (-d $self->{$typ}) {
     eval { mkpath($self->{$typ}, 0, 0700) };
-    return undef
-        if $@;
+    if ($@) {
+      $self->{-log}->log('Create failed', $@);
+      return undef
+    } # if #
+    $self->{-log}->log('Created type', $typ, 'directory', $self->{$typ});
   } # unless #
 
-  return File::Spec->catfile($self->{$typ}, $name);
+  return File::Spec->catfile($self->{$typ}, $name)
+      if ($name);
+  return $self->{$typ};
 } # Method filename
 
 #----------------------------------------------------------------------------
@@ -448,18 +467,14 @@ sub lock($@) {
 #
 # Arguments:
 #  - Object reference
-# Optional arguments:
-#  - Reference to windows hash
-#  - Reference to action routine to clear
 # Returns:
 #  0 no lock applies
 #  1 if session is locked
 #  Also returns lock information if wantarray()
 
-sub isSessionLocked($;$$) {
+sub isSessionLocked($) {
   # parameters
   my $self = shift;
-  my ($win_r, $callback) = @_;
 
   my $s = 0;
   my $t = '';
@@ -468,13 +483,6 @@ sub isSessionLocked($;$$) {
     $t = 'Tidbox är låst';
   } # if #
 
-  if ($win_r) {
-    $win_r->{confirm}
-        -> popup(-title => 'information',
-                 -text  => ['Tidbox är låst av en annan Tidbox!'],
-                 -done  => $callback,
-                );
-  } # if #
   return ($s, $t)
       if (wantarray());
   return $s;
@@ -490,23 +498,19 @@ sub isSessionLocked($;$$) {
 # Arguments:
 #  - Object reference
 #  - Date to check
-# Optional arguments:
-#  - Reference to windows hash
-#  - Reference to action routine to clear
 # Returns:
 #  0 no lock applies
 #  1 if the date is locked
 #  2 if session is locked
 #  Also returns lock information if wantarray()
 #
-#  
 
-sub isLocked($$;$$) {
+sub isLocked($$) {
   # parameters
   my $self = shift;
-  my ($date, $win_r, $callback) = @_;
+  my ($date) = @_;
 
-  my ($s, $t) = $self->isSessionLocked($win_r, $callback);
+  my ($s, $t) = $self->isSessionLocked();
   my $l = $self->{cfg}{lock_date};
 
   if ($s) {
@@ -516,17 +520,7 @@ sub isLocked($$;$$) {
     $t = 'Veckan är låst!';
   } # if #
 
-  if ($s == 1 and $win_r) {
-    $win_r->{confirm}
-        -> popup(-title => 'information',
-                 -text  => ['Kan inte ändra för: '. $date,
-                            'Alla veckor till och med ' .
-                                 $l . ' är låsta.'],
-                 -done  => $callback,
-                );
-  } # if #
-
-  return ($s, $t)
+  return ($s, $t, $l)
       if (wantarray());
 
   return $s;
@@ -578,7 +572,6 @@ sub bakInit($) {
       $r->dirty(1, 'bak');
     } # for #
   } # if #
-
 
   return 0;
 } # Method bakInit

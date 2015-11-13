@@ -2,15 +2,15 @@
 package Supervision;
 #
 #   Document: Supervision class
-#   Version:  1.3   Created: 2011-05-01 18:22
+#   Version:  1.4   Created: 2015-09-29 15:23
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Supervision.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2011-05-01';
+my $VERSION = '1.4';
+my $DATEVER = '2015-09-29';
 
 # History information:
 #
@@ -22,14 +22,17 @@ my $DATEVER = '2011-05-01';
 #      Use Exco %+ to use same source to register version
 # 1.3  2011-03-12  Roland Vallgren
 #      Use FileHandle for file handling
+# 1.4  2015-09-16  Roland Vallgren
+#      Fault handling aligned with Settings in edit
+#      Times::getSortedRefs does join
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -350,9 +353,8 @@ sub calc($) {
   my $time    = 0;
 
   for my $ref (reverse(
-    $self->{-times}->getSortedRefs(
-       join(',', $DATE, $TIME, $BEGINEVENT, $self->{event})
-    )))
+       $self->{-times}->getSortedRefs($DATE, $TIME, $BEGINEVENT, $self->{event})
+    ))
   {
     my $date = substr($$ref, 0, 10);
 
@@ -533,7 +535,9 @@ sub apply($) {
   my $self = shift;
 
 
-  $self->getData();
+  unless ($self->getData()) {
+    return undef;
+  }
 
   # Copy supervision settings
   for my $key (SAVEKEYS) {
@@ -560,24 +564,21 @@ sub getData($) {
   my $self = shift;
 
 
+  my $err_r = [];
   my $date;
   my $edit_r = $self->{edit};
   (undef, $date) = $edit_r->{time_area}->get(1);
-  unless (defined($date)) {
-    $self->callback($edit_r->{-invalid},
-                    'Ogiltigt datum för Bevaka');
-    return undef;
-  } # unless #
 
   my $action_text =
       $self->{-event_cfg} -> getData($edit_r, $edit_r->{-invalid});
 
+  return undef
+      unless (defined($date) and $action_text);
+
   # Store event supervision configuration
-  if ($action_text) {
-    $self->{edit}{sup_event}  = $action_text;
-    $self->{edit}{start_date} = $date;
-    $self->{edit}{sup_enable} = $edit_r->{enabled};
-  } # if #
+  $self->{edit}{sup_event}  = $action_text;
+  $self->{edit}{start_date} = $date;
+  $self->{edit}{sup_enable} = $edit_r->{enabled};
 
   return 1;
 } # Method getData

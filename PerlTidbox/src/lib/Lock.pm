@@ -2,27 +2,31 @@
 package Lock;
 #
 #   Document: Lockfile handler
-#   Version:  1.0   Created: 2013-05-26 18:41
+#   Version:  1.1   Created: 2015-10-13 16:30
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Lock.pmx
 #
 
-my $VERSION = '1.0';
+my $VERSION = '1.1';
+my $DATEVER = '2015-10-13';
 
 # History information:
 #
 # 1.0  2012-04-24  Roland Vallgren
 #      First issue.
+# 1.1  2015-10-08  Roland Vallgren
+#      Minor correction.
+#      Log grab lock
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
-use parent FileBase;
+use base TidBase;
+use base FileBase;
 
 use strict;
 use warnings;
@@ -33,7 +37,7 @@ use integer;
   use Version qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
-                   -date    => '2013-05-26',
+                   -date    => $DATEVER,
                   );
 }
 
@@ -174,8 +178,12 @@ sub lock($$$;$) {
       if ($self->{session});
 
   # Grab the lock if requested
-  delete($self->{locked})
-      if (exists($self->{locked}) and $grab);
+  my $lock_grabbed;
+  if (exists($self->{locked}) and $grab) {
+    $lock_grabbed = $self->{locked};
+    $self->{locked} = undef;
+  } # if #
+
 
   # Check if lock is set
   if ($self->isLocked()) {    
@@ -200,6 +208,17 @@ sub lock($$$;$) {
   $self->dirty();
   $self->save();
 
+  # Start logging after unlock
+
+  if ($lock_grabbed and $self->{-log}) {
+    $self->{-log}->start();
+    $self->{-log}->
+      log('------ Grabbed lock from user:', $lock_grabbed->{user},
+          'Locked at:', $lock_grabbed->{date}, $lock_grabbed->{time},
+          '------'
+         );
+  } # if #
+
   return 0;
 } # Method lock
 
@@ -221,6 +240,7 @@ sub unlock($) {
   return 1
       unless (ref($self->{session}));
   $self->{session} = undef;
+  $self->{-log}->log('Unlock session');
   $self->remove();
   return 0;
 } # Method unlock
@@ -247,7 +267,7 @@ sub isLocked($) {
 #
 # Method:      get
 #
-# Description: Return lock information
+# Description: Return lock information about other session lock
 #
 # Arguments:
 #  0 - Object reference

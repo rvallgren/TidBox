@@ -28,7 +28,7 @@ my $DATEVER = '2013-05-18';
 #
 # Setup
 #
-use parent Gui::Base;
+use base Gui::Base;
 
 use strict;
 use warnings;

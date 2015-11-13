@@ -2,15 +2,15 @@
 package FileBase;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.4   Created: 2013-05-19 09:50
+#   Version:  2.5   Created: 2015-11-04 09:43
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.4';
-my $DATEVER = '2013-05-19';
+my $VERSION = '2.5';
+my $DATEVER = '2015-11-04';
 
 # History information:
 #
@@ -30,13 +30,17 @@ my $DATEVER = '2013-05-19';
 #      Perl 5.16
 # 2.4  2013-05-19  Roland Vallgren
 #      If session is locked, do not write to disk
+# 2.5  2015-08-04  Roland Vallgren
+#      Append should generate log entry
+#      Minor error corrections
+#      Improved handling of backup
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use parent TidBase;
+use base TidBase;
 
 use strict;
 use warnings;
@@ -45,6 +49,7 @@ use integer;
 
 use FileHandle;
 use File::Spec;
+use File::Copy;
 use Text::ParseWords;
 
 # Register version information
@@ -104,6 +109,9 @@ sub dirty($;$$) {
   my $self = shift;
   my ($clear, $typ) = @_;
 
+
+  return 1
+      unless($self->{loaded});
 
   my $bit = $clear ? 0 : 1;
 
@@ -419,13 +427,6 @@ sub load($) {
     $bt = (stat(_))[9]
         if (-e $bak);
 
-    if ($bt > $ft) {
-      $file = $bak;
-      $self->dirty(undef, 'dir');
-    } else {
-      $self->dirty(undef, 'bak');
-    } # if #
-
   } # if #
 
   my $fh = new FileHandle($file, '<');
@@ -462,10 +463,135 @@ sub load($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _statFile
+#
+# Description: Stat file to determine modify time and size
+#
+# Arguments:
+#  - Object reference
+#  - File
+# Returns:
+#  mtime, size
+
+sub _statFile($$) {
+  # parameters
+  my $self = shift;
+  my ($file) = @_;
+
+
+
+  my ($mtime, $size) = (0, 0);
+
+  if (-e $file) {
+    my @f_st = stat(_);
+    $size  = $f_st[7];
+    $mtime = $f_st[9];
+  }
+
+  return ($mtime, $size);
+} # Method _statFile
+
+#----------------------------------------------------------------------------
+#
+# Method:      copyBackup
+#
+# Description: Make sure the backup is up to date
+#              If not use File::Copy to copy
+#              Check is only performed once an hour
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  0 - Backup is OK
+#  1 - Backup does not exist
+#  2 - Session is locked
+
+sub copyBackup($) {
+  # parameters
+  my $self = shift;
+
+
+  return 2
+      if ($self->{-cfg}->isSessionLocked());
+
+  my $bak = $self->{-cfg}->filename('bak', $self->{-name});
+
+  return 1
+      unless ($bak);
+
+  my $file = $self->{-cfg}->filename('dir', $self->{-name});
+
+  # Stat both files to determine date, size
+  my ($fmTime, $fSize) = $self->_statFile($file);
+  my ($bmTime, $bSize) = $self->_statFile($bak);
+
+  return 0
+      if (($fSize == $bSize) and ($fmTime == $bmTime));
+
+  if ($fmTime >= $bmTime) {
+    copy($file, $bak);
+    $self->{-log}->log('Copy:', $file, $bak);
+  } else {
+    copy($bak, $file);
+    $self->{-log}->log('Copy:', $bak, $file);
+  } # if #
+  $self->{-log}->log(' File modify time', $fmTime, "\t Size", $fSize);
+  $self->{-log}->log(' Bkup modify time', $bmTime, "\t Size", $bSize);
+
+  return 0;
+} # Method copyBackup
+
+#----------------------------------------------------------------------------
+#
+# Method:      _saveFile
+#
+# Description: Save a file to disk
+#
+# Arguments:
+#  - Object reference
+#  - File name
+# Returns:
+#  0 - if success
+
+sub _saveFile($$) {
+  # parameters
+  my $self = shift;
+  my ($file) = @_;
+
+
+  my $fh = new FileHandle($file, '>');
+
+  unless ($fh) {
+    $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
+    return 1;
+  } # unless #
+
+  $fh->print(FORMAT_STRING . "\n" .
+             "# This file is generated, do not edit\n" .
+             "# Creator: Tidbox\n" .
+             "\n" .
+             '[' , $self->{-filekey} , ']' ."\n"
+            );
+
+  $self->_save($fh);
+
+  $self->{-log}->log('Saved', $file)
+      if ($self->{-log});
+
+  unless ($fh->close()) {
+    $self->callback($self->{-error_popup}, 'Kan inte skriva: "' . $file . '"' , $! );
+    return 1;
+  } # unless #
+
+  return 1;
+} # Method _saveFile
+
+#----------------------------------------------------------------------------
+#
 # Method:      save
 #
 # Description: Save to disk if there is unchanged data
-#              Also save to backup, if backup directory is defined
+#              Use copyBackup to save to backup, if backup directory is defined
 #              No save happens if data is already save
 #
 # Arguments:
@@ -485,51 +611,29 @@ sub save($;$) {
       if ($self->{-cfg}->isSessionLocked());
 
   unless ($self->{loaded}) {
-    # Load and if successfull load, set dirty to make a sure
-    $self->dirty()
-        if ($self->load());
+    return 1;
   } # unless #
 
   $self->dirty()
       if $force;
 
-  for my $typ ('bak', 'dir') {
+  my $file = $self->{-cfg}->filename('dir', $self->{-name});
 
-    next
-        unless $self->{$typ.'_dirty'};
+  if ($self->{'dir_dirty'}) {
+    $self->_saveFile($file);
+    $self->dirty(1, 'dir');
+  } # if #
 
-    my $file = $self->{-cfg}->filename($typ, $self->{-name});
 
-    next
-        unless $file;
-
-    my $fh = new FileHandle($file, '>');
-
-    unless ($fh) {
-      $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
-      next;
-    } # unless #
-
-    $fh->print(FORMAT_STRING . "\n" .
-               "# This file is generated, do not edit\n" .
-               "# Creator: Tidbox\n" .
-               "\n" .
-               '[' , $self->{-filekey} , ']' ."\n"
-              );
-
-    $self->_save($fh);
-
-    $self->{-log}->log('Saved', $file)
-        if ($self->{-log});
-
-    unless ($fh->close()) {
-      $self->callback($self->{-error_popup}, 'Kan inte skriva: "' . $file . '"' , $! );
-      next;
-    } # unless #
-
-    $self->dirty(1, $typ);
-
-  } # for #
+  if ($self->{'bak_dirty'}) {
+    my $bak  = $self->{-cfg}->filename('bak', $self->{-name});
+    if ($bak) {
+      copy($file, $bak);
+      $self->{-log}->log('Copy:', $file, $bak)
+          if ($self->{-log});
+      $self->dirty(1, 'bak');
+    } # if #
+  } # if #
 
 
   return 1;
@@ -580,6 +684,9 @@ sub append($@) {
 
     $self->_append($fh, @_);
 
+    $self->{-log}->log('Appended', $file)
+        if ($self->{-log} and $self ne $self->{-log});
+
     unless ($fh->close()) {
       $self->callback($self->{-error_popup}, 'Kan inte skriva: "' . $file . '"' , $! );
       next;
@@ -611,7 +718,7 @@ sub remove($) {
     my $file = $self->{-cfg}->filename($typ, $self->{-name});
 
     unlink($file)
-        if (-r $file);
+        if ($file and -r $file);
 
   } # for #
 
@@ -634,8 +741,7 @@ sub startAuto($) {
   my $self = shift;
 
 
-  $self->{-clock}->repeat(-minute => [$self => 'autosave'])
-      unless (exists($self->{dirty}));
+  $self->{-clock}->repeat(-minute => [$self => 'autosave']);
 
   return 1;
 } # Method startAuto
