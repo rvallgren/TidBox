@@ -4,6 +4,8 @@
 package se.roland.tidbox;
 
 import static org.junit.Assert.*;
+import java.time.Instant;
+import java.time.ZoneId;
 import org.junit.Test;
 
 /**
@@ -27,148 +29,140 @@ import org.junit.Test;
 /*
  * ClockTest.testCreateClock
  * 
- * NOTE: Actually this test mostly tests the standard implementation of java.util.GregorianCalendar
+ * NOTE: Actually this test mostly tests the standard implementation of java.timeZonedDateTime
  * 
- * 1381391641120L
- * 
- * java.util.GregorianCalendar
- * [
- *  time=1381391641120,
- *  areFieldsSet=true,
- *  areAllFieldsSet=true,
- *  lenient=true,
- *  zone=sun.util.calendar.ZoneInfo
- *   [
- *    id="Europe/Berlin",
- *    offset=3600000,
- *    dstSavings=3600000,
- *    useDaylight=true,
- *    transitions=143,
- *    lastRule=java.util.SimpleTimeZone
- *     [
- *      id=Europe/Berlin,
- *      offset=3600000,
- *      dstSavings=3600000,
- *      useDaylight=true,
- *      startYear=0,
- *      startMode=2,
- *      startMonth=2,
- *      startDay=-1,
- *      startDayOfWeek=1,
- *      startTime=3600000,
- *      startTimeMode=2,
- *      endMode=2,
- *      endMonth=9,
- *      endDay=-1,
- *      endDayOfWeek=1,
- *      endTime=3600000,
- *      endTimeMode=2
- *     ]
- *   ],
- *  firstDayOfWeek=2,
- *  minimalDaysInFirstWeek=4,
- *  ERA=1,
- *  YEAR=2013,
- *  MONTH=9,
- *  WEEK_OF_YEAR=41,
- *  WEEK_OF_MONTH=2,
- *  DAY_OF_MONTH=10,
- *  DAY_OF_YEAR=283,
- *  DAY_OF_WEEK=5,
- *  DAY_OF_WEEK_IN_MONTH=2,
- *  AM_PM=0,
- *  HOUR=9,
- *  HOUR_OF_DAY=9,
- *  MINUTE=54,
- *  SECOND=1,
- *  MILLISECOND=120,
- *  ZONE_OFFSET=3600000,
- *  DST_OFFSET=3600000
- * ]
 */
 
 public class ClockTest implements ClockEventMethod{
 
-	long testTime = 1381391641120L;
+//	Test 2013-10-10 09:54:01
+//	long testTime = 1381391641120L;
+//	Test 2015-11-20 14:28:46
+//	long testTime = 1448026126569L;
+//	Test 2015-10-21 15:46:02 Onsdag vecka 43
+	final static long testTime = 1445435162626L;
+	final static int testDateYearI   = 2015;
+	final static int testDateMonthI  = 10;
+	final static int testDateDayI    = 21;
+	final static int testDateHourI   = 15;
+	final static int testDateMinuteI = 46;
+	final static int testDateSecondI =  2;
+	final static int testDateWeekI   = 43;
+	// Set to 1 if the year after test year not is a leap year
+	final static int leapYearAdjust  =  0;
+
+	final String testDateStr    = String.join("-", formatTwoDigits(testDateYearI),
+			formatTwoDigits(testDateMonthI),
+			formatTwoDigits(testDateDayI));
+	final String testTimeStr    = String.join(":", formatTwoDigits(testDateHourI), formatTwoDigits(testDateMinuteI));
+	final String testDateTime   = String.join(" ", testDateStr,
+			String.join(":", testTimeStr, formatTwoDigits(testDateSecondI)));
+	
 	private boolean timerExecuted;
 
 	private Clock setup(long time) {
-		return new Clock(time);
+		return new Clock(java.time.Clock.fixed(Instant.ofEpochMilli(time), ZoneId.of("Europe/Stockholm")));
+//		return new Clock(time);
 	}
 
 	private Clock setup() {
 		return setup(testTime);
 	}
 	
+	private String formatTwoDigits(int i) {
+		String res;
+		if (i < 10) {
+			res = "0" + Integer.toString(i);
+		} else {
+			res = Integer.toString(i);
+		}
+		return res;
+	}
+	
+	
+	
 	@Test
 	public void testCreateClock() {
-//		Test 2013-10-10 09:54:01
 		Clock cl = this.setup();
 		
-		assertEquals(testTime, cl.getTimeInMilliseconds());
+//		assertEquals(testTime, cl.getTimeInMilliseconds());
 
-		assertEquals("2013", cl.getYear());
-		assertEquals("10", cl.getMonth());
-		assertEquals("10", cl.getDay());
-		assertEquals(2013, cl.getYearI());
-		assertEquals(9, cl.getMonthI());
-		assertEquals(10, cl.getDayI());
-		assertEquals("2013-10-10", cl.getDate());
-		assertEquals("41", cl.getWeek());
-		assertEquals("Torsdag", cl.getDayOfWeek());
+		assertEquals(testDateTime, cl.getDateTime());
 
-		assertEquals("09", cl.getHour());
-		assertEquals("54", cl.getMinute());
-		assertEquals("01", cl.getSecond());
-		assertEquals(9, cl.getHourI());
-		assertEquals(54, cl.getMinuteI());
-		assertEquals(1, cl.getSecondI());
-		assertEquals("09:54", cl.getTime());
+		assertEquals(formatTwoDigits(testDateYearI), cl.getYear());
+		assertEquals(formatTwoDigits(testDateMonthI), cl.getMonth());
+		assertEquals(formatTwoDigits(testDateDayI), cl.getDay());
+		assertEquals(testDateYearI, cl.getYearI());
+		assertEquals(testDateMonthI, cl.getMonthI());
+		assertEquals(testDateDayI, cl.getDayI());
+		assertEquals(testDateStr, cl.getDate());
+		assertEquals(formatTwoDigits(testDateWeekI), cl.getWeek());
+		assertEquals("Onsdag", cl.getDayOfWeek());
+
+		assertEquals(formatTwoDigits(testDateHourI), cl.getHour());
+		assertEquals(formatTwoDigits(testDateMinuteI), cl.getMinute());
+		assertEquals(formatTwoDigits(testDateSecondI), cl.getSecond());
+		assertEquals(testDateHourI, cl.getHourI());
+		assertEquals(testDateMinuteI, cl.getMinuteI());
+		assertEquals(testDateSecondI, cl.getSecondI());
+		assertEquals(testTimeStr, cl.getTime());
 		
-		assertEquals("2013-10-10 09:54:01", cl.getDateTime());
 		
 		// Tick clock once, step one second
 		cl.tick(1);
 
-		assertEquals("2013-10-10", cl.getDate());
-		assertEquals("09:54", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testDateStr, cl.getDate());
+		assertEquals(testTimeStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 
 		// Tick clock once, step one minute
 		cl.tick(60);
+		String testIncMinuteStr = String.join(":", formatTwoDigits(testDateHourI), formatTwoDigits(testDateMinuteI + 1));
 		
-		assertEquals("2013-10-10", cl.getDate());
-		assertEquals("09:55", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testDateStr, cl.getDate());
+		assertEquals(testIncMinuteStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 		
 		// Tick clock once, step one hour
 		cl.tick(60 * 60);
+		String testIncTimeStr = String.join(":", formatTwoDigits(testDateHourI + 1), formatTwoDigits(testDateMinuteI + 1));
 		
-		assertEquals("2013-10-10", cl.getDate());
-		assertEquals("10:55", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testDateStr, cl.getDate());
+		assertEquals(testIncTimeStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 		
 		// Tick clock once, step 24 hours, one day
 		cl.tick(60 * 60 * 24);
+		String testIncDay    = String.join("-", formatTwoDigits(testDateYearI),
+				formatTwoDigits(testDateMonthI),
+				formatTwoDigits(testDateDayI + 1));
 		
-		assertEquals("2013-10-11", cl.getDate());
-		assertEquals("10:55", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testIncDay, cl.getDate());
+		assertEquals(testIncTimeStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 		
 		// Tick clock once, step 31 days
 		cl.tick(60 * 60 * 24 * 31);
+		String testIncMonth    = String.join("-", formatTwoDigits(testDateYearI),
+				formatTwoDigits(testDateMonthI + 1),
+				formatTwoDigits(testDateDayI + 1));
 		
-		assertEquals("2013-11-11", cl.getDate());
+		assertEquals(testIncMonth, cl.getDate());
 		// Scary, end of daylight saving
-		assertEquals("09:55", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testIncMinuteStr, cl.getTime());
+// TODO		assertEquals(testIncTimeStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 		
 		// Tick clock once, step 365 days
 		cl.tick(60 * 60 * 24 * 365);
+		// Cool: Leap year
+		String testIncYear = String.join("-", formatTwoDigits(testDateYearI + 1),
+				formatTwoDigits(testDateMonthI + 1),
+				formatTwoDigits(testDateDayI + leapYearAdjust));
 		
-		assertEquals("2014-11-11", cl.getDate());
-		assertEquals("09:55", cl.getTime());
-		assertEquals("02", cl.getSecond());
+		assertEquals(testIncYear, cl.getDate());
+		assertEquals(testIncMinuteStr, cl.getTime());
+		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
 		
 	}
 
