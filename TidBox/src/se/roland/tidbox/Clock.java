@@ -5,6 +5,8 @@ package se.roland.tidbox;
 
 import java.text.NumberFormat;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalField;
@@ -141,7 +143,8 @@ public class Clock extends TimerTask {
 	}
 
 	public String getDateTime() {	
-		return String.join(" ", this.getDate(), nowDateTime.toLocalTime().truncatedTo(ChronoUnit.SECONDS).toString());
+//		return String.join(" ", this.getDate(), nowDateTime.toLocalTime().truncatedTo(ChronoUnit.SECONDS).toString());
+		return String.join(" ", this.getDate(), nowDateTime.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)));
 	}
 
 	public String getWeek() {

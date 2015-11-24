@@ -39,8 +39,8 @@ public class ClockTest implements ClockEventMethod{
 //	long testTime = 1381391641120L;
 //	Test 2015-11-20 14:28:46
 //	long testTime = 1448026126569L;
-//	Test 2015-10-21 15:46:02 Onsdag vecka 43
-	final static long testTime = 1445435162626L;
+//	Test 2015-10-21 15:46:59 Onsdag vecka 43
+	final static long testTime = 1445435162000L;
 	final static int testDateYearI   = 2015;
 	final static int testDateMonthI  = 10;
 	final static int testDateDayI    = 21;
@@ -163,6 +163,26 @@ public class ClockTest implements ClockEventMethod{
 		assertEquals(testIncYear, cl.getDate());
 		assertEquals(testIncMinuteStr, cl.getTime());
 		assertEquals(formatTwoDigits(testDateSecondI + 1), cl.getSecond());
+
+		// Check that leading zeroes are shown
+		cl.tick(57);
+		String testSecondZero =
+				String.join(" ",
+						String.join("-", formatTwoDigits(testDateYearI + 1),
+								formatTwoDigits(testDateMonthI + 1),
+								formatTwoDigits(testDateDayI + leapYearAdjust)
+						),
+						String.join(":",
+								formatTwoDigits(testDateHourI),
+								formatTwoDigits(testDateMinuteI + 2),
+								formatTwoDigits(0)
+						)
+				);
+		String zero = formatTwoDigits(testDateSecondI - 2);
+		String res = cl.getSecond();
+		assertEquals(zero, cl.getSecond());
+		assertEquals(testSecondZero, cl.getDateTime());
+		
 		
 	}
 
