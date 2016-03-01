@@ -68,7 +68,7 @@ public class Times implements DataFileSave, DataFileLoad {
 		this.times.add(event);
 		this.undo.add(event);
 		if (! this.dirty) {
-			// TODO Event should have an approptiate method to store a string in a times.dat file
+			// TODO Event should have an appropriate method to store a string in a times.dat file
 			boolean a = false;
 			String i = event.getActivity();
 			if (i != null) {
@@ -229,9 +229,9 @@ public class Times implements DataFileSave, DataFileLoad {
 				String n = s.substring(17, i);
 				i++; // Skip comma
 				if (i < s.length()) {
-					times.add(new Event(d, t, n, s.substring(i)));
+					times.add(Event.make(d, t, n, s.substring(i)));
 				} else {
-					times.add(new Event(d, t, n));
+					times.add(Event.make(d, t, n));
 				}
 			}
 		} catch (Exception e) {

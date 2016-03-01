@@ -2,15 +2,15 @@
 package Times;
 #
 #   Document: Times data
-#   Version:  1.8   Created: 2015-11-04 14:36
+#   Version:  1.9   Created: 2016-01-19 09:44
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2015-11-04';
+my $VERSION = '1.9';
+my $DATEVER = '2016-01-19';
 
 # History information:
 #
@@ -37,6 +37,9 @@ my $DATEVER = '2015-11-04';
 #      Added registration of end of sleep event
 #      Removed check of old setting 'not_set_start'
 #      New method joinAdd to add event data
+# 1.9  2016-01-15  Roland Vallgren
+#      setDisplay moved to TidBase
+#      
 #
 
 #----------------------------------------------------------------------------
@@ -367,30 +370,6 @@ sub move($$;$) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      setDisplay
-#
-# Description: Set display for event changes
-#
-# Arguments:
-#  0 - Object reference
-#  1 - Name of the display
-#  2 - Callback to display
-#      undef disables the named display
-
-# Returns:
-#  -
-
-sub setDisplay($$$) {
-  # parameters
-  my $self = shift;
-  my ($name, $disp) = @_;
-
-  $self->{-display}{$name} = $disp;
-  return 0;
-} # Method setDisplay
-
-#----------------------------------------------------------------------------
-#
 # Method:      setUndo
 #
 # Description: Set display undone number
@@ -494,10 +473,7 @@ sub _doDisplay($;@) {
   @dates = $self->_getUndoDates()
       unless @dates;
 
-  for my $ref (values(%{$self->{-display}})) {
-    $self->callback($ref, @dates);
-  } # for #
-
+  $self->SUPER::_doDisplay(@dates);
   return 0;
 } # Method _doDisplay
 

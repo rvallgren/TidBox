@@ -2,15 +2,15 @@
 package FileBase;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.5   Created: 2015-11-04 09:43
+#   Version:  2.6   Created: 2016-01-18 13:56
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.5';
-my $DATEVER = '2015-11-04';
+my $VERSION = '2.6';
+my $DATEVER = '2016-01-18';
 
 # History information:
 #
@@ -34,6 +34,8 @@ my $DATEVER = '2015-11-04';
 #      Append should generate log entry
 #      Minor error corrections
 #      Improved handling of backup
+# 2.6  2015-12-09  Roland Vallgren
+#      Load the newest of file and backup restored, lost in previous version
 #
 
 #----------------------------------------------------------------------------
@@ -427,6 +429,8 @@ sub load($) {
     $bt = (stat(_))[9]
         if (-e $bak);
 
+    $file = $bak
+        if ($bt > $ft);
   } # if #
 
   my $fh = new FileHandle($file, '<');

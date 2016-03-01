@@ -2,15 +2,15 @@
 package Supervision;
 #
 #   Document: Supervision class
-#   Version:  1.4   Created: 2015-09-29 15:23
+#   Version:  1.5   Created: 2016-01-28 14:37
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Supervision.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2015-09-29';
+my $VERSION = '1.5';
+my $DATEVER = '2016-01-28';
 
 # History information:
 #
@@ -25,6 +25,8 @@ my $DATEVER = '2015-09-29';
 # 1.4  2015-09-16  Roland Vallgren
 #      Fault handling aligned with Settings in edit
 #      Times::getSortedRefs does join
+# 1.5  2016-01-19  Roland Vallgren
+#      Gui handling moved to Gui::SupervisionConfig
 #
 
 #----------------------------------------------------------------------------
@@ -121,6 +123,7 @@ sub new($) {
 
   my $self = {
                  condensed =>   0,
+                 cfg       =>   {},
              };
 
   bless($self, $class);
@@ -147,9 +150,9 @@ sub _clear($) {
   my $self = shift;
 
 
-  $self->{sup_enable} =  0;
-  $self->{start_date} = '';
-  $self->{sup_event}  = '';
+  $self->{cfg}{sup_enable} =  0;
+  $self->{cfg}{start_date} = '';
+  $self->{cfg}{sup_event}  = '';
   $self->{start}      =  0;
   $self->{date}       = '0';
   $self->{event}      = '';
@@ -174,11 +177,7 @@ sub _load($$) {
   my ($fh) = @_;
 
 
-  while (defined(my $line = $fh->getline())) {
-    $self->{$1} = $2
-        if ($line =~ /^(\w+)=(.+?)\s*$/);
-
-  } # while #
+  $self->loadDatedSets($fh, 'cfg');
 
   return 1;
 } # Method load
@@ -200,9 +199,7 @@ sub _save($$) {
   my ($fh) = @_;
 
 
-  for my $key (SAVEKEYS) {
-    $fh->print($key, '=', $self->{$key}, "\n");
-  } # for #
+  $self->saveDatedSets($fh, 'cfg');
 
   return 0;
 } # Method _save
@@ -226,9 +223,9 @@ sub importData($$$$) {
   my $self = shift;
   my ($enable, $date, $event) = @_;
 
-  $self->{sup_enable} = $enable;
-  $self->{start_date} = $date;
-  $self->{sup_event}  = $event;
+  $self->{cfg}{sup_enable} = $enable;
+  $self->{cfg}{start_date} = $date;
+  $self->{cfg}{sup_event}  = $event;
   $self->dirty();
   return 0;
 } # Method importData
@@ -322,7 +319,7 @@ sub is($$) {
   my $self = shift;
   my ($event) = @_;
 
-  return ($self->{sup_enable} and $self->{event} eq $event);
+  return ($self->{cfg}{sup_enable} and $self->{event} eq $event);
 } # Method is
 
 #----------------------------------------------------------------------------
@@ -391,10 +388,10 @@ sub setup($) {
   my $self = shift;
 
 
-  if ($self->{sup_enable})
+  if ($self->{cfg}{sup_enable})
   {
-    $self->{start} = $self->{start_date};
-    $self->{event} = $self->{sup_event};
+    $self->{start} = $self->{cfg}{start_date};
+    $self->{event} = $self->{cfg}{sup_event};
   } else {
     $self->{start} = 0;
     $self->{event} = '';
@@ -446,303 +443,43 @@ sub updated($@) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      _eventKey
+# Method:      getCfg
 #
-# Description: Validate event keys
-#
-# Arguments:
-#  0 - Object reference
-# Arguments as received from the validation callback:
-#  1 - The proposed value of the entry.
-#  2 - The characters to be added (or deleted).
-#  3 - The current value of entry i.e. before the proposed change.
-#  4 - Index of char string to be added/deleted, if any. -1 otherwise
-#  5 - Type of action. 1 == INSERT, 0 == DELETE, -1 if it's a forced
-# Returns:
-#  0 - True, edit is allways allowed
-
-sub _eventKey($$$$$$) {
-  # parameters
-  my $self = shift;
-  my ($proposed, $change, $current, $index, $insert) = @_;
-
-  $self->callback($self->{edit}{-notify});
-  return 1;
-} # Method _eventKey
-
-#----------------------------------------------------------------------------
-#
-# Method:      _setupClear
-#
-# Description: Clear supervision setup
+# Description: Get Supervision configuration
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
 # Returns:
-#  -
+#  Reference to supervision configuration
 
-sub _setupClear($) {
+sub getCfg($) {
   # parameters
   my $self = shift;
 
-  my $edit_r = $self->{edit};
-  $edit_r->{enabled} = 0;
-  $self->{-event_cfg}->clearData($edit_r);
-  $edit_r->{time_area}->clear();
-
-  # No supervision ongoing
-  delete($self->{cfg}{supervision});
-
-  $self->callback($edit_r->{-notify});
-
-  return 0;
-} # Method _setupClear
+  return $self->{cfg};
+} # Method getCfg
 
 #----------------------------------------------------------------------------
 #
-# Method:      _previous
+# Method:      setCfg
 #
-# Description: Add previous
+# Description: Set new supervision configuration
 #
 # Arguments:
-#  0 - Object reference
-#  1 - Reference to event to add
+#  - Object reference
+#  - Reference to configuration settings hash
 # Returns:
 #  -
 
-sub _previous($$) {
+sub setCfg($$) {
   # parameters
   my $self = shift;
   my ($ref) = @_;
 
-  $self->{-event_cfg}->putData($self->{edit}, $$ref);
+  %{$self->{cfg}} = %{$ref};
+  $self->dirty();
   return 0;
-} # Method _previous
-
-#----------------------------------------------------------------------------
-#
-# Method:      apply
-#
-# Description: Apply changes
-#
-# Arguments:
-#  0 - Object reference
-# Returns:
-#  -
-
-sub apply($) {
-  # parameters
-  my $self = shift;
-
-
-  unless ($self->getData()) {
-    return undef;
-  }
-
-  # Copy supervision settings
-  for my $key (SAVEKEYS) {
-    $self->{$key} = $self->{edit}{$key};
-  } # for #
-  $self->setup();
-
-  return 1;
-} # Method apply
-
-#----------------------------------------------------------------------------
-#
-# Method:      getData
-#
-# Description: Get supervision data
-#
-# Arguments:
-#  0 - Object reference
-# Returns:
-#  -
-
-sub getData($) {
-  # parameters
-  my $self = shift;
-
-
-  my $err_r = [];
-  my $date;
-  my $edit_r = $self->{edit};
-  (undef, $date) = $edit_r->{time_area}->get(1);
-
-  my $action_text =
-      $self->{-event_cfg} -> getData($edit_r, $edit_r->{-invalid});
-
-  return undef
-      unless (defined($date) and $action_text);
-
-  # Store event supervision configuration
-  $self->{edit}{sup_event}  = $action_text;
-  $self->{edit}{start_date} = $date;
-  $self->{edit}{sup_enable} = $edit_r->{enabled};
-
-  return 1;
-} # Method getData
-
-#----------------------------------------------------------------------------
-#
-# Method:      _update
-#
-# Description: Update displyed supervision data
-#
-# Arguments:
-#  0 - Object reference
-# Returns:
-#  -
-
-sub _update($) {
-  # parameters
-  my $self = shift;
-
-
-  if ($self->{edit}{sup_event}) {
-    $self->{-event_cfg} -> putData($self->{edit}, $self->{edit}{sup_event});
-  } else {
-    $self->{-event_cfg} -> clearData($self->{edit});
-  } # if #
-
-  $self->{edit}{time_area} -> set(undef, $self->{edit}{start_date});
-  $self->{edit}{enabled} = $self->{edit}{sup_enable};
-
-  return 0;
-} # Method _update
-
-#----------------------------------------------------------------------------
-#
-# Method:      showEdit
-#
-# Description: Insert values in supervision edit
-#
-# Arguments:
-#  0 - Object reference
-# Returns:
-#  -
-
-sub showEdit($) {
-  # parameters
-  my $self = shift;
-  my ($copy) = @_;
-
-
-  # Copy supervision settings
-  for my $key (SAVEKEYS) {
-    $self->{edit}{$key} = $self->{$key};
-  } # for #
-
-
-  $self->_update();
-  return 0;
-} # Method showEdit
-
-#----------------------------------------------------------------------------
-#
-# Method:      _addButtons
-#
-# Description: Add buttons for the supervision dialog
-#
-# Arguments:
-#  0 - Object reference
-#  1 - Area were to add
-# Returns:
-#  -
-
-sub _addButtons($$) {
-  # parameters
-  my $self = shift;
-  my ($area) = @_;
-
-  $self->{-earlier}->create($area, 'right', [$self => '_previous']);
-  return 0;
-} # Method _addButtons
-
-#----------------------------------------------------------------------------
-#
-# Method:      setupEdit
-#
-# Description: Setup for supervision edit
-#
-# Arguments:
-#  0 - Object reference
-#  -area       Window where to add the configuration area
-#  -modified   Callback for modified settings
-#  -invalid    Callback for invalid date
-# Returns:
-#  -
-
-sub setupEdit($%) {
-  # parameters
-  my $self = shift;
-  my %opt = @_;
-
-
-  # Setup and store notify reference
-  my $edit_r = {-notify  => $opt{-modified},
-                -invalid => $opt{-invalid} ,
-                -area    => $opt{-area}    ,
-                name     => 'Supervision'  ,
-               };
-  $self->{edit} = $edit_r;
-
-  ## Area ##
-  $edit_r->{set_area} = $edit_r->{-area}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '0', -fill => 'both');
-
-  ### Label ###
-  $edit_r->{data_lb} = $edit_r->{set_area}
-      -> Label(-text => 'Bevaka:')
-      -> pack(-side => 'left');
-
-  ### Enable checkbox ###
-  # Here we have to make a weird workaround because TK::Checkbutton does
-  # bless the reference sent to -command as a TK::Callback.
-  # TidBas::callback does not know how handle such a callback and hence fails
-  $edit_r->{enabled} = 0;
-  $edit_r->{data_enable} = $edit_r->{set_area}
-      -> Checkbutton(-command  => [@{$opt{-modified}}],
-                     -variable => \$edit_r->{enabled},
-                     -onvalue  => 1,
-                     -offvalue => 0)
-      -> pack(-side => 'left');
-
-  ### Event cfg ##
-  $edit_r->{evbutt_area} = $self->{-event_cfg}
-      -> createArea(-win      => $edit_r,
-                    -area     => $edit_r->{set_area},
-                    -validate => [$self => '_eventKey'],
-                    -buttons  => [$self => '_addButtons'],
-                    -iscfg    => 1,
-                   );
-
-  ## Startdate ##
-  $edit_r->{date_area} = $edit_r->{set_area}
-      -> Frame(-bd => '1', -relief => 'sunken')
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
-  $edit_r->{time_area} =
-      new Gui::Time(
-                    -area      => $edit_r->{date_area},
-                    -calculate => $self->{-calculate},
-                    -date      => 1,
-                    -invalid   => $opt{-invalid},
-                    -notify    => $opt{-modified},
-                    -label     => 'Från och med dag:',
-                   );
-
-  ## Supervision enable / clear ##
-  $edit_r->{buttons_area} = $edit_r->{set_area}
-      -> Frame()
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
-
-  $edit_r->{clear} = $edit_r->{buttons_area}
-      -> Button(-text => 'Rensa', -command => [$self => '_setupClear'])
-      -> pack(-side => 'right');
-
-  return 0;
-} # Method setupEdit
+} # Method setCfg
 
 1;
 __END__

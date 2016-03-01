@@ -9,12 +9,12 @@ public class UndoItemTest {
 	@Test
 	public void undoItem() {
 		// Test Add item
-		Event eOne = new Event("2013-01-01", "23:51", Event.PAUSE);
-		Event eTwo = new Event("2013-01-01", "23:52", Event.PAUSE);
-//		Event eThree = new Event("2013-01-01", "23:53", Event.PAUSE);
-		UndoItem iAdd = new UndoItem(eOne);
-		UndoItem iChange = new UndoItem(eTwo, eOne);
-		UndoItem iRemove = new UndoItem(null, eTwo);
+		Event eOne = Event.make("2013-01-01", "23:51", Event.PAUSE);
+		Event eTwo = Event.make("2013-01-01", "23:52", Event.PAUSE);
+//		Event eThree = Event.make("2013-01-01", "23:53", Event.PAUSE);
+		UndoItem iAdd = UndoItem.make(eOne);
+		UndoItem iChange = UndoItem.make(eTwo, eOne);
+		UndoItem iRemove = UndoItem.make(null, eTwo);
 		
 		Event[] a = iAdd.getEvent();
 		assertEquals(2, a.length);

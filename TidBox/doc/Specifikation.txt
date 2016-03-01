@@ -48,7 +48,7 @@ EventCfg
 						10 => { Fled=>Parental Leave -SE }
 						]
 				}
-		 	4 => {
+		 	3 => {
 					text => "Details"
 					type => "."
 					width => 24
@@ -346,5 +346,68 @@ log
 lock
 
 	
+== 2015-12-03 15:35
 
-	
+my %EVENT_CFG = (
+    COPERNICUS => [ 'Proj:w:8',
+                    'Typ:d:4',
+                    'Art:r:-;+;Ö;KÖ;Res',
+                    'Not:.:24',
+                  ],
+    ENKEL => [ 'Aktivitet:.:24',
+             ],
+    TERP => [ 'Project:d:6',
+              'Task:D:6',
+              'Type:R:' .
+                'N'  . '=>'. 'Normal -SE'                          . ';' .
+                'F+' . '=>'. 'Normal /flex -SE'                    . ';' .
+                'Ö+' . '=>'. 'Overtime Single /saved -SE-Overtime' . ';' .
+                'Res'. '=>'. 'Travelling I /paid -SE-Overtime'     . ';' .
+                'F-' . '=>'. 'Normal /used flex timi -SE'          . ';' .
+                'Ö-' . '=>'. 'Compensation for Overtime -SE'       . ';' .
+                'Sem'. '=>'. 'Vacation -SE'                                ,
+              'Details:.:24',
+            ],
+                );
+
+# Event types definitions
+#   Key:   Typ selection, stored in times.dat
+#   Value: Reference to array with "Regexp", "Description", "Sort order"
+my %types_def = (
+                  A  => [ '[A-ZÅÄÖ]'        , 'Versaler (A-Ö)'           , 1 ],
+                  a  => [ '[a-zåäöA-ZÅÄÖ]'  , 'Alfabetiska (a-öA-Ö)'     , 2 ],
+                  w  => [ '\\w'             , 'Alfanumerisk (a-ö0-9_)'   , 3 ],
+                  W  => [ '[^,\n\r]'        , 'Text (ej ,)'              , 4 ],
+                  d  => [ '\\d'             , 'Siffror (0-9)'            , 5 ],
+                  D  => [ '[\\d\\.\\+\\-]'  , 'Numeriska (0-9.+-)'       , 6 ],
+                  r  => [ '[^,\n\r]'        , 'Radioknapp'               , 7 ],
+                  R  => [ '[^,\n\r]'        , 'Radioknapp översätt'      , 8 ],
+                 '.' => [ '[^\n\r]'         , 'Fritext'                  , 9 ],
+                );
+
+use constant FILENAME  => 'eventcfg.dat';
+use constant FILEKEY   => 'EVENT CONFIGURATION';
+
+ActivityConfiguration
+	ConfigurableEventSetting
+	ActivityDefinitions
+		Konstanter och definitioner för aktiviteter
+	ActivityDefinition
+		Immutable object => Konstruktor skapar innehåll och inga ändringar kan göras
+		Endast beskrivning av hur det kan se ut
+	ConfigurableEvents
+		Startdatum och ConfigurableEventSetting
+		Lägg till
+		Ändra => byt ut
+		Spara till fil
+		Läs in från fil
+	ConfigurableEventGui
+		Sätt upp en GUI instans
+	ConfigurableEventEditGui
+		GUI för att skapa nya ConfigurableEventSetting
+
+== 2015-12-07 13:13	
+Vad bvehöver vi
+  Inställningar för GUI
+    get datum
+      retur array typ, värde, regexp?

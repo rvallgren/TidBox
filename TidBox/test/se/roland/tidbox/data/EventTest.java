@@ -8,6 +8,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
+ * Event should be an immutable object
+ * 
  * @author Roland Vallgren
  *
  */
@@ -33,7 +35,7 @@ public class EventTest {
 	@Test
 	public void testCreateEvent() {
 		// Create events that have no additional activity
-		Event ePause = new Event("2013-10-30", "15:25", Event.PAUSE);
+		Event ePause = Event.make("2013-10-30", "15:25", Event.PAUSE);
 
 		assertEquals("2013-10-30", ePause.getDate());
 		assertEquals("15:25", ePause.getTime());
@@ -43,7 +45,7 @@ public class EventTest {
 		assertEquals("15:25,PAUS", ePause.dayString());
 		assertEquals("2013-10-30,15:25,PAUS", ePause.toString());
 		
-		Event eEvent = new Event("2013-10-30", "15:46", Event.EVENT, "Activity");
+		Event eEvent = Event.make("2013-10-30", "15:46", Event.EVENT, "Activity");
 		
 		assertEquals("2013-10-30", eEvent.getDate());
 		assertEquals("15:46", eEvent.getTime());
@@ -53,26 +55,26 @@ public class EventTest {
 		assertEquals("2013-10-30,15:46,EVENT,Activity", eEvent.toString());
 		
 		// Change events
-		ePause.setDate("2013-01-01");
-		ePause.setTime("07:18");
-		ePause.setState(Event.ENDPAUSE);
+		// Immutable does not change, a new Event is returned
+		Event ePauseNewDate = ePause.changeDate("2013-01-01");
+		Event ePauseNewTime = ePause.changeTime("07:18");
+		Event ePauseNewState = ePause.changeState(Event.ENDPAUSE);
 		
-		assertEquals("2013-01-01", ePause.getDate());
-		assertEquals("07:18", ePause.getTime());
-		assertEquals(Event.ENDPAUSE, ePause.getState());
+		assertEquals("2013-01-01", ePauseNewDate.getDate());
+		assertEquals("07:18", ePauseNewTime.getTime());
+		assertEquals(Event.ENDPAUSE, ePauseNewState.getState());
 		assertNull(ePause.getActivity());
 
-		ePause.setState(Event.EVENT);
-		ePause.setActivity("Activity changed");
+		Event ePauseNewEventActivity = ePause.changeEventActivity("Activity changed");
 		
-		assertEquals(Event.EVENT, ePause.getState());
-		assertEquals("Activity changed", ePause.getActivity());
+		assertEquals(Event.EVENT, ePauseNewEventActivity.getState());
+		assertEquals("Activity changed", ePauseNewEventActivity.getActivity());
 
 		// Activity is "null" when not an EVENT
-		ePause.setState(Event.PAUSE);
-		assertNull(ePause.getActivity());
-		ePause.setState(Event.EVENT);
-		assertEquals("", ePause.getActivity());
+		Event ePauseNewPause = ePause.changeState(Event.PAUSE);
+		assertNull(ePauseNewPause.getActivity());
+		Event ePauseNewEventEmpty = ePause.changeState(Event.EVENT);
+		assertEquals("", ePauseNewEventEmpty.getActivity());
 		
 		// Clone event
 		Event eClone = eEvent.clone();
@@ -82,7 +84,7 @@ public class EventTest {
 		assertEquals(eClone.getActivity(), eEvent.getActivity());
 	
 		// Copy event information from another event
-		Event eCopy = new Event("2010-01-01", "01:01", Event.WORKEND);
+		Event eCopy = Event.make("2010-01-01", "01:01", Event.WORKEND);
 		
 		eCopy.copy(eEvent);
 		assertEquals(eCopy.getDate(), eEvent.getDate());
@@ -110,13 +112,13 @@ public class EventTest {
 	 */
 	@Test
 	public void testEventFormatting(){
-		Event ePause = new Event("2013-10-30", "15:25", Event.PAUSE);
-		Event eEndPause = new Event("2013-10-30", "15:25", Event.ENDPAUSE);
-		Event eWork = new Event("2013-10-30", "15:25", Event.BEGINWORK);
-		Event eEndWork = new Event("2013-10-30", "15:25", Event.WORKEND);
-		Event eEvent = new Event("2013-10-30", "15:25", Event.EVENT, "Project,Task,Art,Kommentar text");
-		Event eEventEmpty = new Event("2013-10-30", "15:25", Event.EVENT);
-		Event eEndEvent = new Event("2013-10-30", "15:25", Event.ENDEVENT);
+		Event ePause = Event.make("2013-10-30", "15:25", Event.PAUSE);
+		Event eEndPause = Event.make("2013-10-30", "15:25", Event.ENDPAUSE);
+		Event eWork = Event.make("2013-10-30", "15:25", Event.BEGINWORK);
+		Event eEndWork = Event.make("2013-10-30", "15:25", Event.WORKEND);
+		Event eEvent = Event.make("2013-10-30", "15:25", Event.EVENT, "Project,Task,Art,Kommentar text");
+		Event eEventEmpty = Event.make("2013-10-30", "15:25", Event.EVENT);
+		Event eEndEvent = Event.make("2013-10-30", "15:25", Event.ENDEVENT);
 		
 		assertEquals("15:25  Börja paus", ePause.format());
 		assertEquals("15:25  Sluta paus", eEndPause.format());
@@ -130,10 +132,10 @@ public class EventTest {
 
 	@Test
 	public void testGet() {
-		Event event = new Event("2013-11-06", "16:38", Event.PAUSE);
+		Event event = Event.make("2013-11-06", "16:38", Event.PAUSE);
 		
 		assertEquals(2013, event.getYearI());
-		assertEquals(10, event.getMonthI());
+		assertEquals(11, event.getMonthI());
 		assertEquals(6, event.getDayI());
 		assertEquals(16, event.getHourI());
 		assertEquals(38, event.getMinuteI());
@@ -151,9 +153,9 @@ public class EventTest {
 	@Test
 	public void testCompareEvent(){
 //		Compare dates
-		Event eA = new Event("2013-11-10", "15:25", Event.WORKEND);
-		Event eB = new Event("2013-11-11", "14:25", Event.PAUSE);
-		Event eC = new Event("2013-11-11", "14:25", Event.PAUSE);
+		Event eA = Event.make("2013-11-10", "15:25", Event.WORKEND);
+		Event eB = Event.make("2013-11-11", "14:25", Event.PAUSE);
+		Event eC = Event.make("2013-11-11", "14:25", Event.PAUSE);
 		
 		assertTrue(eA.compareTo(eB) < 0);
 		assertTrue(eB.compareTo(eA) > 0);
@@ -162,35 +164,32 @@ public class EventTest {
 		// Should have the same hash code if they are  comparable and equal
 		assertNotEquals("Should have different hashCode", eA.hashCode(), eB.hashCode());
 		assertEquals("Should have same hashCode", eB.hashCode(), eC.hashCode());
-		Event eE = new Event("2013-11-11", "14:25", Event.EVENT, "Must have same hashCode");
-		Event eF = new Event("2013-11-11", "14:25", Event.EVENT, "Must have same hashCode");
-		Event eG = new Event("2013-11-11", "14:25", Event.EVENT, "Must have different hashCode");
+		Event eE = Event.make("2013-11-11", "14:25", Event.EVENT, "Must have same hashCode");
+		Event eF = Event.make("2013-11-11", "14:25", Event.EVENT, "Must have same hashCode");
+		Event eG = Event.make("2013-11-11", "14:25", Event.EVENT, "Must have different hashCode");
 		assertEquals("Should have same hashCode", eE.hashCode(), eF.hashCode());
 		assertNotEquals("Should have different hashCode", eE.hashCode(), eG.hashCode());
 		
 //		Compare times
-		eA.setDate(eB.getDate());
+		Event eACD = eA.changeDate(eB.getDate());
 
-		assertTrue(eA.compareTo(eB) > 0);
-		assertTrue(eB.compareTo(eA) < 0);
+		assertTrue(eACD.compareTo(eB) > 0);
+		assertTrue(eB.compareTo(eACD) < 0);
 		
+		Event eACT = eB.changeTime(eA.getTime());
+
+		assertTrue(eACT.compareTo(eB) > 0);
+		assertTrue(eB.compareTo(eACT) < 0);
+
 //		Compare state
-		eA.setTime(eB.getTime());
-
-		assertTrue(eA.compareTo(eB) > 0);
-		assertTrue(eB.compareTo(eA) < 0);
-
 //		Compare activity
-		eA.setState(Event.EVENT);
-		eB.setState(Event.EVENT);
-		eC.setState(Event.EVENT);
-		eA.setActivity("A");
-		eB.setActivity("B");
-		eC.setActivity("B");
+		Event eAnewEvent = eA.changeEventActivity("A");
+		Event eBnewEvent = eB.changeEventActivity("B");
+		Event eCnewEvent = eC.changeEventActivity("B");
 
-		assertTrue(eA.compareTo(eB) < 0);
-		assertTrue(eB.compareTo(eA) > 0);
-		assertEquals(0, eB.compareTo(eC));
+		assertTrue(eAnewEvent.compareTo(eBnewEvent) < 0);
+		assertTrue(eBnewEvent.compareTo(eAnewEvent) > 0);
+		assertEquals(0, eBnewEvent.compareTo(eCnewEvent));
 	}
 
 

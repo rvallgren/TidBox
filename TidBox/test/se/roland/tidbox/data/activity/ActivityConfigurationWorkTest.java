@@ -24,15 +24,25 @@ public class ActivityConfigurationWorkTest {
 		// Task:D:8
 		// Type:R:N=>Normal -SE;F+=>Normal /flex -SE;Ö+=>Overtime Single /saved -SE-Overtime;R=>Travelling I /paid -SE;S=>Vacation -SE;F-=>Normal /used flex timi -SE;Ö-=>Compensation for Overtime -SE;Prm=>Leave of Absence /paid -SE;Sju=>Sick Leave -SE;;Doc=>Doctor Visit -SE;Vab=>Care of child Leave -SE;Fld=>Parental Leave -SE
 		// Details:.:40
-		ActivityConfigurationItem cfg = new ActivityConfigurationItem(4);
+		ActivityConfigurationBuilder cfg = new ActivityConfigurationBuilder("2015-12-08", 4);
+//		Project:d:6
+		cfg.add("Project", 'd', 6);
+//		Task:D:8
+		cfg.add("Task", 'D', 8);
+//		Type:W:17
+		cfg.add("Type", 'W', 17);
+//		Details:.:40
+		cfg.add("Details", '.', 40);
+
 		// TODO: Load activities from file
 		// activityConfiguration splits line
 		String l1 = "1177,01.02,Normal -SE,Detaljer för aktivitet, komma är tillåtet";
-		Matcher m = cfg.match(l1);
-		assertEquals("Project should match", "1177", m.group(0));
-		assertEquals("Task should match", "01.02", m.group(1));
-		assertEquals("Type should match", "Normal -SE", m.group(2));
-		assertEquals("Details should match", "Detaljer för aktivitet, komma är tillåtet", m.group(3));
+		Matcher m = cfg.createActivityConfiguration().match(l1);
+		assertEquals("Whole string should match", l1, m.group(0));
+		assertEquals("Project should match", "1177", m.group(1));
+		assertEquals("Task should match", "01.02", m.group(2));
+		assertEquals("Type should match", "Normal -SE", m.group(3));
+		assertEquals("Details should match", "Detaljer för aktivitet, komma är tillåtet", m.group(4));
 		// Populate activity
 //		String[] e = new String[activityConfiguration.number()];
 //		e[0] = "1177"; // Project
@@ -47,7 +57,7 @@ public class ActivityConfigurationWorkTest {
 		
 		
 		
-		fail("Not yet implemented");
+//		fail("Not yet implemented");
 	}
 
 }

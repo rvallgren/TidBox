@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.8   Created: 2015-10-14 12:01
+#   Version:  2.9   Created: 2016-01-26 09:15
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.8';
-my $DATEVER = '2015-10-14';
+my $VERSION = '2.9';
+my $DATEVER = '2016-01-26';
 
 # History information:
 #
@@ -42,6 +42,8 @@ my $DATEVER = '2015-10-14';
 # 2.8  2015-09-29  Roland Vallgren
 #      Use joinAdd method in Times
 #      Stop repeat from clock when Tidbox quit
+# 2.9  2015-12-09  Roland Vallgren
+#      Moved Gui for Event to own Gui class
 #
 
 #----------------------------------------------------------------------------
@@ -58,6 +60,7 @@ use integer;
 use Tk;
 
 use Gui::Confirm;
+use Gui::Event;
 
 # Register version information
 {
@@ -460,7 +463,8 @@ sub _clear($;$) {
 
   my $win_r = $self->{win};
 
-  $self->{-event_cfg} -> clearData($win_r, $clear);
+  $win_r->{event_handling}->clear();
+
   if ($self->{edit_event_ref}) {
     $win_r->{time_area}->clear();
     $win_r->{day_list}->clear();
@@ -556,7 +560,7 @@ sub _get($;$$) {
            );
   } # if #
 
-  my $action_text = $self->{-event_cfg}->getData($win_r, [$self, '_message']);
+  my $action_text = $win_r->{event_handling}->get([$self, '_message']);
 
   return undef
       unless (defined($action_text));
@@ -782,7 +786,7 @@ sub _validate($$$$$$) {
   my ($proposed, $change, $current, $index, $insert) = @_;
 
 
-  my ($len, undef) = $self->{-event_cfg}->getData($self->{win});
+  my ($len, undef) = $self->{win}{event_handling}->get();
 
   if (defined($proposed)) {
 
@@ -820,10 +824,8 @@ sub _earlier($$) {
   my ($text, $date, $time, $type, $event_data) = @_;
 
 
-  my $win_r = $self->{win};
-
   # Data from earlier menu
-  return $self->{-event_cfg}->putData($win_r, $$text)
+  return $self->{win}{event_handling}->set($$text)
       if (ref($text));
 
   return 0;
@@ -889,7 +891,7 @@ sub show($$) {
     $self->_clear(1);
     my $win_r = $self->{win};
     $win_r->{time_area}->set($time, $date);
-    $self->{-event_cfg}->putData($win_r, $event_data)
+    $win_r->{event_handling}->set($event_data)
         if (defined($event_data) and ($type eq $BEGINEVENT));
     if ($win_r->{event_modify}) {
       $win_r->{event_modify} -> configure(-state => 'normal');
@@ -1078,12 +1080,14 @@ sub _setup($) {
       -> Frame(-bd => '1', -relief => 'raised')
       -> pack(-side => 'top', -expand => '1', -fill => 'both');
 
-  $win_r->{evbutt_area} = $self->{-event_cfg}
-      -> createArea(-win      => $win_r,
-                    -area     => $win_r->{event_area},
-                    -validate => [$self, '_validate'],
-                    -buttons  => [$self, '_buttons'],
-                    -return   => [$self, '_modify', 1],
+  $win_r->{event_handling} =
+      new Gui::Event(
+                    -event_cfg => $self->{-event_cfg},
+                    -area      => $win_r->{event_area},
+                    -validate  => [$self, '_validate'],
+                    -buttons   => [$self, '_buttons'],
+                    -return    => [$self, '_modify', 1],
+                    -parentName => $win_r->{name},
                    );
 
   ### Previous handling ###
@@ -1239,7 +1243,7 @@ sub _quit($) {
 #      if ($win_r->{day_list});
   $win_r->{time_area}->quit();
 
-  $self->{-event_cfg}->quit($win_r->{name});
+  $win_r->{event_handling}->quit();
 
   $win_r->{previous_add}     -> configure(-state => 'disabled');
   $win_r->{previous_show}    -> configure(-state => 'disabled');

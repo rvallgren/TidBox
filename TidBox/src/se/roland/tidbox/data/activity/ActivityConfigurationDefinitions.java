@@ -6,8 +6,15 @@ package se.roland.tidbox.data.activity;
 import java.util.regex.Pattern;
 
 /**
- * @author vallgrol
+ * <p>
+ * Definitions for event configurations.
+ * </p>
+ * <p>
+ * Event configuration settings from Tidbox 4.9 Perl implementation.
+ * </p>
  *
+ * <pre>
+ * 	Regexp and configuration selection
  *     UPPERCASE          A  => [ '[A-ZÅÄÖ]'        , 'Versaler (A-Ö)'           , 1 ],
  *     ALPHABETIC         a  => [ '[a-zåäöA-ZÅÄÖ]'  , 'Alfabetiska (a-öA-Ö)'     , 2 ],
  *     ALFANUMERIC        w  => [ '\\w'             , 'Alfanumerisk (a-ö0-9_)'   , 3 ],
@@ -17,11 +24,44 @@ import java.util.regex.Pattern;
  *     RADIO              r  => [ '[^,\n\r]'        , 'Radioknapp'               , 7 ],
  *     RADIO_ALIAS        R  => [ '[^,\n\r]'        , 'Radioknapp översätt'      , 8 ],
  *     FREE_TEXT         '.' => [ '[^\n\r]'         , 'Fritext'                  , 9 ],
+ *     
+ *  MyTime
+ *     2015-12-03	
+ *     Project:d:6
+ *     Task:D:6
+ *     Type:R:
+ *             'N'  . '=>'. 'Normal -SE'                          . ';' .
+ *             'F+' . '=>'. 'Normal /flex -SE'                    . ';' .
+ *             'Ö+' . '=>'. 'Overtime Single /saved -SE-Overtime' . ';' .
+ *             'Res'. '=>'. 'Travelling I /paid -SE-Overtime'     . ';' .
+ *             'F-' . '=>'. 'Normal /used flex timi -SE'          . ';' .
+ *             'Ö-' . '=>'. 'Compensation for Overtime -SE'       . ';' .
+ *             'Sem'. '=>'. 'Vacation -SE'
+ *     Details:.:24
+ *
+ * </pre>
+ * 
+ * @author Roland Vallgren
  */
-public class ActivityConfigurationDefinitions {
+public final class ActivityConfigurationDefinitions {
+	
+	/**
+	 * 
+	 */
+	private ActivityConfigurationDefinitions() {
+		// TODO Auto-generated constructor stub
+	}
 
 	public enum Type {
-		DIGITS, NUMBER, FREE_TEXT
+		UPPERCASE,  
+		ALPHABETIC, 
+		ALFANUMERIC,
+		TEXT,       
+		DIGITS,     
+		NUMBER,     
+		RADIO,      
+		RADIO_ALIAS,
+		FREE_TEXT  
 		};
 
 	private static char[] types = new char[] {
@@ -36,7 +76,7 @@ public class ActivityConfigurationDefinitions {
 			'.',
 	};
 	
-	private static String idx = "AawWdDrR.";
+	private static String idx = String.join("", String.valueOf(types));
 	
 	private static String[] regExps = new String[] {
 			"[A-ZÅÄÖ]",

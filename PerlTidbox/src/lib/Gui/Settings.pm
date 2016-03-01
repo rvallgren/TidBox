@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.0   Created: 2015-11-04 15:01
+#   Version:  2.1   Created: 2016-01-27 10:51
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.0';
-my $DATEVER = '2015-11-04';
+my $VERSION = '2.1';
+my $DATEVER = '2016-01-27';
 
 # History information:
 #
@@ -40,6 +40,8 @@ my $DATEVER = '2015-11-04';
 #      Added tab for start of Tidbox
 #      Added settings for handling of resume
 #      Improved handling of invalid values
+# 2.1  2015-12-16  Roland Vallgren
+#      Moved Gui for Event to own Gui class
 #
 
 #----------------------------------------------------------------------------
@@ -57,6 +59,9 @@ use Tk;
 use Tk::NoteBook;
 
 use Gui::Confirm;
+use Gui::Event;
+use Gui::EventConfig;
+use Gui::SupervisionConfig;
 
 # Register version information
 {
@@ -304,9 +309,9 @@ sub _restore($) {
 
   ### Insert Configuration area ###
 
-  $self->{-event_cfg}->showEdit();
+  $self->{-event_cfg_setup}->showEdit();
 
-  $self->{-supervision}->showEdit();
+  $self->{-supervision_cfg_setup}->showEdit();
 
   if ($self->{cfg}{BACKUP_ENA()}) {
     $win_r->{backup_button}->
@@ -326,11 +331,11 @@ sub _restore($) {
                          'Välj Terp mall (export.csv)',
                );
 
-  $self->{-event_cfg}
-       -> putData($self->{start_tidbox_win_r}, $self->{cfg}{start_operation_event}, 1);
+  $self->{start_tidbox_win_r}{event_handling}
+      -> set($self->{cfg}{start_operation_event}, 1);
 
-  $self->{-event_cfg}
-       -> putData($self->{resume_tidbox_win_r}, $self->{cfg}{resume_operation_event}, 1);
+  $self->{resume_tidbox_win_r}{event_handling}
+      -> set($self->{cfg}{resume_operation_event}, 1);
 
   # No changes registered
   $self->_discard();
@@ -359,7 +364,7 @@ sub _apply($) {
   my $win_r = $self->{win};
 
   # Check if any lock prohibits changes
-  my ($lock, $txt, $lockdate, $date) = $self->{-event_cfg}->isLocked();
+  my ($lock, $txt, $lockdate, $date) = $self->{-event_cfg_setup}->isLocked();
   if ($lock == 1) {
     $win_r->{confirm}
         -> popup(-title => 'information',
@@ -388,12 +393,12 @@ sub _apply($) {
   $self->_not_allow_add('Säkerhetskopia vald för "' . $^O . '" men ingen katalog är definierad.')
       if ($self->{cfg}{BACKUP_ENA()} and not $self->{cfg}{BACKUP_DIR()});
 
-  $self->{-supervision}->getData();
+  $self->{-supervision_cfg_setup}->getData();
 
-  my $tmp_starttb_event = $self->{-event_cfg} ->
-      getData($self->{start_tidbox_win_r}, [$self => '_not_allow_add']);
-  my $tmp_resumetb_event = $self->{-event_cfg} ->
-      getData($self->{resume_tidbox_win_r}, [$self => '_not_allow_add']);
+  my $tmp_starttb_event = $self->{start_tidbox_win_r}{event_handling}
+      -> get([$self => '_not_allow_add']);
+  my $tmp_resumetb_event = $self->{resume_tidbox_win_r}{event_handling}
+      -> get([$self => '_not_allow_add']);
 
   if (@{$self->{errors}} > 0) {
     $self->_not_allowed();
@@ -405,7 +410,7 @@ sub _apply($) {
     # Handle event configuration
     if ($self->{mod}{event_cfg}) {
 
-      if ($self->{-event_cfg}->apply()) {
+      if ($self->{-event_cfg_setup}->apply()) {
         $self->{-week_win}->withdraw();
         $self->{-event_cfg}->save(1);
       } # if #
@@ -441,7 +446,7 @@ sub _apply($) {
     if ($self->{mod}{supervision}) {
 
       $self->{-supervision}->save(1)
-          if ($self->{-supervision}->apply());
+          if ($self->{-supervision_cfg_setup}->apply());
       $self->{mod}{supervision} = 0;
     } # if #
 
@@ -661,7 +666,9 @@ sub _setupClear($$) {
   my ($action) = @_;
 
   my $win_r = $self->{win};
-  $self->{-event_cfg}->clearData($self->{$action . '_tidbox_win_r'});
+
+  $self->{$action . '_tidbox_win_r'}{event_handling}
+      -> clear();
   $self->callback([$self => '_modified', $action . '_tidbox']);
 
 
@@ -686,7 +693,8 @@ sub _previous($$$) {
   my $self = shift;
   my ($action, $ref) = @_;
 
-  $self->{-event_cfg}->putData($self->{$action . '_tidbox_win_r'}, $$ref);
+  $self->{$action . '_tidbox_win_r'}{event_handling}
+      -> set($$ref);
   return 0;
 } # Method _previous
 
@@ -970,21 +978,29 @@ sub _setup($) {
 
   # Supervision setting
 
-  $self->{-supervision} ->
-      setupEdit(-area     => $win_r->{status_tab},
-                -modified => [$self => '_modified', 'supervision'],
-                -invalid  => [$self => '_not_allow_add'],
-               );
+  $self->{-supervision_cfg_setup} =
+      new Gui::SupervisionConfig(-area      => $win_r->{status_tab},
+                -supervision => $self->{-supervision},
+                -event_cfg   => $self->{-event_cfg},
+                -earlier     => $self->{-earlier},
+                -calculate   => $self->{-calculate},
+                -modified    => [$self => '_modified', 'supervision'],
+                -invalid     => [$self => '_not_allow_add'],
+                          );
 
   ### TAB: Event configuration settings ###
   $win_r->{edit_tab} = $win_r->{notebook}
       -> add('events', -label => 'Händelser');
-  $self->{-event_cfg} ->
-      setupEdit(-area     => $win_r->{edit_tab},
-                -win_r    => $win_r,
-                -modified => [ $self => '_modified', 'event_cfg'],
-                -invalid  => [$self => '_not_allowed'],
-               );
+  $self->{-event_cfg_setup} =
+      new Gui::EventConfig(-area      => $win_r->{edit_tab},
+                           -win_r     => $win_r,
+                           -modified  => [ $self => '_modified', 'event_cfg'],
+                           -event_cfg => $self->{-event_cfg},
+                           -invalid   => [$self => '_not_allowed'],
+                           -calculate => $self->{-calculate},
+                           -clock     => $self->{-clock},
+                           -cfg       => $self->{-cfg},
+                          );
 
   ### TAB: Start Tidbox ###
   $win_r->{start_tab} = $win_r->{notebook}
@@ -1033,9 +1049,11 @@ sub _setup($) {
                       };
   $self->{start_tidbox_win_r} = $starttb_win_r;
 
-  $win_r->{set_start_event_cfg} = $self->{-event_cfg}
-      -> createArea(-win      => $starttb_win_r,
-                    -area     => $win_r->{set_start_event_area},
+  $starttb_win_r->{event_handling} =
+      new Gui::Event(
+                    -event_cfg  => $self->{-event_cfg},
+                    -area       => $starttb_win_r->{-area},
+                    -parentName => $starttb_win_r->{name},
                     -validate => [$self => '_modified', 'start_operation_event'],
                     -buttons  => [$self => '_addButtonsStart'],
                    );
@@ -1105,11 +1123,13 @@ sub _setup($) {
                        };
   $self->{resume_tidbox_win_r} = $resumetb_win_r;
 
-  $win_r->{set_resume_event_cfg} = $self->{-event_cfg}
-      -> createArea(-win      => $resumetb_win_r,
-                    -area     => $win_r->{set_resume_event_area},
-                    -validate => [$self => '_modified', 'resume_operation_event'],
-                    -buttons  => [$self => '_addButtonsResume'],
+  $resumetb_win_r->{event_handling} =
+      new Gui::Event(
+                    -event_cfg  => $self->{-event_cfg},
+                    -area       => $resumetb_win_r->{-area},
+                    -parentName => $resumetb_win_r->{name},
+                    -validate  => [$self => '_modified', 'resume_operation_event'],
+                    -buttons   => [$self => '_addButtonsResume'],
                    );
 
   ### TAB: Terp configuration settings ###

@@ -2,7 +2,7 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.11   Created: 2013-05-27 19:17
+#   Version:  1.11   Created: 2016-01-19 12:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Week;
 #
 
 my $VERSION = '1.11';
-my $DATEVER = '2013-05-27';
+my $DATEVER = '2016-01-19';
 
 # History information:
 #
@@ -59,6 +59,7 @@ use integer;
 
 use Tk;
 use Tk::ROText;
+use Tk::LabFrame;
 
 use Gui::Confirm;
 use Terp;

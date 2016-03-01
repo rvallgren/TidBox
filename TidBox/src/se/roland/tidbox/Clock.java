@@ -223,6 +223,7 @@ public class Clock extends TimerTask {
 	 * Stop timer when program is ended
 	 */
 	public void stop() {
+		this.secondTimers.clear();
 		clockTimer.cancel();
 	}
 

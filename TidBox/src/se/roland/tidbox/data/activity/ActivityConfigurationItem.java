@@ -3,20 +3,17 @@
  */
 package se.roland.tidbox.data.activity;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
- * @author vallgrol
+ * @author Roland Vallgren
  *
  */
 public class ActivityConfigurationItem {
 
 	private String date;
-	private int number;
+	private int numberOfElements;
 	private String[] labels;
 	private char[] types;
 	private int[] sizes;
@@ -25,48 +22,51 @@ public class ActivityConfigurationItem {
 	private Pattern any;
 
 	/**
+	 * Create an activity configuration item with a defined number of elements.
 	 * 
-	 * @param i
+	 * @param date
+	 * @param number  Number of items in the activity configuration 
 	 */
- 	public ActivityConfigurationItem(int number) {
-		this.number = 0;
-		this.labels = new String[number];
-		this.types = new char[number];
-		this.sizes = new int[number];
-		this.patternParts = new Pattern[number];
+ 	private ActivityConfigurationItem(String date, String[] labels, char[] types, int[] sizes) {
+		this.date = date;
+		this.labels = labels;
+		this.types = types;
+		this.sizes = sizes;
+		numberOfElements = types.length;
+		this.patternParts = new Pattern[numberOfElements];
+		for (int i = 0; i < numberOfElements; i++) {
+			patternParts[i] = Pattern.compile("(" + ActivityConfigurationDefinitions.getPatternString(types[i]) + "),?(.*)" );
+		}
+
+		StringBuilder s = new StringBuilder("(");
+		int group = 1;
+		for (int element = 0; element < numberOfElements; element++) {
+			s.append(ActivityConfigurationDefinitions.getPatternString(types[element])).append(")");
+			if (group < numberOfElements) {
+				s.append(",(");
+				group++;
+			}
+		}
+		pattern = Pattern.compile(s.toString());
 		this.any = Pattern.compile("[^,]*,(.*)");
 	}
 
-	/**
-	 * @param date
-	 * @param i
-	 */
-	public ActivityConfigurationItem(String d, int i) {
-		this(i);
-		date = d;
+
+	public static ActivityConfigurationItem create(String d, String[] l, char[] t, int[] s) {
+		return new ActivityConfigurationItem(d, l, t, s);
 	}
 
 
-	/**
-	 * @param string
-	 * @param c
-	 * @param i
-	 */
-	public void add(String desc, char type, int size) {
-		labels[number] = desc;
-		types[number] = type;
-		sizes[number] = size;
-		number++;
-	}
 
 	/**
 	 * @return number of settings
 	 */
-	public int number() {
-		return labels.length;
+	public int getSize() {
+		return numberOfElements;
 	}
 
 	/**
+	 * String of item date
 	 * @return
 	 */
 	public String toFile() {
@@ -74,7 +74,8 @@ public class ActivityConfigurationItem {
 	}
 
 	/**
-	 * @param i
+	 * Create a String with configuration information for item
+	 * @param element
 	 * @return
 	 */
 	public String toFile(int element) {
@@ -86,18 +87,6 @@ public class ActivityConfigurationItem {
 	 * @return a Matcher if the line matches the pattern for the configuration item
 	 */
 	public Matcher match(String line) {
-		if (pattern == null) {
-			StringBuilder s = new StringBuilder("(");
-			int g = 1;
-			for (int i = 0; i < number; i++) {
-				s.append(ActivityConfigurationDefinitions.getPatternString(types[i])).append(")");
-				if (g < number) {
-					s.append(",(");
-					g++;
-				}
-			}
-			pattern = Pattern.compile(s.toString());
-		}
 		Matcher m = pattern.matcher(line);
 		if (m.matches())
 			return m;
@@ -106,41 +95,48 @@ public class ActivityConfigurationItem {
 
 
 	/**
+	 * Save configuration settings for the item
 	 * @return
 	 */
 	public String save() {
 		StringBuilder tmp = new StringBuilder(date + "\n");	
-		for (int i = 0; i < labels.length; i++) {
-			tmp.append(toFile(i));
+		for (int element = 0; element < numberOfElements; element++) {
+			tmp.append(toFile(element));
 			tmp.append("\n");
 		}
 		return tmp.toString();
 	}
 
 	/**
-	 * @param iterator
-	 * @return
+	 * Get label to use for entry number
+	 * 
+	 * @param element
+	 * @return String label
 	 */
-	public String getLabel(int item) {
-		return labels[item];
+	public String getLabel(int element) {
+		return labels[element];
 	}
 
 	/**
-	 * @param iterator
-	 * @return
+	 * Get size for Gui text entry
+	 * 
+	 * @param element
+	 * @return Size in number of characters
 	 */
-	public int getSize(int item) {
-		return sizes[item];
+	public int getSize(int element) {
+		return sizes[element];
 	}
 
 	/**
-	 * @param inf
-	 * @return
+	 * Split an activity in parts
+	 * 
+	 * @param  information String to be split
+	 * @return Array with strings of activity parts
 	 */
 	public String[] split(String information) {
 		Matcher m = this.match(information);
 		int n = m.groupCount();
-		if (n == number) {
+		if (n == numberOfElements) {
 			String[] res = new String[n];
 			for (int i = 0; i < n; i++) {
 				res[i] = m.group(i+1);
@@ -177,21 +173,18 @@ public class ActivityConfigurationItem {
 	 * Parse an event string for event fields
 	 * Non existing fields or fields with faulty content returns an empty string
 	 * 
-	 * @param information
-	 * @return Array of String
+	 * @param information   String to be parsed as event configuration data
+	 * @return Array of strings with parsed data
 	 */
 	public String[] parse(String information) {
-		String[] res = new String[number];
-		for (int i = 0; i < patternParts.length; i++) {
-			if (patternParts[i] == null) {
-				patternParts[i] = Pattern.compile("(" + ActivityConfigurationDefinitions.getPatternString(types[i]) + "),?(.*)" );
-			}
-			Matcher m = patternParts[i].matcher(information);
+		String[] res = new String[numberOfElements];
+		for (int element = 0; element < numberOfElements; element++) {
+			Matcher m = patternParts[element].matcher(information);
 			if (m.matches()) {
-				res[i] = m.group(1);
+				res[element] = m.group(1);
 				information = m.group(2);
 			} else {
-				res[i] = "";
+				res[element] = "";
 				m = any.matcher(information);
 				if (m.matches()) {
 					information = m.group(1);

@@ -21,12 +21,12 @@ public class UndoEvent {
 	}
 	
 	public void add(Event e) {
-		undo.push(new UndoItem(e));
+		undo.push(UndoItem.make(e));
 		redo.clear();
 	}
 
 	public void add(Event eOld, Event eNew) {
-		undo.push(new UndoItem(eOld, eNew));
+		undo.push(UndoItem.make(eOld, eNew));
 		redo.clear();
 	}
 

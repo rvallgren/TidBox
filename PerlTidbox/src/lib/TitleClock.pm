@@ -2,15 +2,15 @@
 package TitleClock;
 #
 #   Document: Running clock for timing and visible clock
-#   Version:  1.8   Created: 2015-11-04 09:57
+#   Version:  1.9   Created: 2016-01-15 13:08
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TitleClock.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2015-11-04';
+my $VERSION = '1.9';
+my $DATEVER = '2016-01-15';
 
 # History information:
 #
@@ -32,6 +32,8 @@ my $DATEVER = '2015-11-04';
 # 1.8  2015-09-23  Roland Vallgren
 #      Added detection and subscription of sleep
 #      Added quit method to stop sending repeat messages
+# 1.9  2016-01-15  Roland Vallgren
+#      setDisplay moved to TidBase
 #
 
 #----------------------------------------------------------------------------
@@ -119,29 +121,6 @@ sub new($) {
 
   return ($self);
 } # Method new
-
-#----------------------------------------------------------------------------
-#
-# Method:      setDisplay
-#
-# Description: Set display for the clock
-#
-# Arguments:
-#  0 - Object reference
-#  1 - Name of the clock
-#  2 - Widget were to display the clock
-#      Disable this clock if not defined
-# Returns:
-#  -
-
-sub setDisplay($$$) {
-  # parameters
-  my $self = shift;
-  my ($name, $disp) = @_;
-
-  $self->{-display}{$name} = $disp;
-  return 0;
-} # Method setDisplay
 
 #----------------------------------------------------------------------------
 #

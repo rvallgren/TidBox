@@ -13,7 +13,7 @@ public class UndoEventTest {
 		assertTrue("Undo is empty from beginnig", u.undoIsEmpty());
 		assertTrue("Redo is empty from beginnig", u.redoIsEmpty());
 		
-		Event ePause = new Event("2013-01-01", "23:59", Event.PAUSE);
+		Event ePause = Event.make("2013-01-01", "23:59", Event.PAUSE);
 		u.add(ePause);
 		
 		assertFalse("One item added to undo", u.undoIsEmpty());
@@ -63,8 +63,8 @@ public class UndoEventTest {
 	public void undoReplaceRemove() {
 		UndoEvent u = new UndoEvent();
 
-		Event pauseA = new Event("2013-01-01", "10:00", Event.PAUSE);
-		Event pauseB = new Event("2013-01-01", "11:00", Event.PAUSE);
+		Event pauseA = Event.make("2013-01-01", "10:00", Event.PAUSE);
+		Event pauseB = Event.make("2013-01-01", "11:00", Event.PAUSE);
 
 		// replace
 		u.add(pauseA, pauseB);

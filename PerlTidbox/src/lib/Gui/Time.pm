@@ -2,15 +2,15 @@
 package Gui::Time;
 #
 #   Document: Time entry area
-#   Version:  1.5   Created: 2011-04-05 19:49
+#   Version:  1.6   Created: 2016-01-27 12:12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Time.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2011-04-05';
+my $VERSION = '1.6';
+my $DATEVER = '2016-01-27';
 
 # History information:
 #
@@ -26,6 +26,8 @@ my $DATEVER = '2011-04-05';
 #      Use Exco %+ to use same source to register version
 # 1.5  2011-03-31  Roland Vallgren
 #      New method quit
+# 1.6  2016-01-27  Roland Vallgren
+#      Default action of <Return> in a field is to reevaluate the information
 #
 
 #----------------------------------------------------------------------------
@@ -340,10 +342,10 @@ sub _week($) {
 
   return 0 unless($self->{-week});
 
-  my $win_r = $self->{win};
+  return $self->callback($self->{-week})
+      if (ref($self->{-week}));
 
-  $self->callback($self->{-week});
-
+  $self->_step(0);
   return 0;
 } # Method _week
 
@@ -365,10 +367,10 @@ sub _date($) {
 
   return 0 unless($self->{-date});
 
-  my $win_r = $self->{win};
+  return $self->callback($self->{-date})
+      if (ref($self->{-date}));
 
-  $self->callback($self->{-date});
-
+  $self->_step(0);
   return 0;
 } # Method _date
 
@@ -390,10 +392,10 @@ sub _time($) {
 
   return 0 unless($self->{-time});
 
-  my $win_r = $self->{win};
+  return $self->callback($self->{-time})
+      if (ref($self->{-time}));
 
-  $self->callback($self->{-time});
-
+  $self->_step(0);
   return 0;
 } # Method _time
 

@@ -2,15 +2,15 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.4   Created: 2009-07-08 17:17
+#   Version:  1.5   Created: 2016-01-27 11:02
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidBase.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2009-07-08';
+my $VERSION = '1.5';
+my $DATEVER = '2016-01-27';
 
 # History information:
 #
@@ -23,6 +23,9 @@ my $DATEVER = '2009-07-08';
 #      Method configure added
 # 1.4  2008-12-06  Roland Vallgren
 #      Use Exco %+ to use same source to register version
+# 1.5  2016-01-15  Roland Vallgren
+#      Added common methods to handle subscriptions (displays)
+#      callback croaks if it can not handle a callback
 #
 
 #----------------------------------------------------------------------------
@@ -80,7 +83,10 @@ sub callback($;$@) {
 
   return &$callback(@arg) if (ref($callback) eq 'CODE');
 
-  return 1 unless (ref($callback) eq 'ARRAY');
+  unless (ref($callback) eq 'ARRAY') {
+    croak "callback issued: \"" . ref($callback) . "\" Not ARRAY, afraid no good way to handle this\n";
+    return 1;
+  }
 
   if (ref($callback->[0]) eq 'CODE') {
     my ($sub, @opt) = @$callback;
@@ -92,6 +98,7 @@ sub callback($;$@) {
 
   } # if #
 
+  croak "callback issued: No known way to handle\n";
   return 1;
 } # Method callback
 
@@ -123,6 +130,57 @@ sub configure($%) {
 
   return 0;
 } # Method configure
+
+#----------------------------------------------------------------------------
+#
+# Method:      setDisplay
+#
+# Description: Set display for changes used by clients
+#              TODO: Is the name OK? (Suggestion add 'ec' for EventCfg)
+#              TODO: TitleClock does not handle an ordinary callback
+#
+# Arguments:
+#  - Object reference
+#  - Name of the change
+#  - Callback argument, undef to disable
+# Returns:
+#  -
+
+sub setDisplay($$$) {
+  # parameters
+  my $self = shift;
+  my ($name, $disp) = @_;
+
+  $self->{-display}{$name} = $disp;
+  return 0;
+} # Method setDisplay
+
+#----------------------------------------------------------------------------
+#
+# Method:      _doDisplay
+#
+# Description: Display subscribed changes
+#              Calls the registered handler provided arguments
+#
+# Arguments:
+#  0 - Object reference
+# Optional Arguments:
+#  1 .. n - Dates array fetched earlier from by
+# Returns:
+#  -
+
+sub _doDisplay($;@) {
+  # parameters
+  my $self = shift;
+
+
+  for my $ref (values(%{$self->{-display}})) {
+    $self->callback($ref, @_)
+        if ($ref);
+  } # for #
+
+  return 0;
+} # Method _doDisplay
 
 1;
 __END__

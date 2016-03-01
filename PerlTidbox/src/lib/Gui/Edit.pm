@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.2   Created: 2015-11-04 12:44
+#   Version:  2.3   Created: 2016-01-26 09:15
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.2';
-my $DATEVER = '2015-11-04';
+my $VERSION = '2.3';
+my $DATEVER = '2016-01-26';
 
 # History information:
 #
@@ -24,6 +24,8 @@ my $DATEVER = '2015-11-04';
 # 2.2  2015-09-29  Roland Vallgren
 #      Time::getSortedRefs joins
 #      Configuration.pm should not have any Gui code
+# 2.3  2015-12-10  Roland Vallgren
+#      Moved Gui for Event to own Gui class
 #
 
 #----------------------------------------------------------------------------
@@ -41,6 +43,7 @@ use Tk;
 
 use Gui::Confirm;
 use Gui::DayList;
+use Gui::Event;
 
 # Register version information
 {
@@ -225,7 +228,7 @@ sub _clear($) {
 
   $win_r->{time_area}->set('', $self->{date});
   $self->{type_setting} = 0;
-  $self->{-event_cfg}->clearData($win_r, 1);
+  $win_r->{event_handling}->clear(1);
 
   $win_r->{day_list}->clear();
 
@@ -267,8 +270,7 @@ sub _get($;$) {
 
   if ($self->{type_setting} eq $BEGINEVENT) {
 
-    $action_text =
-        $self->{-event_cfg}->getData($win_r, $msg, $win_r->{date});
+    $action_text = $win_r->{event_handling}->get($msg);
 
     return undef unless (defined($action_text));
 
@@ -366,9 +368,9 @@ sub show($;$$) {
     my ($date, $time, $type, $event_data) = ($1, $2, $3, $4);
     $win_r->{time_area}->set($time, $date);
     if (defined($event_data) and ($type eq $BEGINEVENT)) {
-      $self->{-event_cfg}->putData($win_r, $event_data)
+      $win_r->{event_handling}->set($event_data);
     } else {
-      $self->{-event_cfg}->clearData($win_r, 1);
+      $win_r->{event_handling}->clear(1);
     } # if #
     $self->{type_setting} = $type;
     $self->_message("Info: " . $text);
@@ -583,7 +585,7 @@ sub _search($;$) {
 
   if ($win_r->{day_list}->see($fnd)) {
     $self->{-earlier}->add($action_text);
-    $self->{-event_cfg}->putData($win_r, $action_text, 1);
+    $win_r->{event_handling}->set($action_text, 1);
   } # if #
 
   return 0;
@@ -607,7 +609,7 @@ sub _previous($$) {
   my ($ref) = @_;
 
   $self->{type_setting} = $BEGINEVENT;
-  $self->{-event_cfg}->putData($self->{win}, $$ref);
+  $self->{win}->{event_handling}->set($$ref);
   $self->_enableAdd();
   $self->_message('');
   return 0;
@@ -1116,17 +1118,19 @@ sub _setup($) {
       -sticky => 'w'
     );
 
-  ### Entry edit text ###
+  ### Entry edit configurable event ###
   $win_r->{entry_event_area} = $win_r->{entry_area}
       -> Frame(-bd => '1', -relief => 'raised')
       -> pack(-side => 'top', -fill => 'both');
-  $win_r->{entry_evbutt_area} = $self->{-event_cfg}
-      -> createArea(-win      => $win_r,
-                    -area     => $win_r->{entry_event_area},
-                    -validate => [$self => '_validate'],
-                    -buttons  => [$self => '_earlierAdd'],
-                    -return   => [$self => '_change'],
-                    -date     => $self->{-clock}->getDate(),
+  $win_r->{event_handling} =
+      new Gui::Event(
+                    -event_cfg => $self->{-event_cfg},
+                    -area      => $win_r->{entry_event_area},
+                    -validate  => [$self => '_validate'],
+                    -buttons   => [$self => '_earlierAdd'],
+                    -return    => [$self => '_change'],
+                    -date      => $self->{-clock}->getDate(),
+                    -parentName => $win_r->{name},
                    );
 
   ### Entry edit message ###
@@ -1295,7 +1299,7 @@ sub _display($;$$) {
   $self->{-times}->save();
 
   # Update event configuration
-  $self->{-event_cfg} -> modifyArea($win_r, $date);
+  $win_r->{event_handling}->modifyArea($date);
 
   # List recorded of a day and update lock
   $self -> update();

@@ -23,7 +23,7 @@ public class DayListTest {
 //		Times tmp = new Times();
 		DayList d = new DayList(new Times());
 		
-		Event ePause = new Event("2013-01-01", "23:59", Event.PAUSE);
+		Event ePause = Event.make("2013-01-01", "23:59", Event.PAUSE);
 		d.add(ePause);
 		
 		ArrayList<Event> empty = d.getDate("2012-01-01");
@@ -39,7 +39,7 @@ public class DayListTest {
 		Event eCheck = tDate.get(0);
 		assertEquals(ePause, eCheck);
 		
-		Event eEvent = new Event("2013-01-01", "01:01", Event.EVENT, "An event");
+		Event eEvent = Event.make("2013-01-01", "01:01", Event.EVENT, "An event");
 		d.add(eEvent);
 		
 		tDate = d.getDate("2013-01-01");
@@ -79,12 +79,12 @@ public class DayListTest {
 
 		// Add events unsorted
 		String date = "2013-11-06";
-		Event eBeginWork = new Event(date, "15:49", Event.BEGINWORK);
-		Event ePause = new Event(date, "15:50", Event.PAUSE);
-		Event eEndPause = new Event(date, "15:51", Event.ENDPAUSE);
-		Event eEvent = new Event(date, "15:52", Event.EVENT, "An event");
-		Event eEndEvent = new Event(date, "15:53", Event.ENDEVENT);
-		Event eWorkEnd = new Event(date, "15:54", Event.WORKEND);
+		Event eBeginWork = Event.make(date, "15:49", Event.BEGINWORK);
+		Event ePause = Event.make(date, "15:50", Event.PAUSE);
+		Event eEndPause = Event.make(date, "15:51", Event.ENDPAUSE);
+		Event eEvent = Event.make(date, "15:52", Event.EVENT, "An event");
+		Event eEndEvent = Event.make(date, "15:53", Event.ENDEVENT);
+		Event eWorkEnd = Event.make(date, "15:54", Event.WORKEND);
 
 		d.add(eBeginWork);
 		d.add(eEndPause);
@@ -106,7 +106,7 @@ public class DayListTest {
 		l = d.getDate(date);
 		eEvent = l.get(3);
 		Event eGotten = eEvent.clone();
-		Event eReplace = new Event(date, "15:52", Event.EVENT, "Replace event");
+		Event eReplace = Event.make(date, "15:52", Event.EVENT, "Replace event");
 		d.replace(eEvent, eReplace);
 		// FIXME Test that replace changes dirty in times to make sure change is saved to file 
 		

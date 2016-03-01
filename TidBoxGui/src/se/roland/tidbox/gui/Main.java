@@ -1,36 +1,26 @@
 package se.roland.tidbox.gui;
 
-//import java.awt.event.ActionEvent;
-//import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-//import javax.swing.ButtonGroup;
-//import javax.swing.Timer;
-
-
-
-
-
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+//import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Composite;
+//import org.eclipse.swt.widgets.Control;
 //import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-//import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.custom.CBanner;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.graphics.Point;
+//import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -40,18 +30,26 @@ import se.roland.tidbox.ClockEventMethod;
 import se.roland.tidbox.data.DayList;
 import se.roland.tidbox.data.Event;
 import se.roland.tidbox.data.Times;
+import se.roland.tidbox.data.activity.ActivityConfigurationBuilder;
 import se.roland.tidbox.data.activity.ActivityConfigurationItem;
 
 import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.GridData;
 //import org.eclipse.swt.events.KeyAdapter;
 //import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FillLayout;
 
 //public class Main implements ClockEventMethod, ActionListener {
 public class Main implements ClockEventMethod {
 
+	private static final String TOOL_TIP_SHOW_NOW_TIME = "Visa aktuell tid";
+	private static final String TOOL_TIP_UNDO = "\u00C5ngra senaste";
+	private static final String TOOL_TIP_REDO = "Registrera igen";
+	private static final String REDO_BUTTON = "Igen";
+	private static final String UNDO_BUTTON = "\u00C5ngra";
+	private static final String TOOL_TIP_CLICK_TO_SELECT = "Klicka f\u00F6r att visa";
 	private static final String BUTTON_DATETTIME_NOW = "Nu";
 	private static final String STATE_ENDEVENT = "Sluta h\u00E4ndelse";
 	private static final String STATE_BEGINEVENT = "B\u00F6rja h\u00E4ndelse";
@@ -60,13 +58,13 @@ public class Main implements ClockEventMethod {
 	private static final String STATE_ENDWORKDAY = "Sluta arbetsdagen";
 	private static final String STATE_BEGINWORKDAY = "B\u00F6rja arbetsdagen";
 	private static final String BUTTON_REMOVE = "Ta bort";
-	private static final String REMOVE_REGISTERED_ITEM = "Tag bort en registrering";
+	private static final String TOOL_TIP_REMOVE_REGISTERED_ITEM = "Tag bort en registrering";
 	private static final String BUTTON_CHANGE = "\u00C4ndra";
 	private static final String TOOL_TIP_CHANGE_REGISTERED_ITEM = "\u00C4ndra tid eller egenskaper f\u00F6r en registrering";
-	private static final String CLEAR_REGISTERED_SHOW = "Rensa inmatningsfält";
+	private static final String TOOL_TIP_CLEAR_REGISTERED_SHOW = "Rensa inmatningsfält";
 	private static final String BUTTON_CLEAR = "Rensa";
 	private static final String LABEL_ADD = "L\u00E4gg till";
-	private static final String LABEL_ADD_EVENT = "L\u00E4gg till h\u00E4ndelse";
+	private static final String TOOL_TIP_LABEL_ADD_EVENT = "L\u00E4gg till h\u00E4ndelse";
 //	private static final String LABEL_EVENT = "H\u00E4ndelse:";
 	private static final String LABEL_ACTION = "\u00C5tg\u00E4rd:";
 	private static final String LABEL_DATE_TIME = "Datum Tid:";
@@ -87,10 +85,9 @@ public class Main implements ClockEventMethod {
 						BUTTON_PRESSED_REMOVE, BUTTON_PRESSED_CLEAR,
 						BUTTON_PRESSED_UNDO, BUTTON_PRESSED_REDO };
 
-	private String title = TIDBOX_TITLE;
+	private String title = String.join(" ", TIDBOX_TITLE, TIDBOX_VERSION);
 
 	protected Shell shlTidbox;
-	protected GridData gd_composite;
 	protected Display display;
 //	protected Text enterTask;
 //	protected Text enterDetails;
@@ -112,10 +109,9 @@ public class Main implements ClockEventMethod {
 	protected ToolBar toolBar;
 	protected ToolItem tltmToday;
 	protected ToolItem tltmYesterday;
-	protected CBanner banner;
+	protected Composite compositeMain;
 	protected Composite compositeLeft;
 	protected RowLayout left_rl_composite;
-	protected ScrolledComposite scrolledComposite;
 	protected Composite compositeRight;
 	protected RowLayout right_rl_composite;
 	protected Composite compositeDateTime;
@@ -130,34 +126,13 @@ public class Main implements ClockEventMethod {
 	protected Button btnChangeEvent;
 	protected Button btnRemoveEvent;
 	protected Button btnClear;
-	private Activity activity;
-//	protected Composite compositeEventCfg;
-//	protected RowLayout rl_compositeEventCfg;
-//	protected Composite composite_1;
-//	protected Label lblTask;
-//	protected Label lblDetails;
-//	protected Composite composite_2;
-//	protected Label lblProject;
-//	protected Button btnSelect;
-//	protected Menu menu_1;
-//	protected MenuItem menuItem;
-//	protected MenuItem mntmIdleTime;
-//	protected MenuItem mntmTraining;
-//	protected MenuItem mntmAbsence;
-//	protected Composite composite_3;
-//	protected Label lblType;
-//	protected Button btnN;
-//	protected Button btnFlex;
-//	protected Button button;
-//	protected Button btnR;
-//	protected Button btnS;
-//	protected Button btnFlexUttag;
-	protected Composite composite_Bottom;
-	protected Button btnWeek;
-	protected Button btnSettings;
-	protected Button btnExit;
+	protected Activity activity;
 	protected Button btnNow;
-	private Composite compositeState;
+	protected Composite compositeRegistrationTypeSelection;
+	
+	// TODO EventCfg
+//	private Composite compositeEventCfg;
+//	private RowLayout rl_compositeEventCfg;
 
 	private static final HashMap<String, Button> btnState = new HashMap<String, Button>();
 
@@ -173,8 +148,23 @@ public class Main implements ClockEventMethod {
 	private int lastMinute;
 	private Button btnUndo;
 	private Button btnRedo;
-//	private ButtonGroup stateRadioGroup; 
-	private ActivityConfigurationItem activityCfg;
+	private ActivityConfigurationBuilder activityCfgBuild;
+	private ToolBar toolBar_1;
+	private ToolItem tltmTestar;
+	private Button stateRadioBtnBeginWork;
+	private Button stateRadioBtnEndWork;
+	private Button stateRadioBtnBeginPause;
+	private Button stateRadioBtnEndPause;
+	private Button stateRadioBtnBeginEvent;
+	private Button stateRadioBtnEndEvent;
+	private Composite compositeDatTimeLabel;
+	private Composite compositeRegistrationType;
+	private Composite compositeRegistrationAction;
+	private Composite compositeRegistrationTypeLabel;
+	private Label lblTyp;
+	private Composite composite_1;
+//	private Point compositeSize;
+//	private Point shlSize;
 	
 
 	/**
@@ -192,7 +182,8 @@ public class Main implements ClockEventMethod {
 	}
 
 	/**
-	 * Open the window.
+	 * Open the window.'
+	 * TODO: Separate GUI and application code
 	 */
 	public void open() {
 		display = Display.getDefault();
@@ -207,6 +198,10 @@ public class Main implements ClockEventMethod {
 		dayList = new DayList(times);
 		setDateTimeNow(0);
 		updateDayList();
+		printSizes("Initial");
+//		compositeSize.x += 20;
+//		compositeSize.y += 20;
+//		shlTidbox.setSize(compositeSize);
 		while (!shlTidbox.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -220,102 +215,365 @@ public class Main implements ClockEventMethod {
 	 */
 	protected void createContents() {
 		shlTidbox = new Shell();
+//		shlTidbox.setSize(786, 421);
+//		shlTidbox.setSize(new Point(786, 421));
+		shlTidbox.setSize(new Point(597, 417));
+		shlTidbox.setMinimumSize(new Point(461, 294));
+		shlTidbox.setToolTipText("");
 		shlTidbox.addShellListener(new ShellAdapter() {
 			@Override
 			public void shellClosed(ShellEvent e) {
+				printSizes("Exit");
 				exit();
 			}
 		});
-		shlTidbox.setSize(530, 455);
-		shlTidbox.setText(TIDBOX_TITLE + " " + TIDBOX_VERSION);
-//		shlTidbox.setLayout(new StackLayout());
-		shlTidbox.setLayout(new GridLayout());
+
+		shlTidbox.setText(title);
 		
 		createMenuBar();
 
 		composite = new Composite(shlTidbox, SWT.NONE);
-		gd_composite = new GridData(SWT.CENTER, SWT.CENTER, true, true, 1, 1);
-		gd_composite.heightHint = 329;
-		composite.setLayoutData(gd_composite);
 		rl_composite = new RowLayout(SWT.VERTICAL);
 		rl_composite.wrap = false;
+		rl_composite.fill = true;
 		composite.setLayout(rl_composite);
-
-		toolBar = new ToolBar(composite, SWT.BORDER | SWT.FLAT | SWT.WRAP | SWT.RIGHT);
 		
+		compositeMain = new Composite(composite, SWT.BORDER);
+		RowLayout rl_compositeMain = new RowLayout(SWT.HORIZONTAL);
+		compositeMain.setLayout(rl_compositeMain);
+				
+		//		Left
+		compositeLeft = new Composite(compositeMain, SWT.NONE);
+		//		compositeLeft.setToolTipText("H\u00E4ndelser f\u00F6r dagen");
+		left_rl_composite = new RowLayout(SWT.VERTICAL);
+		left_rl_composite.justify = true;
+		left_rl_composite.fill = true;
+		left_rl_composite.center = true;
+		left_rl_composite.wrap = false;
+		compositeLeft.setLayout(left_rl_composite);
+		
+		wDayList = new List(compositeLeft, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		wDayList.setLayoutData(new RowData(150, 200));
+		wDayList.setToolTipText(TOOL_TIP_CLICK_TO_SELECT);
+		wDayList.addSelectionListener(new SelectionAdapter() {
+											
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				dayListSelectedEvent = dayList.get(wDayList.getSelectionIndex());
+				setDateW(dayListSelectedEvent.getYearI(), dayListSelectedEvent.getMonthI(), dayListSelectedEvent.getDayI());
+				setTimeW(dayListSelectedEvent.getHourI(), dayListSelectedEvent.getMinuteI());
+				//				btnState.get(radioState).setSelection(true);
+				//				radioState = event.getState();
+				stateSelected(dayListSelectedEvent.getState());
+				// Event cfg
+				if (radioState.equals(Event.EVENT)) {
+					String inf = dayListSelectedEvent.getActivity();
+					if (inf != null) {
+						activity.insert(inf);
+					}
+				} else {
+					activity.clear();
+				}
+				btnChangeEvent.setEnabled(true);
+				btnRemoveEvent.setEnabled(true);
+//				btnClear.setEnabled(true);
+				nowCounter = 120;
+			}
+		});
+		
+		//		Right
+		compositeRight = new Composite(compositeMain, SWT.BORDER);
+		right_rl_composite = new RowLayout(SWT.VERTICAL);
+		right_rl_composite.justify = true;
+		right_rl_composite.fill = true;
+		right_rl_composite.center = true;
+		compositeRight.setLayout(right_rl_composite);
+										
+		toolBar = new ToolBar(compositeRight, SWT.BORDER | SWT.FLAT | SWT.WRAP | SWT.RIGHT);
+				
 		tltmToday = new ToolItem(toolBar, SWT.RADIO);
-		tltmToday.setEnabled(false);
+		tltmToday.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				setToday();
+			}
+		});
+		//		tltmToday.setEnabled(false);
 		tltmToday.setText(TOOL_TODAY);
-
+		
 		tltmYesterday = new ToolItem(toolBar, SWT.RADIO);
 		tltmYesterday.setEnabled(false);
 		tltmYesterday.setText(TOOL_YESTERDAY);
-
-		banner = new CBanner(composite, SWT.NONE);
-		banner.setLayoutData(new RowData(SWT.DEFAULT, 293));
-		banner.setRightMinimumSize(new Point(100, 250));
-
-//		Left
-		compositeLeft = new Composite(banner, SWT.NONE);
-//		compositeLeft.setToolTipText("H\u00E4ndelser f\u00F6r dagen");
-		banner.setLeft(compositeLeft);
-		left_rl_composite = new RowLayout(SWT.VERTICAL);
-		left_rl_composite.fill = true;
-		left_rl_composite.wrap = false;
-		compositeLeft.setLayout(left_rl_composite);
-
-		createDayListComposite();
-
-//		Right
-		compositeRight = new Composite(banner, SWT.NONE);
-		banner.setRight(compositeRight);
-		right_rl_composite = new RowLayout(SWT.VERTICAL);
-		right_rl_composite.fill = true;
-		right_rl_composite.center = true;
-		right_rl_composite.wrap = false;
-		compositeRight.setLayout(right_rl_composite);
+								
+		//		Date Time
+		compositeDateTime = new Composite(compositeRight, SWT.NONE);
+		rl_compositeDateTime = new RowLayout(SWT.HORIZONTAL);
+		rl_compositeDateTime.fill = true;
+		rl_compositeDateTime.wrap = false;
+		compositeDateTime.setLayout(rl_compositeDateTime);
 		
-		createDateTimeComposite();
+		compositeDatTimeLabel = new Composite(compositeDateTime, SWT.NONE);
+		RowLayout rl_composite_1 = new RowLayout(SWT.VERTICAL);
+		rl_composite_1.wrap = false;
+		rl_composite_1.pack = false;
+		rl_composite_1.justify = true;
+		compositeDatTimeLabel.setLayout(rl_composite_1);
 		
-		createStateComposite();
-
-		createActionsComposite();
-		
-		activity = new Activity(compositeRight);
-		// TODO should be read from file
-		activityCfg = new ActivityConfigurationItem("2013-12-18", 4);
-//		Project:d:6
-		activityCfg.add("Project", 'd', 6);
-//		Task:D:8
-		activityCfg.add("Task", 'D', 8);
-//		Type:W:17
-		activityCfg.add("Type", 'W', 17);
-//		Details:.:40
-		activityCfg.add("Details", '.', 40);
-		
-		activity.createActivityComposite(activityCfg);
-
-//		TODO: Should be removed? Toolbar at bottom with buttons???
-		composite_Bottom = new Composite(banner, SWT.NONE);
-		banner.setBottom(composite_Bottom);
-		composite_Bottom.setLayout(new RowLayout(SWT.HORIZONTAL));
-
-		btnWeek = new Button(composite_Bottom, SWT.NONE);
-		btnWeek.setEnabled(false);
-		btnWeek.setText(MENU_WEEK);
-
-		btnSettings = new Button(composite_Bottom, SWT.NONE);
-		btnSettings.setEnabled(false);
-		btnSettings.setText(MENU_PREFERENCES);
-
-		btnExit = new Button(composite_Bottom, SWT.NONE);
-		btnExit.addSelectionListener(new SelectionAdapter() {
+		lblDateTime = new Label(compositeDatTimeLabel, SWT.HORIZONTAL | SWT.CENTER);
+		lblDateTime.setText(LABEL_DATE_TIME);
+										
+		// TODO: Do we need to create an own DateTime widget?
+		//       This one does not allow copy, empty, other than date, etc...
+		date = new DateTime(compositeDateTime, SWT.BORDER | SWT.DROP_DOWN);
+										
+		time = new DateTime(compositeDateTime, SWT.BORDER | SWT.TIME | SWT.SHORT);
+		time.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				exit();
+				nowCounter  = 120;
 			}
 		});
-		btnExit.setText(MENU_EXIT);
+		
+		btnNow = new Button(compositeDateTime, SWT.NONE);
+		btnNow.setToolTipText(TOOL_TIP_SHOW_NOW_TIME);
+		btnNow.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				setDateTimeNow(60);
+//				clock.start();
+												
+			}
+		});
+		btnNow.setText(BUTTON_DATETTIME_NOW);
+		
+		compositeRegistrationType = new Composite(compositeRight, SWT.NONE);
+		RowLayout rl_composite_2 = new RowLayout(SWT.HORIZONTAL);
+		rl_composite_2.fill = true;
+		compositeRegistrationType.setLayout(rl_composite_2);
+		
+		compositeRegistrationTypeLabel = new Composite(compositeRegistrationType, SWT.NONE);
+		RowLayout rl_compositeRegTypeLabel = new RowLayout(SWT.VERTICAL);
+		rl_compositeRegTypeLabel.wrap = false;
+		rl_compositeRegTypeLabel.pack = false;
+		rl_compositeRegTypeLabel.justify = true;
+		compositeRegistrationTypeLabel.setLayout(rl_compositeRegTypeLabel);
+		
+		lblTyp = new Label(compositeRegistrationTypeLabel, SWT.HORIZONTAL | SWT.CENTER);
+		lblTyp.setText("Typ:");
+		// State
+		compositeRegistrationTypeSelection = new Composite(compositeRegistrationType, SWT.NONE);
+		GridLayout gl_compositeRegistrationTypeSelection = new GridLayout(2, true);
+		gl_compositeRegistrationTypeSelection.horizontalSpacing = 20;
+		gl_compositeRegistrationTypeSelection.marginRight = 10;
+		gl_compositeRegistrationTypeSelection.marginLeft = 9;
+		compositeRegistrationTypeSelection.setLayout(gl_compositeRegistrationTypeSelection);
+		//		stateRadioGroup = new ButtonGroup();
+										
+		// TODO: Foreach loop??
+		stateRadioBtnBeginWork = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		stateRadioBtn.setData(Event.BEGINWORK);
+		stateRadioBtnBeginWork.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.BEGINWORK);
+			}
+		});
+		stateRadioBtnBeginWork.setText(STATE_BEGINWORKDAY);
+		//		stateRadioGroup.add(tmp);
+		btnState.put(Event.BEGINWORK, stateRadioBtnBeginWork);
+																
+		stateRadioBtnEndWork = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		tmp.setData(Event.WORKEND);
+		stateRadioBtnEndWork.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.WORKEND);
+			}
+		});
+		stateRadioBtnEndWork.setText(STATE_ENDWORKDAY);
+		btnState.put(Event.WORKEND, stateRadioBtnEndWork);
+																		
+		stateRadioBtnBeginPause = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		tmp.setData(Event.PAUSE);
+		stateRadioBtnBeginPause.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.PAUSE);
+			}
+		});
+		stateRadioBtnBeginPause.setText(STATE_BEGINPAUSE);
+		btnState.put(Event.PAUSE, stateRadioBtnBeginPause);
+																				
+		stateRadioBtnEndPause = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		btnEndPause.setData(Event.ENDPAUSE);
+		stateRadioBtnEndPause.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.ENDPAUSE);
+			}
+		});
+		stateRadioBtnEndPause.setText(STATE_ENDPAUS);
+		btnState.put(Event.ENDPAUSE, stateRadioBtnEndPause);
+																								
+																										
+		stateRadioBtnBeginEvent = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		btnBeginEvent.setData(Event.EVENT);
+		stateRadioBtnBeginEvent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.EVENT);
+			}
+		});
+		stateRadioBtnBeginEvent.setText(STATE_BEGINEVENT);
+		btnState.put(Event.EVENT, stateRadioBtnBeginEvent);
+																														
+		stateRadioBtnEndEvent = new Button(compositeRegistrationTypeSelection, SWT.RADIO);
+		//		btnEndEvent.setData(Event.ENDEVENT);
+		stateRadioBtnEndEvent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stateSelected(Event.ENDEVENT);
+			}
+		});
+		stateRadioBtnEndEvent.setText(STATE_ENDEVENT);
+		btnState.put(Event.ENDEVENT, stateRadioBtnEndEvent);
+		//		Registrations handling
+		compositeAction = new Composite(compositeRight, SWT.NONE);
+		rl_compositeAction = new RowLayout(SWT.HORIZONTAL);
+		rl_compositeAction.wrap = false;
+		rl_compositeAction.fill = true;
+		compositeAction.setLayout(rl_compositeAction);
+		
+		compositeRegistrationAction = new Composite(compositeAction, SWT.NONE);
+		RowLayout rl_compositeRegistrationAction = new RowLayout(SWT.VERTICAL);
+		rl_compositeRegistrationAction.wrap = false;
+		rl_compositeRegistrationAction.pack = false;
+		rl_compositeRegistrationAction.justify = true;
+		compositeRegistrationAction.setLayout(rl_compositeRegistrationAction);
+		
+		lblAction = new Label(compositeRegistrationAction, SWT.CENTER);
+		lblAction.setAlignment(SWT.CENTER);
+		lblAction.setText(LABEL_ACTION);
+		
+		btnAddEvent = new Button(compositeAction, SWT.NONE);
+		btnAddEvent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_ADD);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_ADD);
+			}
+		});
+		btnAddEvent.setToolTipText(TOOL_TIP_LABEL_ADD_EVENT);
+		btnAddEvent.setText(LABEL_ADD);
+		
+		btnChangeEvent = new Button(compositeAction, SWT.NONE);
+		btnChangeEvent.setEnabled(false);
+		btnChangeEvent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_CHANGE);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_CHANGE);
+			}
+		});
+		btnChangeEvent.setToolTipText(TOOL_TIP_CHANGE_REGISTERED_ITEM);
+		btnChangeEvent.setText(BUTTON_CHANGE);
+		
+		btnRemoveEvent = new Button(compositeAction, SWT.NONE);
+		btnRemoveEvent.setEnabled(false);
+		btnRemoveEvent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_REMOVE);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_REMOVE);
+			}
+		});
+		btnRemoveEvent.setToolTipText(TOOL_TIP_REMOVE_REGISTERED_ITEM);
+		btnRemoveEvent.setText(BUTTON_REMOVE);
+																																
+		btnClear = new Button(compositeAction, SWT.NONE);
+//		btnClear.setEnabled(false);
+		btnClear.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_CLEAR);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_CLEAR);
+			}
+		});
+		btnClear.setToolTipText(TOOL_TIP_CLEAR_REGISTERED_SHOW);
+		btnClear.setText(BUTTON_CLEAR);
+																																
+		btnUndo = new Button(compositeAction, SWT.FLAT);
+		btnUndo.setToolTipText(TOOL_TIP_UNDO);
+		btnUndo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_UNDO);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_UNDO);
+			}
+		});
+		btnUndo.setEnabled(false);
+		btnUndo.setText(UNDO_BUTTON);
+		
+		btnRedo = new Button(compositeAction, SWT.NONE);
+		btnRedo.setToolTipText(TOOL_TIP_REDO);
+		btnRedo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_REDO);
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				buttonAction(ButtonPressed.BUTTON_PRESSED_REDO);
+			}
+		});
+		btnRedo.setEnabled(false);
+		btnRedo.setText(REDO_BUTTON);
+		
+		// TODO should be read from file
+//		activityCfg = new ActivityConfigurationItem("2013-12-18", 1);
+//		activityCfg.add("Project", 'd', 6);
+		activityCfgBuild = new ActivityConfigurationBuilder("2013-12-18", 4);
+//		Project:d:6
+		activityCfgBuild.add("Project", 'd', 6);
+//		Task:D:8
+		activityCfgBuild.add("Task", 'D', 8);
+//		Type:W:17
+		activityCfgBuild.add("Type", 'W', 17);
+//		Details:.:40
+		activityCfgBuild.add("Details", '.', 40);
+		
+		activity = new Activity(compositeRight);
+		activity.createActivityComposite(activityCfgBuild.createActivityConfiguration());
+		
+//		composite_1 = new Composite(compositeRight, SWT.NONE);
+//		composite_1.setLayout(new RowLayout(SWT.VERTICAL));
+//		
+//		Label lblLabel = new Label(composite_1, SWT.NONE);
+//		lblLabel.setText("Label 1");
+//		
+//		Label lblLabel_1 = new Label(composite_1, SWT.NONE);
+//		lblLabel_1.setText("Label 2");
+
+//		toolBar_1 = new ToolBar(compositeRight, SWT.BORDER | SWT.FLAT | SWT.RIGHT);
+//		
+//		tltmTestar = new ToolItem(toolBar_1, SWT.CHECK);
+//		tltmTestar.setToolTipText("Enbart f\u00F6r test av layouthanteraren");
+//		tltmTestar.setText("Testar");
 
 	}
 
@@ -323,6 +581,7 @@ public class Main implements ClockEventMethod {
 	 * 
 	 */
 	private void createMenuBar() {
+		shlTidbox.setLayout(new FillLayout(SWT.HORIZONTAL));
 		menuBar = new Menu(shlTidbox, SWT.BAR);
 		shlTidbox.setMenuBar(menuBar);
 		
@@ -366,363 +625,6 @@ public class Main implements ClockEventMethod {
 		mntmPreferences.setText(MENU_PREFERENCES);
 	}
 
-	/**
-	 * 
-	 */
-	private void createDayListComposite() {
-		//		Day list
-		// TODO: Width and height
-		scrolledComposite = new ScrolledComposite(compositeLeft, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		scrolledComposite.setExpandHorizontal(true);
-		scrolledComposite.setExpandVertical(true);
-		
-		wDayList = new List(scrolledComposite, SWT.BORDER | SWT.V_SCROLL);
-		wDayList.addSelectionListener(new SelectionAdapter() {
-			
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				dayListSelectedEvent = dayList.get(wDayList.getSelectionIndex());
-				date.setDate(dayListSelectedEvent.getYearI(), dayListSelectedEvent.getMonthI(), dayListSelectedEvent.getDayI());
-				time.setHours(dayListSelectedEvent.getHourI());
-				time.setMinutes(dayListSelectedEvent.getMinuteI());
-				//				btnState.get(radioState).setSelection(true);
-				//				radioState = event.getState();
-				stateSelected(dayListSelectedEvent.getState());
-				// Event cfg
-				if (radioState.equals(Event.EVENT)) {
-					String inf = dayListSelectedEvent.getActivity();
-					if (inf != null) {
-						activity.insert(inf);
-					}
-				} else {
-					activity.clear();
-				}
-				btnChangeEvent.setEnabled(true);
-				btnRemoveEvent.setEnabled(true);
-				btnClear.setEnabled(true);
-				nowCounter = 120;
-			}
-		});
-		scrolledComposite.setContent(wDayList);
-	}
-
-	/**
-	 * 
-	 */
-	private void createDateTimeComposite() {
-		//		Date Time
-		compositeDateTime = new Composite(compositeRight, SWT.NONE);
-		compositeDateTime.setLayoutData(new RowData(SWT.DEFAULT, 30));
-		rl_compositeDateTime = new RowLayout(SWT.HORIZONTAL);
-		rl_compositeDateTime.fill = true;
-		rl_compositeDateTime.wrap = false;
-		compositeDateTime.setLayout(rl_compositeDateTime);
-		
-		lblDateTime = new Label(compositeDateTime, SWT.NONE);
-		lblDateTime.setText(LABEL_DATE_TIME);
-		
-		// TODO: Do we need to create an own DateTime widget?
-		//       This one does not allow copy, empty, other than date, etc...
-		date = new DateTime(compositeDateTime, SWT.BORDER | SWT.DROP_DOWN);
-		
-		time = new DateTime(compositeDateTime, SWT.BORDER | SWT.TIME | SWT.SHORT);
-		time.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				nowCounter  = 120;
-			}
-		});
-		
-		btnNow = new Button(compositeDateTime, SWT.NONE);
-		btnNow.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				setDateTimeNow(60);
-//				clock.start();
-				
-			}
-		});
-		btnNow.setText(BUTTON_DATETTIME_NOW);
-	}
-	
-	/**
-	 * 
-	 */
-	private void createStateComposite() {
-		// State
-		compositeState = new Composite(compositeRight, SWT.NONE);
-		compositeState.setLayoutData(new RowData(SWT.DEFAULT, 67));
-		compositeState.setLayout(new GridLayout(2, false));
-
-		Button tmp;
-//		stateRadioGroup = new ButtonGroup();
-
-		// TODO: Foreach loop??
-		tmp = new Button(compositeState, SWT.RADIO);
-//		tmp.setData(Event.BEGINWORK);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.BEGINWORK);
-			}
-		});
-		tmp.setText(STATE_BEGINWORKDAY);
-//		stateRadioGroup.add(tmp);
-		btnState.put(Event.BEGINWORK, tmp);
-		
-		tmp = new Button(compositeState, SWT.RADIO);
-//		tmp.setData(Event.WORKEND);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.WORKEND);
-			}
-		});
-		tmp.setText(STATE_ENDWORKDAY);
-		btnState.put(Event.WORKEND, tmp);
-		
-		tmp = new Button(compositeState, SWT.RADIO);
-//		tmp.setData(Event.PAUSE);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.PAUSE);
-			}
-		});
-		tmp.setText(STATE_BEGINPAUSE);
-		btnState.put(Event.PAUSE, tmp);
-
-		tmp = new Button(compositeState, SWT.RADIO);
-//		btnEndPause.setData(Event.ENDPAUSE);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.ENDPAUSE);
-			}
-		});
-		tmp.setText(STATE_ENDPAUS);
-		btnState.put(Event.ENDPAUSE, tmp);
-
-		
-		tmp = new Button(compositeState, SWT.RADIO);
-//		btnBeginEvent.setData(Event.EVENT);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.EVENT);
-			}
-		});
-		tmp.setText(STATE_BEGINEVENT);
-		btnState.put(Event.EVENT, tmp);
-
-		
-		tmp = new Button(compositeState, SWT.RADIO);
-//		btnEndEvent.setData(Event.ENDEVENT);
-		tmp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				stateSelected(Event.ENDEVENT);
-			}
-		});
-		tmp.setText(STATE_ENDEVENT);
-		btnState.put(Event.ENDEVENT, tmp);
-	}
-
-	/**
-	 * 
-	 */
-	private void createActionsComposite() {
-		//		Registrations handling
-		compositeAction = new Composite(compositeRight, SWT.NONE);
-		compositeAction.setLayoutData(new RowData(352, SWT.DEFAULT));
-		rl_compositeAction = new RowLayout(SWT.HORIZONTAL);
-		rl_compositeAction.wrap = false;
-		compositeAction.setLayout(rl_compositeAction);
-		
-		lblAction = new Label(compositeAction, SWT.CENTER);
-		lblAction.setAlignment(SWT.CENTER);
-		lblAction.setText(LABEL_ACTION);
-		
-		btnAddEvent = new Button(compositeAction, SWT.NONE);
-		btnAddEvent.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_ADD);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_ADD);
-			}
-		});
-		btnAddEvent.setToolTipText(LABEL_ADD_EVENT);
-		btnAddEvent.setText(LABEL_ADD);
-		
-		btnChangeEvent = new Button(compositeAction, SWT.NONE);
-		btnChangeEvent.setEnabled(false);
-		btnChangeEvent.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_CHANGE);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_CHANGE);
-			}
-		});
-		btnChangeEvent.setToolTipText(TOOL_TIP_CHANGE_REGISTERED_ITEM);
-		btnChangeEvent.setText(BUTTON_CHANGE);
-		
-		btnRemoveEvent = new Button(compositeAction, SWT.NONE);
-		btnRemoveEvent.setEnabled(false);
-		btnRemoveEvent.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_REMOVE);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_REMOVE);
-			}
-		});
-		btnRemoveEvent.setToolTipText(REMOVE_REGISTERED_ITEM);
-		btnRemoveEvent.setText(BUTTON_REMOVE);
-		
-		btnClear = new Button(compositeAction, SWT.NONE);
-		btnClear.setEnabled(false);
-		btnClear.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_CLEAR);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_CLEAR);
-			}
-		});
-		btnClear.setToolTipText(CLEAR_REGISTERED_SHOW);
-		btnClear.setText(BUTTON_CLEAR);
-		
-		btnUndo = new Button(compositeAction, SWT.FLAT);
-		btnUndo.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_UNDO);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_UNDO);
-			}
-		});
-		btnUndo.setEnabled(false);
-		btnUndo.setText("\u00C5ngra");
-		
-		btnRedo = new Button(compositeAction, SWT.NONE);
-		btnRedo.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_REDO);
-			}
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				buttonAction(ButtonPressed.BUTTON_PRESSED_REDO);
-			}
-		});
-		btnRedo.setEnabled(false);
-		btnRedo.setText("Igen");
-	}
-
-
-//	/**
-//	 * 
-//	 */
-//	private void createActivityComposite() {
-//		//		Configurable Activity
-//		// TODO: Configurable Activity
-//		compositeEventCfg = new Composite(compositeRight, SWT.NONE);
-//		//		compositeEventCfg.setEnabled(false);
-//		rl_compositeEventCfg = new RowLayout(SWT.VERTICAL);
-//		rl_compositeEventCfg.fill = true;
-//		rl_compositeEventCfg.marginHeight = 2;
-//		rl_compositeEventCfg.marginWidth = 2;
-//		rl_compositeEventCfg.wrap = false;
-//		compositeEventCfg.setLayout(rl_compositeEventCfg);
-//		
-//		composite_2 = new Composite(compositeEventCfg, SWT.NONE);
-//		composite_2.setLayout(new RowLayout(SWT.HORIZONTAL));
-//		
-//		lblProject = new Label(composite_2, SWT.NONE);
-//		lblProject.setText("Project:");
-//		
-//		btnSelect = new Button(composite_2, SWT.NONE);
-//		btnSelect.setText("V\u00E4lj");
-//		
-//		menu_1 = new Menu(btnSelect);
-//		btnSelect.setMenu(menu_1);
-//		
-//		menuItem = new MenuItem(menu_1, SWT.NONE);
-//		menuItem.setText("?");
-//		
-//		mntmIdleTime = new MenuItem(menu_1, SWT.NONE);
-//		mntmIdleTime.setText("Obel\u00E4ggning");
-//		
-//		mntmTraining = new MenuItem(menu_1, SWT.NONE);
-//		mntmTraining.setText("Utbildning");
-//		
-//		mntmAbsence = new MenuItem(menu_1, SWT.NONE);
-//		mntmAbsence.setText("Fr\u00E5nvaro");
-//		
-//		composite_1 = new Composite(compositeEventCfg, SWT.NONE);
-//		composite_1.setLayout(new RowLayout(SWT.HORIZONTAL));
-//		
-//		lblTask = new Label(composite_1, SWT.NONE);
-//		lblTask.setText("Task:");
-//		
-//		enterTask = new Text(composite_1, SWT.BORDER);
-//		//	TODO
-//		//		enterTask.addKeyListener(new KeyAdapter() {
-//		//			@Override
-//		//			public void keyReleased(KeyEvent e) {
-//		//				if (e.character == SWT.CR) {
-//		//					
-//		//				} else {
-//		//
-//		//				}
-//		//			}
-//		//		});
-//		
-//		lblDetails = new Label(composite_1, SWT.NONE);
-//		lblDetails.setText("Details:");
-//		// TODO:		compositeEventCfg.setTabList(new Control[]{enterTask, enterDetails});
-//		
-//		enterDetails = new Text(composite_1, SWT.BORDER);
-//		
-//		composite_3 = new Composite(compositeEventCfg, SWT.NONE);
-//		composite_3.setLayout(new RowLayout(SWT.HORIZONTAL));
-//		
-//		lblType = new Label(composite_3, SWT.NONE);
-//		lblType.setText("Type:");
-//		
-//		btnN = new Button(composite_3, SWT.RADIO);
-//		btnN.setText("N");
-//		
-//		btnFlex = new Button(composite_3, SWT.RADIO);
-//		btnFlex.setText("F+");
-//		
-//		button = new Button(composite_3, SWT.RADIO);
-//		button.setText("\u00D6+");
-//		
-//		btnR = new Button(composite_3, SWT.RADIO);
-//		btnR.setText("R");
-//		
-//		btnS = new Button(composite_3, SWT.RADIO);
-//		btnS.setText("S");
-//		
-//		btnFlexUttag = new Button(composite_3, SWT.RADIO);
-//		btnFlexUttag.setText("F-");
-//		
-//		composite_3.setTabList(new Control[]{btnN, btnFlex, button, btnR, btnS, btnFlexUttag});
-//	}
-
 	private void initialize() {
 //		btnState.get(Event.EVENT).setSelection(true);
 //		this.radioState = Event.EVENT;
@@ -744,6 +646,10 @@ public class Main implements ClockEventMethod {
 		}
 	}
 
+	protected void stateClear() {
+		stateSelected(Event.EVENT);
+	}
+	
 	private String getDate() {
 		int y = this.date.getYear();
 		int m = this.date.getMonth() + 1;
@@ -780,57 +686,88 @@ public class Main implements ClockEventMethod {
 	}
 	
 	private void setDateTimeNow(int cnt) {
-		date.setDate(clock.getYearI(), clock.getMonthI(), clock.getDayI());
-		time.setTime(clock.getHourI(), clock.getMinuteI(), 0);
+		setDateW(clock.getYearI(), clock.getMonthI(), clock.getDayI());
+		setTimeW(clock.getHourI(), clock.getMinuteI());
 		this.nowCounter  = cnt;
 	}
 
+	private void setToday() {
+		setDateW(clock.getYearI(), clock.getMonthI(), clock.getDayI());
+	}
+
+	private void setDateW(int y, int m, int d) {
+		date.setDate(y, m-1, d);
+	}
+	
+	private void setTimeW(int h, int m) {
+		time.setTime(h, m, 0);
+	}
+	
 	private void buttonAction(ButtonPressed but) {
 		String date;
 		String time;
 		String activity;
 		Event event;
+		boolean errors = false;
 
 		switch (but) {
 		case BUTTON_PRESSED_ADD:
 			date = getDate();
 			time = getTime();
-			event = new Event(date, time, this.radioState);
 			// TODO: Configurable event
 			if (this.radioState.equals(Event.EVENT)) {
 				activity = this.activity.get();
-				event.setActivity(activity);
-				this.activity.clear();
+				if (activity != null) {
+					this.dayList.add(Event.make(date, time, this.radioState, activity));
+					this.activity.clear();
+					stateClear();
+				} else {
+					errors = true;
+				}
+			} else {
+				this.dayList.add(Event.make(date, time, this.radioState));
+				stateClear();
 			}
-			this.dayList.add(event);
 			break;
 
 		case BUTTON_PRESSED_CHANGE:
 			date = getDate();
 			time = getTime();
-			event = new Event(date, time, this.radioState);
 			// TODO: Configurable event
 			if (this.radioState.equals(Event.EVENT)) {
 				activity = this.activity.get();
-				event.setActivity(activity);
-				this.activity.clear();
+				if (activity != null) {
+					event = Event.make(date, time, this.radioState, activity);
+					if (! dayListSelectedEvent.equals(event)) {
+						dayList.replace(dayListSelectedEvent, event);
+						this.activity.clear();
+						stateClear();
+					}
+				} else {
+					errors = true;
+				}
+			} else {
+				event = Event.make(date, time, this.radioState);
+				if (! dayListSelectedEvent.equals(event)) {
+					dayList.replace(dayListSelectedEvent, event);
+					stateClear();
+				}
 			}
-			if (! dayListSelectedEvent.equals(event)) {
-//				dayListSelectedEvent.copy(event);
-				dayList.replace(dayListSelectedEvent, event);
-			}
+					
 			break;
 			
 		case BUTTON_PRESSED_REMOVE:
 			dayList.remove(dayListSelectedEvent);
 			// TODO: Configurable event
 			this.activity.clear();
+			stateClear();
 			break;
 			
 		case BUTTON_PRESSED_CLEAR:
 //			wDayList.deselectAll();
 			dayListSelectedEvent = null;
 			this.activity.clear();
+			stateClear();
 			break;
 			
 		case BUTTON_PRESSED_UNDO:
@@ -848,15 +785,17 @@ public class Main implements ClockEventMethod {
 		}
 
 		nowCounter = 0;
-		setDateTimeNow(0);
-		updateDayList();
+		if (! errors) {
+			setDateTimeNow(0);
+			updateDayList();
+		}
 //		this.date.
 		// TODO: Today? How do we handle a date other than today in daylist
 		//       This is also an issue Edit events for another day
 		//       Java tutorial:  "How to Use Spinners"
 	}
 	
-	public void updateDayList() {
+	private void updateDayList() {
 		String date = getDate();
 		this.wDayList.removeAll();
 		ArrayList<Event> l = this.dayList.getDate(date);
@@ -865,9 +804,17 @@ public class Main implements ClockEventMethod {
 		}
 		btnChangeEvent.setEnabled(false);
 		btnRemoveEvent.setEnabled(false);
-		btnClear.setEnabled(false);
+//		btnClear.setEnabled(false);
 		btnUndo.setEnabled(! this.dayList.isUndoEmpty());			
 		btnRedo.setEnabled(! this.dayList.isRedoEmpty());			
+	}
+
+	private void printSizes(String message) {
+		Point compositeSize = composite.getSize();
+		Point shlSize = shlTidbox.getSize();
+		System.out.println(message + " sizes");
+		System.out.println(" Composite:  " + compositeSize);
+		System.out.println(" Window: " + shlSize);
 	}
 
 	private void startClock() {
@@ -891,11 +838,14 @@ public class Main implements ClockEventMethod {
 			public void run() {
 				int h, m;
 				if (!shlTidbox.isDisposed()) {
-					shlTidbox.setText(title +
-									  " " + clock.getDayOfWeek() +
-									  " Vecka: " + clock.getWeek() +
-									  " Datum: " + clock.getDateTime());
-//									  + " w: " + clock.getLastTimeMillis());
+					shlTidbox.setText(String.join(" ",
+										title,
+										clock.getDayOfWeek(),
+									    "Vecka:", clock.getWeek(),
+									    "Datum:", clock.getDateTime()
+									    )
+							);
+//									  + "w:" + clock.getLastTimeMillis());
 					h = clock.getHourI();
 					m = clock.getMinuteI();
 					if (nowCounter > 0) {
@@ -915,7 +865,7 @@ public class Main implements ClockEventMethod {
 	private void exit() {
 //		clockTimer.stop();
 		clock.stop();
-		shlTidbox.setText(TIDBOX_VERSION + " Exiting");
+		shlTidbox.setText(String.join(" ", TIDBOX_VERSION, "Exiting"));
 		times.save();
 		shlTidbox.dispose();
 	}

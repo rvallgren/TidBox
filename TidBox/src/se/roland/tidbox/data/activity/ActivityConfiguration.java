@@ -4,17 +4,15 @@
 package se.roland.tidbox.data.activity;
 
 /**
- * @author vallgrol
+ * Activity configurations collection
+ * 
+ * @author Roland Vallgren
  *
  */
 public class ActivityConfiguration {
-
-	/**
-	 * @return
-	 */
-	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
+	
+	public ActivityConfiguration() {
+		// TODO Auto-generated constructor stub
 	}
 
 }

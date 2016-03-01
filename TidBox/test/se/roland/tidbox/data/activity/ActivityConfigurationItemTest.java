@@ -10,7 +10,8 @@ import java.util.regex.Matcher;
 import org.junit.Test;
 
 /**
- * @author vallgrol
+ * Activity configuration item should be immutable
+ * @author Roland Vallgren
  *
  */
 public class ActivityConfigurationItemTest {
@@ -20,7 +21,16 @@ public class ActivityConfigurationItemTest {
 	 * @return
 	 */
 	private ActivityConfigurationItem setupActivityCfg(String date) {
-		ActivityConfigurationItem a = new ActivityConfigurationItem(date, 4);
+//		ActivityConfigurationItem a = new ActivityConfigurationItem(date, 4);
+////		Project:d:6
+//		a.add("Project", 'd', 6);
+////		Task:D:8
+//		a.add("Task", 'D', 8);
+////		Type:W:17
+//		a.add("Type", 'W', 17);
+////		Details:.:40
+//		a.add("Details", '.', 40);
+		ActivityConfigurationBuilder a = new ActivityConfigurationBuilder(date, 4);
 //		Project:d:6
 		a.add("Project", 'd', 6);
 //		Task:D:8
@@ -29,14 +39,15 @@ public class ActivityConfigurationItemTest {
 		a.add("Type", 'W', 17);
 //		Details:.:40
 		a.add("Details", '.', 40);
-		return a;
+		
+		return a.createActivityConfiguration();
 	}
 	
 	@Test
 	public void constructor() {
-		ActivityConfigurationItem b = new ActivityConfigurationItem(1);
+		ActivityConfigurationBuilder b = new ActivityConfigurationBuilder("2015-12-08", 1);
 		b.add("Text", '.', 10);
-		Matcher bm = b.match("Some chars");
+		Matcher bm = b.createActivityConfiguration().match("Some chars");
 		assertNotNull("A matcher should be returned", bm);
 		assertEquals("One group should match", 1, bm.groupCount());
 		assertEquals("Project should match", "Some chars", bm.group(0));
@@ -107,7 +118,7 @@ public class ActivityConfigurationItemTest {
 //		Task:D:8
 //		Type:W:17
 //		Details:.:40
-		assertEquals("Four configuration fields expected", 4, a.number());
+		assertEquals("Four configuration fields expected", 4, a.getSize());
 		assertEquals("Date expected", date, a.toFile());
 		assertEquals("Project:d:6 expected", "Project:d:6", a.toFile(0));
 		assertEquals("Task:D:8 expected", "Task:D:8", a.toFile(1));

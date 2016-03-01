@@ -1,0 +1,4 @@
+# Ignore EXCO backup
+*.BAK
+*.*_
+# End of file

@@ -3,13 +3,15 @@ package se.roland.tidbox.data;
 import java.util.HashMap;
 
 /**
- * @author vallgrol
- *
+ * Immutable object Event
+ * 
+ * @author Roland Vallgren
  */
 public class Event implements Comparable<Event>, Cloneable {
 
 	/**
 	 * Constants defining states
+	 * TODO Extract to own definitions class
 	 */
 	public static final String BEGINWORK = "BEGINWORK";
 	public static final String WORKEND = "WORKEND";
@@ -42,16 +44,13 @@ public class Event implements Comparable<Event>, Cloneable {
 	private String time;
 	private String state;
 // TODO: activity: own class???
+//	private Activity activity;
 	private String activity;
 	
 	/**
-	 * Constructor
-	 * @param date
-	 * @param time
-	 * @param state
+	 * Private Default Constructor do nothing
 	 */
-	public Event(String date, String time, String state) {
-		this(date, time, state, "");
+	private Event() {
 	}
 
 	/**
@@ -59,58 +58,74 @@ public class Event implements Comparable<Event>, Cloneable {
 	 * @param date
 	 * @param time
 	 * @param state
-	 * @param event activity
 	 */
-	public Event(String date, String time, String state, String activity) {
+	private Event(String date, String time, String state) {
+		this(date, time, state, "");
+	}
+	
+	public static Event make(String date, String time, String state) {
+		return new Event(date, time, state);
+	}
+
+	/**
+	 * Construct an event
+	 * @param date		Start date
+	 * @param time		Start time
+	 * @param state		Kind of event
+	 * @param activity  Activity for event, only when state == EVENT
+	 */
+	private Event(String date, String time, String state, String activity) {
 		this.date = date;
 		this.time = time;
 		this.state = state;
 		if (state.equals(Event.EVENT)) {
 			this.activity = activity;
+		} else {
+			this.activity = null;
 		}
 	}
+
+	public static Event make(String date, String time, String state, String activity) {
+		return new Event(date, time, state, activity);
+	}
+	
 
 	public String getDate() {
 		return date;
 	}
 
-	public void setDate(String date) {
-		this.date = date;
+	public Event changeDate(String setDate) {
+		return new Event(setDate, time, state, activity);
 	}
 
 	public String getTime() {
 		return time;
 	}
 
-	public void setTime(String time) {
-		this.time = time;
+	public Event changeTime(String setTime) {
+		return new Event(date, setTime, state, activity);
 	}
 
 	public String getState() {
 		return state;
 	}
 
-	/**
-	 * @param state
-	 */
-	public void setState(String state) {
-		if ( ! this.state.equals(state)) {
-			if (state.equals(EVENT)) {
-				this.activity = "";
-			} else {
-				this.activity = null;
-			}
+	public Event changeState(String setState) {
+		if (state.equals(Event.EVENT)) {
+			return new Event(date, time, setState, activity);
+		} else {
+			return new Event(date, time, setState);
 		}
-		this.state = state;
 	}
 
 	public String getActivity() {
 		return activity;
 	}
 
-	public void setActivity(String activity) {
-		this.activity = activity;
+	public Event changeEventActivity(String setActivity) {
+		return new Event(date, time, Event.EVENT, setActivity);
 	}
+
 
 	public String dayString() {
 		if (state.equals(Event.EVENT)) {
@@ -186,7 +201,7 @@ public class Event implements Comparable<Event>, Cloneable {
 	}
 
 	public int getMonthI() {
-		return Integer.parseInt(date.substring(5, 7)) - 1;
+		return Integer.parseInt(date.substring(5, 7));
 	}
 
 	public int getDayI() {
@@ -202,5 +217,4 @@ public class Event implements Comparable<Event>, Cloneable {
 	}
 
 
-	
 }

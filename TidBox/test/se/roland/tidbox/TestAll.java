@@ -27,7 +27,7 @@ import se.roland.tidbox.file.DataFileTest;
 			DataFileTest.class,
 			ActivityConfigurationDefinitionsTest.class,
 			ActivityConfigurationWorkTest.class,
-			ActivityConfigurationTest.class,
+//			ActivityConfigurationTest.class,
 			ActivityConfigurationBuilderTest.class,
 		})
 
