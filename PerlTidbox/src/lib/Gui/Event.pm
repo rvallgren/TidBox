@@ -2,7 +2,7 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.0   Created: 2016-01-26 09:16
+#   Version:  1.0   Created: 2017-03-15 15:29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Event;
 #
 
 my $VERSION = '1.0';
-my $DATEVER = '2016-01-26';
+my $DATEVER = '2017-03-15';
 
 # History information:
 #
@@ -384,13 +384,13 @@ sub get($;$) {
 # Arguments:
 #  - Object reference
 #  - Reference to configuration strings data to split for
-#  - Event to split
 # Optional Arguments:
+#  - Event to split
 #  - Relaxed type check
 # Returns:
 #  List with split data for presentation
 
-sub _split_data($$$;$) {
+sub _split_data($$;$$) {
   # parameters
   my $self = shift;
   my ($str_r, $event, $nocheck) = @_;

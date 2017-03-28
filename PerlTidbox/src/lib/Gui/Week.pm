@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.11   Created: 2016-01-19 12:36
+#   Version:  1.12   Created: 2017-03-14 17:40
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.11';
-my $DATEVER = '2016-01-19';
+my $VERSION = '1.12';
+my $DATEVER = '2017-03-14';
 
 # History information:
 #
@@ -44,6 +44,8 @@ my $DATEVER = '2016-01-19';
 #       Event cfg match expr is compiled
 # 1.11  2013-05-18  Roland Vallgren
 #       Use isLocked to check lock
+# 1.12  2017-02-24  Roland Vallgren
+#       Display flex time as +/- hours
 #
 
 #----------------------------------------------------------------------------
@@ -186,6 +188,21 @@ sub _formatWeekRow($$$$$) {
 
   $insert_box->insert('end', $line . "\n");
 
+  if (wantarray()) {
+    my $normal = $self->{-cfg}->get('terp_normal_worktime') * 60;
+    my ($flex, $sign);
+    if ($row_time > $normal) {
+      $flex = $row_time - $normal;
+      $sign = '+';
+    } else {
+      $flex = $normal - $row_time;
+      $sign = '-';
+    } # if #
+
+    return ($self->{-calculate}->hours($row_time),
+            $sign . $self->{-calculate}->hours($flex)
+           );
+  } # if #
   return $self->{-calculate}->hours($row_time);
 } # Method _formatWeekRow
 
@@ -227,6 +244,7 @@ sub _showHead($) {
     $win_r->{times}     -> configure(-background => 'lightgrey');
     $win_r->{worktime}  -> configure(-background => 'lightgrey');
     $win_r->{wholeweek} -> configure(-background => 'lightgrey');
+    $win_r->{flex}      -> configure(-background => 'lightgrey');
   } else {
     $win_r->{lock_week} -> configure(-state => 'normal');
     $win_r->{lock_week} -> configure(-text => 'Lås vecka');
@@ -235,6 +253,7 @@ sub _showHead($) {
     $win_r->{times}     -> configure(-background => 'white');
     $win_r->{worktime}  -> configure(-background => 'white');
     $win_r->{wholeweek} -> configure(-background => 'white');
+    $win_r->{flex}      -> configure(-background => 'white');
   } # if #
 
   $win_r->{title} -> configure(-text => $text);
@@ -320,6 +339,15 @@ sub _setup($) {
                   -relief => 'flat')
       -> pack(-side => 'right');
   $win_r->{wholeweek} = $win_r->{wholeweek_label}
+      -> Label()
+      -> pack(-side => 'right');
+
+  $win_r->{flex_label} = $win_r->{wholeweek_area}
+      -> LabFrame(-labelside => 'left',
+                  -label => 'Plus/minus-tid: ',
+                  -relief => 'flat')
+      -> pack(-side => 'left');
+  $win_r->{flex} = $win_r->{flex_label}
       -> Label()
       -> pack(-side => 'right');
 
@@ -619,11 +647,12 @@ sub _display($;$) {
   $self->_formatWeekRow($win_r->{times}, $event_text_max_length,
                         'Övrig tid', $weekdays_r, 'not_event_time');
 
-  my $week_work_time =
+  my ($week_work_time, $week_flex_time) =
       $self->_formatWeekRow($win_r->{worktime}, $event_text_max_length,
                             'Arbetstid', $weekdays_r, 'work_time');
 
   $win_r->{wholeweek}->configure(-text => $week_work_time);
+  $win_r->{flex}->configure(-text => $week_flex_time);
 
   # Set scroll position same as before update
   $win_r->{times} -> yviewMoveto($scroll_pos)

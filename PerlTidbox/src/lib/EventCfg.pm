@@ -2,7 +2,7 @@
 package EventCfg;
 #
 #   Document: Event Configuration Data
-#   Version:  3.0   Created: 2016-01-19 16:54
+#   Version:  3.0   Created: 2016-04-22 17:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package EventCfg;
 #
 
 my $VERSION = '3.0';
-my $DATEVER = '2016-01-19';
+my $DATEVER = '2016-04-22';
 
 # History information:
 
@@ -56,6 +56,8 @@ my $DATEVER = '2016-01-19';
 #      Configuration.pm should not have any Gui code
 # 3.0  2015-12-07  Roland Vallgren
 #      Event gui moved to own perl module
+#      Do not add cfg if equal to previous
+#      New method removeCfg
 #
 
 #----------------------------------------------------------------------------
@@ -456,8 +458,25 @@ sub getEventCfg($;$) {
   return ($self->{earlier}{$found}, $self->{strings}{$found})
      if wantarray();
   return $self->{earlier}{$found};
-  return 0;
 } # Method getEventCfg
+
+#----------------------------------------------------------------------------
+#
+# Method:      getEarlierEventCfg
+#
+# Description: Get earlier event cfg
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  - Referense to earlier hash
+
+sub getEarlierEventCfg($) {
+  # parameters
+  my $self = shift;
+
+  return $self->{earlier};
+} # Method getEarlierEventCfg
 
 #----------------------------------------------------------------------------
 #
@@ -530,10 +549,34 @@ sub getDefinition($;$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      compareCfg
+#
+# Description: Compare two CFG
+#              Compare with current cfg if only one provided
+#
+# Arguments:
+#  - Object reference
+#  - Reference to event cfg data
+# Optional Arguments:
+#  - Reference to event cfg data
+# Returns:
+#  1 if equal
+
+sub compareCfg($$;$) {
+  # parameters
+  my $self = shift;
+  my ($r1, $r2) = @_;
+
+  return (join('', @$r1) eq join('', @$r2))
+      if ($r2);
+  return (join('', @$r1) eq join('', @{$self->{cfg}}));
+} # Method compareCfg
+
+#----------------------------------------------------------------------------
+#
 # Method:      addCfg
 #
 # Description: Add one event configuration setting
-#              TODO: Do not add if cfg data is equal to previous data
 #
 # Arguments:
 #  - Object reference
@@ -548,6 +591,10 @@ sub addCfg($$$) {
   my ($date, $ref) = @_;
 
 
+  if ($self->compareCfg($ref)) {
+    return 0;
+  } # if #
+
   if ($date gt $self->{date}) {
     $self->{earlier}{$self->{date}} = $self->{cfg};
     $self->{strings}{$self->{date}} = $self->{str};
@@ -557,8 +604,44 @@ sub addCfg($$$) {
   @{$self->{cfg}} = @{$ref};
   $self->{str} = _text_strings($self->{cfg});
 
-  return 0;
+  return 1;
 } # Method addCfg
+
+#----------------------------------------------------------------------------
+#
+# Method:      removeCfg
+#
+# Description: Remove one event configuration setting
+#
+# Arguments:
+#  - Object reference
+#  - Date
+# Returns:
+#  -
+
+sub removeCfg($$) {
+  # parameters
+  my $self = shift;
+  my ($date) = @_;
+
+
+  if ($date eq $self->{date}) {
+    my @prev_dates = sort(keys(%{$self->{earlier}}));
+    my $pdate = $prev_dates[0];
+    $self->{date} = $pdate;
+    $self->{cfg} = $self->{earlier}{$pdate};
+    $self->{str} = $self->{strings}{$pdate};
+    delete($self->{earlier}{$pdate});
+    delete($self->{strings}{$pdate});
+  } else {
+    delete($self->{earlier}{$date});
+    delete($self->{strings}{$date});
+  } # if #
+
+  $self->dirty();
+
+  return 1;
+} # Method removeCfg
 
 #----------------------------------------------------------------------------
 #

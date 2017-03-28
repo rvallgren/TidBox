@@ -2,15 +2,15 @@
 package Terp;
 #
 #   Document: Terp export
-#   Version:  1.8   Created: 2011-03-13 07:21
+#   Version:  1.9   Created: 2016-04-15 16:51
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Terp.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2011-03-13';
+my $VERSION = '1.9';
+my $DATEVER = '2016-04-15';
 
 # History information:
 #
@@ -35,6 +35,8 @@ my $DATEVER = '2011-03-13';
 #      Warn for fractions of tenths of hours
 # 1.8  2011-03-12  Roland Vallgren
 #      Use FileHandle for file handling
+# 1.9  2016-04-15  Roland Vallgren
+#      Allow "Short Notice Compensation-SE" as type
 #
 
 #----------------------------------------------------------------------------
@@ -240,7 +242,7 @@ sub exportTo($$$$;$) {
   for my $event (sort(keys(%week_events))) {
 
     push @doubtfull , $event
-        unless ($event =~ /^(?:\d+),(?:[\d\.]+),(?:[A-Z][\w \.\/]+ -SE(?:-Overtime)?),/);
+        unless ($event =~ /^(?:\d+),(?:[\d\.]+),(?:[A-Z][\w \.\/]+-SE(?:-Overtime)?),/);
 
     if ($event =~ /$match_string/) {
       next if($1 eq $activity);

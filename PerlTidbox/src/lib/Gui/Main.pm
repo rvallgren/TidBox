@@ -2,7 +2,7 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.9   Created: 2016-01-26 09:15
+#   Version:  2.9   Created: 2017-03-22 09:45
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Main;
 #
 
 my $VERSION = '2.9';
-my $DATEVER = '2016-01-26';
+my $DATEVER = '2017-03-22';
 
 # History information:
 #
@@ -44,6 +44,7 @@ my $DATEVER = '2016-01-26';
 #      Stop repeat from clock when Tidbox quit
 # 2.9  2015-12-09  Roland Vallgren
 #      Moved Gui for Event to own Gui class
+#      Return in date will modify event if selected
 #
 
 #----------------------------------------------------------------------------
@@ -587,7 +588,7 @@ sub _get($;$$) {
 #  - Object reference
 #  - Type of event to register
 # Optional Arguments:
-#  - Reference to event text, for example from earlier meny
+#  - Reference to event text, for example from earlier menu
 # Returns:
 #  -
 
@@ -979,7 +980,10 @@ sub _dated($$) {
                 )
       if ($date le $self->{-cfg}->get('archive_date'));
 
-  $win_r->{time_area}->clear(1);
+  $self->_clear()
+      if (ref($self->{edit_event_ref}));
+
+  $win_r->{time_area}->clear();
   $ext->display($date);
 
   return 0;

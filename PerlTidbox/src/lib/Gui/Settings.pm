@@ -2,7 +2,7 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.1   Created: 2016-01-27 10:51
+#   Version:  2.1   Created: 2016-02-03 16:33
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Settings;
 #
 
 my $VERSION = '2.1';
-my $DATEVER = '2016-01-27';
+my $DATEVER = '2016-02-03';
 
 # History information:
 #

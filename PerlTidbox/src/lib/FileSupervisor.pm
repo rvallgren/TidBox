@@ -2,15 +2,15 @@
 package FileSupervisor;
 #
 #   Document: Handle all files
-#   Version:  2.1   Created: 2015-11-04 10:51
+#   Version:  2.2   Created: 2017-03-14 17:30
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileSupervisor.pmx
 #
 
-my $VERSION = '2.1';
-my $DATEVER = '2015-11-04';
+my $VERSION = '2.2';
+my $DATEVER = '2017-03-14';
 
 # History information:
 #
@@ -25,6 +25,8 @@ my $DATEVER = '2015-11-04';
 #      Moved check lock for start session in Times to Times.pm
 #      Show version information in log
 #      Added supervision of backup
+# 2.2  2017-03-08  Roland Vallgren
+#      Don't log when session.dat is written
 #
 
 #----------------------------------------------------------------------------
@@ -179,7 +181,6 @@ sub configure($%) {
       configure(
                 -cfg         => $files->{-cfg},
                 -clock       => $args{-clock},
-                -log         => $files->{-log},
                 -error_popup => $args{-error_popup},
                );
 

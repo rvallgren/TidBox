@@ -2,7 +2,7 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.0   Created: 2016-01-27 11:58
+#   Version:  1.0   Created: 2017-03-14 17:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,12 +10,13 @@ package Gui::EventConfig;
 #
 
 my $VERSION = '1.0';
-my $DATEVER = '2016-01-27';
+my $DATEVER = '2017-03-14';
 
 # History information:
 
 # 1.0  2015-12-09  Roland Vallgren
 #      Event gui moved to own perl module
+#      New cfg is not added if equal to previous
 #
 
 #----------------------------------------------------------------------------
@@ -32,6 +33,7 @@ use integer;
 
 use Tk;
 use Tk::LabFrame;
+use Tk::TextUndo;
 
 use Gui::Time;
 
@@ -74,22 +76,23 @@ sub _chg_state($) {
   # parameters
   my ($ref) = @_;
 
-  if ($ref->{size_OK}  and
-      $ref->{label_OK} and
+# TODO: How to detect changed radio button text?
+  if (lc($ref->{type_edit_type_var}) eq 'r') {
+    $ref->{button_set} -> configure(-state => 'normal');
+    $ref->{change} = 1;
+  } elsif ($ref->{size_OK}  and
+           $ref->{label_OK} and
        (
          $ref->{label_proposed} ne $ref->{ev_ref}{text}
          or
          $ref->{type_edit_type_var} ne $ref->{ev_ref}{type}
          or
          (
-           ( lc($ref->{type_edit_type_var}) eq 'r' and
-             $ref->{size_proposed} ne $ref->{ev_ref}{sz_values} )
+           ( lc($ref->{type_edit_type_var}) eq 'r' )
            or
            ( lc($ref->{type_edit_type_var}) ne 'r' and
              $ref->{size_proposed} != $ref->{ev_ref}{sz_values} )
          )
-         or
-         $ref->{type_edit_type_var} ne $ref->{ev_ref}{type}
        )
      ) {
     $ref->{button_set} -> configure(-state => 'normal');
@@ -142,8 +145,13 @@ sub new($%) {
              -clock     => $args{-clock},
              -cfg       => $args{-cfg},
              -event_cfg => $args{-event_cfg},
+             -invalid   => $args{-invalid},
              types_def  => $types_def,
              EVENT_CFG  => $EVENT_CFG,
+             earlier_copy => {},
+             earlier_index => {},
+             earlier_removed => [],
+             earlier_selector => undef,
           };
 
   bless($self, $class);
@@ -248,13 +256,51 @@ sub new($%) {
   $edit_r->{size_edit_entry}
       -> bind('<Return>' => [$self => 'change']);
 
+  # Right area: Radio button values: Text
+  $edit_r->{radio_edit_area} = $edit_r->{entry_sec_area}
+      -> Frame()
+      -> pack(-side => 'top', -fill => 'x');
+
+  $edit_r->{radio_edit_label} = $edit_r->{radio_edit_area}
+      -> Label(-text => 'Radioknapp')
+      -> pack(-side => 'top');
+
+  $edit_r->{radio_edit_text_area} = $edit_r->{radio_edit_area}
+      -> Frame(-bd => '2', -relief => 'sunken')
+      -> pack(-side => 'top', -fill => 'x');
+
+  $edit_r->{radio_edit_text} = $edit_r->{radio_edit_text_area}
+      -> TextUndo(
+                -wrap => 'no',
+                -height => 9,
+                -width => 40,
+               )
+      -> pack(-side => 'left', -expand => '1', -fill => 'both');
+  $edit_r->{radio_edit_text} -> tagAdd('syntax', '1.0', 'end');
+  $edit_r->{radio_edit_text} -> bind('<KeyRelease>', [$self => '_syntaxCheck']);
+
+  $edit_r->{radio_edit_scrollbar} = $edit_r->{radio_edit_text_area}
+      -> Scrollbar(-command => [yview => $edit_r->{radio_edit_text}])
+      -> pack(-side => 'left', -fill => 'y');
+
+  $edit_r->{radio_edit_text}
+      -> configure(-yscrollcommand => [set => $edit_r->{radio_edit_scrollbar}]);
+
+  # Message
+  $edit_r->{entry_message_area} = $edit_r->{radio_edit_area}
+      -> Frame(-bd => '2', -relief => 'sunken')
+      -> pack(-side => 'bottom', -fill => 'x');
+
+  $edit_r->{entry_message_text} = $edit_r->{entry_message_area}
+      -> Label()
+      -> pack(-side => 'left');
 
   # Defaults, Set, Add and Delete buttons
   $edit_r->{entry_button_area} = $edit_r->{entry_edit_area}
       -> Frame()
       -> pack(-side => 'bottom');
 
-  $self->{defaults_selector} = '';
+  $self->{templates_selector} = '';
   ### Defaults menu button ###
   $edit_r->{defaults_but} = $edit_r->{entry_button_area}
       -> Menubutton(-text => 'Förslag', -bd => '2', -relief => 'raised')
@@ -270,9 +316,9 @@ sub new($%) {
   for my $key (sort(keys(%$EVENT_CFG))) {
     $edit_r->{defaults_menu}
         -> add('radiobutton',
-               -command => [select => $self],
+               -command => [selectTemplate => $self],
                -label => ucfirst(lc($key)),
-               -variable => \$self->{defaults_selector},
+               -variable => \$self->{templates_selector},
                -value => $key,
                -indicatoron => 0
               );
@@ -308,6 +354,41 @@ sub new($%) {
                     -label     => 'Från och med vecka:',
                    );
 
+  ### Earlier EventCfg ###
+  $edit_r->{earlier_sec_area} = $edit_r->{set_area}
+      -> Frame()
+      -> pack(-side => 'top', -expand => '0', -fill => 'x');
+
+  $edit_r->{earlier_area} = $edit_r->{earlier_sec_area}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'left');
+
+  ### Earlier menu button ###
+  $edit_r->{earlier_but} = $edit_r->{earlier_area}
+      -> Menubutton(-text => 'Tidigare', -bd => '2', -relief => 'raised')
+      -> pack(-side => 'left');
+
+  ### Earlier menu ###
+  $edit_r->{earlier_menu} = $edit_r->{earlier_but}
+      -> Menu(-tearoff => 'false');
+  # Associate Menubutton with Menu.
+  $edit_r->{earlier_but} -> configure(-menu => $edit_r->{earlier_menu});
+
+  $edit_r->{earlier_selected_label} = $edit_r->{earlier_area}
+      -> Label(-text => 'aktuell')
+      -> pack(-side => 'left');
+
+  # View, Remove buttons
+  $edit_r->{button_earlier_view} = $edit_r->{earlier_area}
+      -> Button(-text => 'Visa', -command => [ealierView => $self])
+      -> pack(-side => 'left');
+
+  $edit_r->{button_earlier_remove} = $edit_r->{earlier_area}
+      -> Button(-text => 'Ta bort',
+                -state => 'disabled',
+                -command => [earlierRemove => $self])
+      -> pack(-side => 'left');
+
   # Set initial max_date
   $self->setMaxDate();
 
@@ -317,6 +398,52 @@ sub new($%) {
 
   return ($self);
 } # Method new
+
+#----------------------------------------------------------------------------
+#
+# Method:      _showStatus
+#
+# Description: Show status of radio button
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub _showStatus($;$) {
+  # parameters
+  my $self = shift;
+  my ($text) = @_;
+
+  $self->{edit}->{entry_message_text}-> configure(-text=> $text || '');
+  return undef;
+} # Method _showStatus
+
+#----------------------------------------------------------------------------
+#
+# Method:      _highlightErrRow
+#
+# Description: Show status of radio button edit
+#
+# Arguments:
+#  - Object reference
+#  - Error text
+#  - Line
+#  - Length
+# Returns:
+#  -
+
+sub _highlightErrRow($$$$) {
+  # parameters
+  my $self = shift;
+  my ($t, $x, $l) = @_;
+
+  my $text_r = $self->{edit}->{radio_edit_text};
+  $text_r->tagAdd('err', $x.'.0', $x.'.'.$l);
+  $text_r->tagConfigure('err', -background => 'grey');
+  $self->_showStatus($t);
+  return undef;
+} # Method _highlightErrRow
 
 #----------------------------------------------------------------------------
 #
@@ -398,41 +525,91 @@ sub sizeKey($;@) {
     return 1;
 
   } else {
-    # Radio button entry
-    return 0
-        if ($insert and ($proposed !~ /^[^,:]*$/));
-
-    if (($proposed =~ m/^[^\r\n]+$/)     and
-        (index($proposed, ';;;') lt 0)   and
-        (substr($proposed, 0, 1) ne ';') and
-        (substr($proposed, -1)   ne ';')
-       ) {
-
-      my $ok = 1;
-      if ($edit_r->{type_edit_type_var} eq 'R') {
-        for my $t (split(';', $proposed)) {
-          next
-              unless $t;
-          my $i = index($t, '=>');
-          $ok = 0
-              unless ($i > 0 and $i < length($t) - 2);
-
-        } # for #
-      } # if #
-
-      $edit_r->{size_OK} = $ok;
-      $edit_r->{size_proposed} = $proposed
-          if $ok;
-    } else {
-      $edit_r->{size_OK} = 0;
-    } # if #
-    _chg_state($edit_r);
     return 1;
-
   } # if #
 
   return 0;
 } # Method sizeKey
+
+#----------------------------------------------------------------------------
+#
+# Method:      _radioButtonGet
+#
+# Description: Get contents of radio button settings
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  Undef: Invalid radio button contents
+#  String with reatio button settings
+
+sub _radioButtonGet($) {
+  # parameters
+  my $self = shift;
+
+  my $edit_r = $self->{edit};
+
+  return undef
+      if (lc($edit_r->{type_edit_type_var}) ne 'r');
+
+  my $text_r = $edit_r->{radio_edit_text};
+  $text_r->tagDelete('err');
+  my $tmp = $text_r -> get('1.0', 'end');
+  $tmp =~ s/^\n+\s*//;
+  $tmp =~ s/\s*\n+$//;
+  $tmp =~ s/\s*=>\s*/=>/g;
+  $tmp =~ s/\s*\n\s*/;/g;
+  return $self->_showStatus("Värde saknas")
+      unless (length($tmp) > 0);
+  return $self->_showStatus("Flera blankrader ej tillåtet")
+      if ((index($tmp, "\r")  > 0) or
+          (index($tmp, ';;;') > 0)    );
+
+  if ($edit_r->{type_edit_type_var} eq 'R') {
+    my $r = 0;
+    for my $t (split(';', $tmp)) {
+      $r++;
+      next
+          unless $t;
+      my $i = index($t, '=>');
+      return $self->_highlightErrRow("'=>' saknas", $r, length($t))
+          if ($i < 0);
+      return $self->_highlightErrRow("'=>' är först", $r, length($t))
+          if ($i == 0);
+      return $self->_highlightErrRow("'=>' är sist", $r, length($t))
+          if ($i >= length($t) - 2);
+      $i = index($t, '=>', $i+1);
+      return $self->_highlightErrRow("Flera '=>'", $r, length($t))
+          if ($i > 0);
+    } # for #
+  } # if #
+
+  return $tmp;
+} # Method _radioButtonGet
+
+#----------------------------------------------------------------------------
+#
+# Method:      _syntaxCheck
+#
+# Description: Syntax check of radio button settings
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub _syntaxCheck($) {
+  # parameters
+  my $self = shift;
+
+
+# TODO: How to apply this to the buttons like _check-state?
+  if (defined($self->_radioButtonGet())) {
+    $self->_showStatus();
+  } # if #
+
+  return 0;
+} # Method _syntaxCheck
 
 #----------------------------------------------------------------------------
 #
@@ -452,24 +629,33 @@ sub showType($) {
   my $edit_r = $self->{edit};
 
   $edit_r->{type_edit_menu_but}
-         -> configure(-text => $self->{types_def}{$edit_r->{type_edit_type_var}}[1]);
+         -> configure(
+             -text => $self->{types_def}{$edit_r->{type_edit_type_var}}[1]
+                     );
 
-  if ($edit_r->{type_edit_type_var} ne $edit_r->{ev_ref}{type} and
-      (lc($edit_r->{type_edit_type_var}) eq 'r' or
-       lc($edit_r->{ev_ref}{type})       eq 'r'
+  if ($edit_r->{type_edit_type_var} ne $edit_r->{type_edit_type_previous}
+      and
+      (lc($edit_r->{type_edit_type_var})      eq 'r' or
+       lc($edit_r->{type_edit_type_previous}) eq 'r'
       )
      )
   {
-    $edit_r->{size_edit_entry} -> delete(0, 'end');
-    if (lc($edit_r->{type_edit_type_var}) ne 'r') {
-      $edit_r->{size_edit_entry} -> configure(-justify => 'right');
-      $edit_r->{size_edit_entry} -> configure(-width => EDIT_WIDTH);
-      $edit_r->{size_edit_frame} -> configure(-label => 'Bredd:');
+    if (lc($edit_r->{type_edit_type_var}) eq 'r') {
+      $edit_r->{size_edit_entry} -> delete(0, 'end');
+      $edit_r->{size_edit_entry} -> configure(-state => 'disabled');
+
+      $edit_r->{radio_edit_text} -> configure(-state => 'normal');
+      $edit_r->{radio_edit_text} -> delete('1.0', 'end');
+      $edit_r->{radio_edit_text} -> tagAdd('syntax', '1.0', 'end');
+      $edit_r->{button_set} -> configure(-state => 'normal');
     } else {
-      $edit_r->{size_edit_entry} -> configure(-justify => 'left');
-      $edit_r->{size_edit_entry} -> configure(-width => 30);
-      $edit_r->{size_edit_frame} -> configure(-label => 'Värden:');
+      $edit_r->{size_edit_entry} -> configure(-state => 'normal');
+      $edit_r->{size_edit_entry} -> delete(0, 'end');
+
+      $edit_r->{radio_edit_text} -> delete('1.0', 'end');
+      $edit_r->{radio_edit_text} -> configure(-state => 'disabled');
     } # if #
+    $edit_r->{type_edit_type_previous} = $edit_r->{type_edit_type_var};
     $edit_r->{size_OK} = 0;
   } # if #
 
@@ -524,40 +710,57 @@ sub display($;$) {
     $edit_r->{type_edit_menu_but}
            -> configure(-text => $ev_ref->{type_desc}, -state => 'normal');
     $edit_r->{type_edit_type_var} = $ev_ref->{type};
+    $edit_r->{type_edit_type_previous} = $edit_r->{type_edit_type_var};
     $edit_r->{type_edit_menu} ->
         entryconfigure('end',
             -state => ($cur_selection < 
-                         $#{$edit_r->{cfg}}) ? 'disabled' : 'normal'
+                         $#{$self->{cfg}}) ? 'disabled' : 'normal'
                        );
 
     # Size or radiobutton values setting
     $edit_r->{size_edit_entry} -> configure(-state => 'normal');
-    $edit_r->{size_edit_entry} -> delete(0, 'end');
-    $edit_r->{size_edit_entry} -> insert(0, $ev_ref->{sz_values});
-    if (lc($ev_ref->{type}) ne 'r') {
-      $edit_r->{size_edit_entry} -> configure(-justify => 'right');
-      $edit_r->{size_edit_frame} -> configure(-label => 'Bredd:');
+    if (lc($ev_ref->{type}) eq 'r') {
+      $edit_r->{size_edit_entry} -> delete(0, 'end');
+      $edit_r->{size_edit_entry} -> configure(-state => 'disabled');
     } else {
-      $edit_r->{size_edit_entry} -> configure(-justify => 'left');
-      $edit_r->{size_edit_frame} -> configure(-label => 'Värden:');
+      $edit_r->{size_edit_entry} -> delete(0, 'end');
+      $edit_r->{size_edit_entry} -> insert(0, $ev_ref->{sz_values});
+      $edit_r->{size_proposed} = $ev_ref->{sz_values};
     } # if #
-    $edit_r->{size_edit_entry} -> configure(
-       -width => (length($ev_ref->{sz_values}) > EDIT_WIDTH) ?
-                 (length($ev_ref->{sz_values}))  :
-                  EDIT_WIDTH);
-    $edit_r->{size_proposed} = $ev_ref->{sz_values};
     $edit_r->{size_OK}       = 1;
 
+    # Radiobutton values setting
+    $edit_r->{radio_edit_text} -> configure(-state => 'normal');
+    if (lc($ev_ref->{type}) ne 'r') {
+      $edit_r->{radio_edit_text} -> delete('1.0', 'end');
+      $edit_r->{radio_edit_text} -> configure(-state => 'disabled');
+      $edit_r->{button_set} -> configure(-state => 'disabled');
+    } else {
+      $edit_r->{radio_edit_text} -> delete('1.0', 'end');
+      $edit_r->{radio_edit_text} -> tagAdd('syntax', '1.0', 'end');
+      for my $e (split(';', $ev_ref->{sz_values})) {
+        # TODO =>
+        $e =~ s/\s*=>\s*/ => /;
+        $edit_r->{radio_edit_text}
+            -> insert('end', $e . "\n");
+      } # for #
+      $edit_r->{radio_edit_text}->ResetUndo();
+      $edit_r->{size_proposed} = $ev_ref->{sz_values};
+      $edit_r->{button_set} -> configure(-state => 'normal');
+      $edit_r->{change} = 1;
+
+    } # if #
+
     # Change button setting
-    $edit_r->{button_set} -> configure(-state => 'disabled');
     $edit_r->{button_add} -> configure(-state => 'normal');
-    if ($cur_selection < $#{$edit_r->{cfg}}) {
+    if ($cur_selection < $#{$self->{cfg}}) {
       $edit_r->{button_remove} -> configure(-state => 'normal');
     } else {
       $edit_r->{button_remove} -> configure(-state => 'disabled');
     } # if #
 
     $edit_r->{ev_ref} = $ev_ref;
+    $self->_showStatus("");
   } # if #
 
   return 0;
@@ -584,6 +787,8 @@ sub update($;$) {
 
   my $edit_r = $self->{edit};
 
+  $self->_showStatus("");
+
   # Display event cfg entries in listbox
 
   if (exists($edit_r->{edit_list_refs})) {
@@ -594,7 +799,7 @@ sub update($;$) {
 
   $edit_r->{edit_list_box}      -> delete(0, 'end');
   my $edit_list_refs = $edit_r->{edit_list_refs};
-  for my $ev_st (@{$edit_r->{cfg}}) {
+  for my $ev_st (@{$self->{cfg}}) {
     my ($text, $type, $sz_values) = split(':', $ev_st);
 
     my $type_desc = '-';
@@ -626,9 +831,11 @@ sub update($;$) {
   } else {
     $edit_r->{label_edit_entry}   -> delete(0, 'end');
     $edit_r->{label_edit_entry}   -> configure(-state => 'disabled');
-    $edit_r->{size_edit_frame}    -> configure(-label => '');
+    $edit_r->{size_edit_frame}    -> configure(-label => 'Bredd:');
     $edit_r->{size_edit_entry}    -> delete(0, 'end');
     $edit_r->{size_edit_entry}    -> configure(-width => EDIT_WIDTH, -state => 'disabled');
+    $edit_r->{radio_edit_text}    -> delete('1.0', 'end');
+    $edit_r->{radio_edit_text}    -> configure(-state => 'disabled');
     $edit_r->{type_edit_menu_but} -> configure(-text => '-', -state => 'disabled');
     $edit_r->{button_set}         -> configure(-state => 'disabled');
     $edit_r->{button_add}         -> configure(-state => 'disabled');
@@ -655,19 +862,33 @@ sub change($) {
 
 
   my $edit_r = $self->{edit};
-  return 0 unless ($edit_r->{change});
+  my $radio;
+  if (lc($edit_r->{type_edit_type_var}) eq 'r') {
+    $radio = $self->_radioButtonGet();
+    return 0
+        unless $radio;
+    $self->_showStatus();
+  } # if #
+
+  return 0
+      unless ($edit_r->{change});
 
   if (ref($edit_r->{ev_ref})) {
     my $ev_ref= $edit_r->{ev_ref};
+
     ${$ev_ref->{ref}} =
            $edit_r->{label_edit_entry} -> get() . ':' .
-           $edit_r->{type_edit_type_var}        . ':' .
-           $edit_r->{size_edit_entry}  -> get() ;
+           $edit_r->{type_edit_type_var}        . ':';
+    if (lc($edit_r->{type_edit_type_var}) ne 'r') {
+      ${$ev_ref->{ref}} .= $edit_r->{size_edit_entry} -> get() ;
+    } else {
+      ${$ev_ref->{ref}} .= $radio;
+    } # if #
     $self->update();
     $edit_r->{button_add}     -> configure(-state => 'disabled');
     $edit_r->{button_remove}  -> configure(-state => 'disabled');
     $edit_r->{modified} = 2;
-    $self->callback($edit_r->{notify});
+    $self->callback($edit_r->{notify}, 'modified_event_cfg');
   } # if #
 
   return 1;
@@ -694,9 +915,9 @@ sub add($) {
   my $index = $edit_r->{edit_list_box}->curselection();
   $index = $index->[0] if ref($index);
 
-  @{$edit_r->{cfg}} = (@{$edit_r->{cfg}}[0 .. $index-1],
-                       'Ny:A:6',
-                       @{$edit_r->{cfg}}[$index .. $#{$edit_r->{cfg}}]);
+  @{$self->{cfg}} = (@{$self->{cfg}}[0 .. $index-1],
+                     'Ny:A:6',
+                     @{$self->{cfg}}[$index .. $#{$self->{cfg}}]);
   $self->update($index);
 
   return 0;
@@ -723,8 +944,8 @@ sub remove($) {
   my $index = $edit_r->{edit_list_box}->curselection();
   $index = $index->[0] if ref($index);
 
-  @{$edit_r->{cfg}} = (@{$edit_r->{cfg}}[0 .. $index-1],
-                       @{$edit_r->{cfg}}[$index+1 .. $#{$edit_r->{cfg}}]);
+  @{$self->{cfg}} = (@{$self->{cfg}}[0 .. $index-1],
+                     @{$self->{cfg}}[$index+1 .. $#{$self->{cfg}}]);
   $edit_r->{modified} = 2;
   $self->callback($edit_r->{notify}, 'modified_event_cfg');
   $self->update();
@@ -733,32 +954,32 @@ sub remove($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      select
+# Method:      selectTemplate
 #
-# Description: Select a default setting
+# Description: Select a setting template
 #
 # Arguments:
 #  0 - Object reference
 # Returns:
 #  -
 
-sub select($) {
+sub selectTemplate($) {
   # parameters
   my $self = shift;
 
 
   my $edit_r = $self->{edit};
 
-  @{$edit_r->{cfg}} = @{$self->{EVENT_CFG}{$self->{defaults_selector}}};
+  @{$self->{cfg}} = @{$self->{EVENT_CFG}{$self->{templates_selector}}};
 
   $edit_r->{modified} = 2;
   $self->callback($edit_r->{notify}, 'modified_event_cfg');
   $self->update();
 
-  $self->{defaults_selector} = '';
+  $self->{templates_selector} = '';
 
   return 0;
-} # Method select
+} # Method selectTemplate
 
 #----------------------------------------------------------------------------
 #
@@ -806,30 +1027,264 @@ sub apply($) {
 
 
   my $edit_r = $self->{edit};
+  my $return = 0;
 
-  return 0
-      unless ($edit_r->{modified});
+  if ($edit_r->{modified}) {
+    my $date = $edit_r->{week_no}->get(1);
 
-  my $date = $edit_r->{week_no}->get(1);
+    return 0
+        unless $date;
 
-  return 0
-      unless $date;
+    return 0
+        if ($self->{-cfg}->isLocked($date));
 
-  return 0
-      if ($self->{-cfg}->isLocked($date));
+    if ($self->{-event_cfg}->addCfg($date, $self->{cfg})) {
 
-  $edit_r->{week_no} -> update(-min_date => $date);
+      $return = $edit_r->{modified} - 1;
+      $edit_r->{week_no} -> update(-min_date => $date);
+      $self->{-event_cfg}->notifyClients($date);
 
-  $self->{-event_cfg}->addCfg($date, $edit_r->{cfg});
+    } # if #
 
-  $self->{-event_cfg}->notifyClients($date);
+    $edit_r->{modified} = 0;
+  } # if #
 
-  my $return = $edit_r->{modified} - 1;
+  while (@{$self->{earlier_removed}}) {
+    my $date = shift(@{$self->{earlier_removed}});
+    $self->{-event_cfg}->removeCfg($date);
+  } # while #
 
-  $edit_r->{modified} = 0;
+  $self->_rebuildEarlier();
 
   return $return;
 } # Method apply
+
+#----------------------------------------------------------------------------
+#
+# Method:      _showWeekNo
+#
+# Description: Calculate week no from date, '0000-00-00' show 'tidigare'
+#
+# Arguments:
+#  - Object reference
+#  - Date
+# Returns:
+#  -
+
+sub _showWeekNo($$) {
+  # parameters
+  my $self = shift;
+  my ($date) = @_;
+
+  return 'tidigare'
+      if ($date eq '0000-00-00');
+  return join('v', $self->{-calculate}->weekNumber($date));
+} # Method _showWeekNo
+
+#----------------------------------------------------------------------------
+#
+# Method:      _rebuildEarlier
+#
+# Description: Rebuild earlier EventCfg menu, copy from EventCfg
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub _rebuildEarlier($) {
+  # parameters
+  my $self = shift;
+
+
+  my $old = $self->{earlier_copy};
+  my $cnt_r = $self->{earlier_index};
+
+  my $edit_r = $self->{edit};
+
+  # Make a copy of the configuration
+  my $get = $self->{-event_cfg}->getEarlierEventCfg();
+  my $ref = {};
+  $self->{earlier_copy} = $ref;
+  while (my ($d, $r) = each(%$get)) {
+    $ref->{$d} = [@{$r}];
+  } # while #
+  {
+    my ($d, $r) = $self->{-event_cfg}->getDateEventCfg();
+    $ref->{$d} = [@{$r}];
+  }
+
+  # Remove old items from menu
+  my $cnt = 0;
+  my $mnu = $edit_r->{earlier_menu};
+  for my $d (sort(keys(%{$old}))) {
+    if (exists($ref->{$d})) {
+      $cnt++;
+    } else {
+      $mnu->delete($cnt);
+      delete($cnt_r->{$d});
+    } # if #
+  } # for #
+
+  # Add new items
+  my $prev_r;
+  my $msg = '';
+  $cnt = 0;
+  for my $date (sort(keys(%{$ref}))) {
+    if ($prev_r and 
+        $self->{-event_cfg}->compareCfg($prev_r, $ref->{$date})
+       )
+    {
+       $msg = ' (lika som föregående)';
+    } else {
+       $msg = '';
+    } # if #
+
+    if (exists($old->{$date})) {
+      $mnu->entryconfigure($cnt,
+                           -label => $self->_showWeekNo($date) . $msg,
+                           -value => $date);
+    } else {
+      $mnu->insert($cnt,
+                   'radiobutton',
+                   -command => [selectEarlier => $self],
+                   -label => $self->_showWeekNo($date) . $msg,
+                   -variable => \$self->{earlier_selector},
+                   -value => $date,
+                   -indicatoron => 0
+                  );
+    } # if #
+
+    $cnt_r->{$date}=$cnt;
+    $cnt++;
+    $prev_r = $ref->{$date};
+  } # for #
+
+  return 0;
+} # Method _rebuildEarlier
+
+#----------------------------------------------------------------------------
+#
+# Method:      ealierView
+#
+# Description: View earlier EventCfg
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub ealierView($) {
+  # parameters
+  my $self = shift;
+
+
+  return 0
+      unless ($self->{earlier_selector});
+
+  my $date = $self->{earlier_selector};
+
+  return 0
+      unless (exists($self->{earlier_copy}{$date}));
+
+  @{$self->{cfg}} = @{$self->{earlier_copy}{$date}};
+
+  my $edit_r = $self->{edit};
+  $edit_r->{modified} = 2;
+  $self->callback($edit_r->{notify}, 'modified_event_cfg');
+  $self->update();
+
+  return 0;
+} # Method ealierView
+
+#----------------------------------------------------------------------------
+#
+# Method:      earlierRemove
+#
+# Description: Remove an EventCfg for selected version
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub earlierRemove($) {
+  # parameters
+  my $self = shift;
+
+
+  return 0
+      unless ($self->{earlier_selector});
+
+  my $date = $self->{earlier_selector};
+
+  return 0
+      if ($date eq '0000-00-00');
+
+  return 0
+      unless (exists($self->{earlier_copy}{$date}));
+
+  return $self->callback($self->{-invalid},
+                      'Vecka före ' .
+                      join('v', $self->{-calculate}->weekNumber($date)) .
+                      ' är låst')
+      if ($self->{-cfg}->isLocked($date));
+
+  my $edit_r = $self->{edit};
+
+  my $ix = $self->{earlier_index}{$date};
+  $edit_r->{earlier_menu}->delete($ix);
+  delete($self->{earlier_copy}{$date});
+  delete($self->{earlier_index}{$date});
+  push(@{$self->{earlier_removed}}, $date);
+  while (my ($key, $val) = each(%{$self->{earlier_index}})) {
+    if ($val > $ix) {
+      $self->{earlier_index}{$key}--;
+    } # if #
+  } # while #
+
+  $self->callback($edit_r->{notify}, 'modified_event_cfg');
+
+  $self->{earlier_selector} = undef;
+  $edit_r->{earlier_selected_label}
+        -> configure(-text=> 'Borttagen');
+
+  $edit_r->{button_earlier_view}->configure(-state => 'disabled');
+  $edit_r->{button_earlier_remove}->configure(-state => 'disabled');
+
+  return 0;
+} # Method earlierRemove
+
+#----------------------------------------------------------------------------
+#
+# Method:      selectEarlier
+#
+# Description: Select an earlier event cfg
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub selectEarlier($) {
+  # parameters
+  my $self = shift;
+
+
+  my $edit_r = $self->{edit};
+
+  $edit_r->{earlier_selected_label}
+        -> configure(-text=> $self->_showWeekNo($self->{earlier_selector}));
+  $edit_r->{button_earlier_view}->configure(-state => 'normal');
+  my $date = $self->{earlier_selector};
+  if ($date eq '0000-00-00') {
+    $edit_r->{button_earlier_remove}->configure(-state => 'disabled');
+  } else {
+    $edit_r->{button_earlier_remove}->configure(-state => 'normal');
+  } # if #
+
+  return 0;
+} # Method selectEarlier
 
 #----------------------------------------------------------------------------
 #
@@ -855,8 +1310,9 @@ sub showEdit($$$) {
   # Copy event configuration
   my @tmp = $self->{-event_cfg}->getDateEventCfg();
   $edit_r->{week_no} -> update(-min_date => $tmp[0]);
-  @{$edit_r->{cfg}} = @{$tmp[1]};
+  @{$self->{cfg}} = @{$tmp[1]};
 
+  $self->_rebuildEarlier();
   $self->update();
   $edit_r->{week_no} -> set(undef, $self->{-clock}->getDate());
   $edit_r->{modified} = 0;

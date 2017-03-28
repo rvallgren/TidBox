@@ -2,7 +2,7 @@
 package Times;
 #
 #   Document: Times data
-#   Version:  1.9   Created: 2016-01-19 09:44
+#   Version:  1.9   Created: 2017-03-14 17:37
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Times;
 #
 
 my $VERSION = '1.9';
-my $DATEVER = '2016-01-19';
+my $DATEVER = '2017-03-14';
 
 # History information:
 #
@@ -39,6 +39,7 @@ my $DATEVER = '2016-01-19';
 #      New method joinAdd to add event data
 # 1.9  2016-01-15  Roland Vallgren
 #      setDisplay moved to TidBase
+#      Added handling of midnight
 #      
 #
 
@@ -958,7 +959,7 @@ sub _addFixedStartResume($$$$) {
 # Returns:
 #  -
 
-sub checkResume($$$$) {
+sub checkResume($) {
   # parameters
   my $self = shift;
 
@@ -974,7 +975,6 @@ sub checkResume($$$$) {
       if ($self->{-cfg}->isLocked($date));
 
   my $op = $self->{-cfg}->get('resume_operation');
-
 
   if ($op == 1 or $op == 3) {
     $self->_addFixedStartResume($date, $time, $op);
@@ -993,6 +993,62 @@ sub checkResume($$$$) {
 
   return 0;
 } # Method checkResume
+
+#----------------------------------------------------------------------------
+#
+# Method:      midnight
+#
+# Description: If worktime is ongoing at midnight end workday at 23:59
+#              yesterday and continue ongoing activity at 00:00
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub midnight($) {
+  # parameters
+  my $self = shift;
+
+
+  my $today = $self->{-clock}->getDate();
+
+  # Skip if today is locked
+  return 0
+      if ($self->{-cfg}->isLocked($today));
+
+  my $yesterday = $self->{-calculate}->stepDate($today, -1);
+
+  # Search yesterday backward to find ongoing activity
+  for my $ref (reverse($self->getSortedRefs($yesterday))) {
+
+    next unless (substr($$ref, 17) =~ /^($TYPE),(.*)$/);
+    my ($state, $text) = ($1, $2);
+
+    # Do not add anything when no work or paus is ongoing
+    last
+        if ($state eq $ENDWORKDAY or
+            $state eq $BEGINPAUS);
+    
+    # Register end workday yesterday 23:59 unless yesterday is locked
+    $self->joinAdd($yesterday, '23:59', $ENDWORKDAY, '')
+        unless ($self->{-cfg}->isLocked($yesterday));
+
+    if ($state eq $BEGINEVENT) {
+      # Register event start at 00:00 with event that ended yesterday
+      $self->joinAdd($today, '00:00', $state, $text);
+
+    } else {
+      # Register begin workday at 00:00 if state was work yesterday
+      $self->joinAdd($today, '00:00', $BEGINWORKDAY, '');
+
+    } # if #
+    last;
+
+  } # for #
+
+  return 0;
+} # Method midnight
 
 #----------------------------------------------------------------------------
 #
@@ -1016,6 +1072,7 @@ sub startSession($$$) {
 
 
   $self->{-clock}->repeat(-sleep => [$self => 'checkResume']);
+  $self->{-clock}->repeat(-date => [$self, 'midnight']);
 
   return 0
       if ($self->{-cfg}->isLocked($date));

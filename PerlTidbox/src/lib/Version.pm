@@ -1,7 +1,7 @@
 #
 package Version;
 #
-#   Version:  1.5   Created: 2016-01-26
+#   Version:  1.5   Created: 2017-03-22
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package Version;
 #
 
 my $VERSION = '1.5';
-my $DATEVER = '2016-01-26';
+my $DATEVER = '2017-03-22';
 
 # Register version information
 {
@@ -69,7 +69,7 @@ my %components;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2016-01-26',
+    date      => '2017-03-22',
     prepared  => 'Roland Vallgren',
     VERSION   => '4.9',
 );
@@ -104,7 +104,14 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
+Inställningar -> Händelser
+- Hantering av tidigare inställningar tillagd.
+- Redigering av radioknappar omgjord.
 Kodförbättringar.
+Plus/minus-tid jämfört med planerad tid visas i veckan.
+Om aktivitet pågår vid midnatt så avslutas den vid 23:59
+och samma aktivitet startas 00:00 nästa dag.
+Tagit bort session.dat från loggen
 '
 ,
 
