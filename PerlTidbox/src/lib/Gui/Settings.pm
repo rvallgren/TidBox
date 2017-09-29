@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.1   Created: 2016-02-03 16:33
+#   Version:  2.2   Created: 2017-09-26 10:38
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.1';
-my $DATEVER = '2016-02-03';
+my $VERSION = '2.2';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -42,6 +42,10 @@ my $DATEVER = '2016-02-03';
 #      Improved handling of invalid values
 # 2.1  2015-12-16  Roland Vallgren
 #      Moved Gui for Event to own Gui class
+# 2.2  2017-05-23  Roland Vallgren
+#      Added plugin handling
+#      Removed Terp, moved to MyTime plugin
+#      Setting for ordinary work time for a week is now a common setting
 #
 
 #----------------------------------------------------------------------------
@@ -102,12 +106,10 @@ use Gui::SupervisionConfig;
 #   show_message_timeout    Tid för visa status information:
 #   $^O.'_do_backup'        Spara säkerhetskopia {OS}
 #   $^O.'_backup_directory' Katalog för säkerhetskopia {OS}
-#   terp_template           Terp template file, also modifiable in Week
-#   terp_normal_worktime    Normal veckoarbetstid
+#   ordinary_week_work_time  Ordinarie veckoarbetstid
 #
 # Settings defined in specific windows
 #
-#   terp_template           Week: .csv file for Terp
 #   lock_date               Week: Date for locked week
 #   archive_date            Year: Date for archive
 #   last_version            Main: Tool version
@@ -138,8 +140,7 @@ use constant SETTABLE_CFGS =>
         show_data
         show_reg_date
         show_message_timeout
-        terp_template
-        terp_normal_worktime
+        ordinary_week_work_time
       );
 
 use constant BACKUP_ENA => $^O . '_do_backup';
@@ -182,9 +183,13 @@ sub new($%) {
 
   my $self = {
               @_,
-              win       => {name => 'sett'},
-              condensed => 0,
-              errors    => undef,
+              win        => {name => 'sett'},
+              condensed  => 0,
+              errors     => undef,
+              plugin_can => { -area    => undef,
+                              -apply   => undef,
+                              -restore => undef,
+                            },
              };
 
   $self->{-title} .= ': Inställningar';
@@ -307,7 +312,7 @@ sub _restore($) {
   } # while #
 
 
-  ### Insert Configuration area ###
+  ### Insert Configuration data ###
 
   $self->{-event_cfg_setup}->showEdit();
 
@@ -325,17 +330,19 @@ sub _restore($) {
                  );
   } # if #
 
-  $win_r->{terp_file_button}->
-      configure(
-                -text => $self->{cfg}{terp_template} || 
-                         'Välj Terp mall (export.csv)',
-               );
+
 
   $self->{start_tidbox_win_r}{event_handling}
       -> set($self->{cfg}{start_operation_event}, 1);
 
   $self->{resume_tidbox_win_r}{event_handling}
       -> set($self->{cfg}{resume_operation_event}, 1);
+
+  ### Insert plugin configuration data ###
+  while (my ($name, $ref) = each(%{$self->{plugin}})) {
+    $self->callback($ref->{-restore})
+        if (exists($ref->{-restore}));
+  } # while #
 
   # No changes registered
   $self->_discard();
@@ -437,6 +444,12 @@ sub _apply($) {
 
     } # if #
 
+  ### Insert plugin configuration data ###
+  while (my ($name, $ref) = each(%{$self->{plugin}})) {
+    $self->callback($ref->{-apply})
+        if (exists($ref->{-apply}));
+  } # while #
+
     # Update configuration data
     $self->{-cfg}->set(%{$self->{cfg}});
     $self->{-cfg}->save(1);
@@ -501,13 +514,6 @@ sub _modified($;$) {
                      );
         $self->{cfg}{BACKUP_DIR()} = undef;
       } # if #
-
-    } elsif ($setting eq '_do_terp_template') {
-      $win_r->{terp_file_button}->
-          configure(
-                    -text => $self->{cfg}{terp_template} || 
-                             'Välj Terp mall (export.csv)',
-                   );
 
     } else {
       $self->{mod}{$setting} = 1;
@@ -591,62 +597,6 @@ sub _chooseBakDirectory($) {
 
   return 0;
 } # Method _chooseBakDirectory
-
-#----------------------------------------------------------------------------
-#
-# Method:      _chooseTerpFile
-#
-# Description: Choose Terp template file
-#
-# Arguments:
-#  - Object reference
-# Returns:
-#  -
-
-sub _chooseTerpFile($) {
-  # parameters
-  my $self = shift;
-
-  my $win_r = $self->{win};
-
-  my $tpt = $self->{cfg}{terp_template};
-
-  my $initialdir ;
-  my $initialfile;
-
-  if ($tpt    and
-      -r $tpt and
-      $tpt =~ /^(.*?)[\\\/]([^\\\/]+)$/)
-  {
-    $initialdir  = $1;
-    $initialfile = $2;
-  } else {
-    $initialdir  = ($^O eq 'MSWin32') ? $ENV{HOMEDRIVE} : $ENV{HOME};
-    $initialfile = 'export.csv';
-  } # if #
-
-
-  my $file = $win_r->{win}
-        -> getOpenFile(-defaultextension => '.csv',
-                       -filetypes => [
-                           ['csv files' , '.csv'],
-                           ['Text files', '.txt'],
-                           ['All Files' , '*'   ],
-                                     ],
-                       -initialdir  => $initialdir ,
-                       -initialfile => $initialfile,
-                       -title => $self->{-title} . ': Terp mall',
-                      );
-
-
-  return 0
-      unless ($file and -r $file and (not $tpt or $tpt and ($file ne $tpt)));
-
-  $self->{cfg}{terp_template} = $file;
-  $self->_modified('_do_terp_template');
-
-  return 0;
-} # Method _chooseTerpFile
 
 #----------------------------------------------------------------------------
 #
@@ -840,6 +790,28 @@ sub _setup($) {
 
   $win_r->{earlier_menu_size_note} = $win_r->{earlier_menu_size_area}
       -> Label(-text => ' (menyerna minskas endast efter omstart)')
+      -> pack(-side => 'left');
+
+  # Ordinary week worktime (temporary)
+  $win_r->{ordinary_worktime_area} = $win_r->{general_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'x');
+
+  $win_r->{ordinary_worktime_lb} = $win_r->{ordinary_worktime_area}
+      -> Label(-text => 'Ordinarie veckoarbetstid: ')
+      -> pack(-side => 'left');
+
+  $win_r->{ordinary_worktime_entry} = $win_r->{ordinary_worktime_area}
+      -> Entry(-width    => 3,
+               -validate => 'key',
+               -justify  => 'center',
+               -textvariable    => \$self->{cfg}{ordinary_week_work_time},
+               -validatecommand => [$self => '_number_entry_key'],
+              )
+      -> pack(-side => 'left');
+
+  $win_r->{ordinary_worktime_note} = $win_r->{ordinary_worktime_area}
+      -> Label(-text => ' (kan komma att ersättas med schema i senare versioner)')
       -> pack(-side => 'left');
 
   # Adjust precision
@@ -1132,52 +1104,15 @@ sub _setup($) {
                     -buttons   => [$self => '_addButtonsResume'],
                    );
 
-  ### TAB: Terp configuration settings ###
-  $win_r->{terp_tab} = $win_r->{notebook}
-      -> add('terp', -label => 'Terp');
-
-  # Terp template file
-  $win_r->{terp_tpt_area} = $win_r->{terp_tab}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '0', -fill => 'both');
-
-  $win_r->{terp_lb} = $win_r->{terp_tpt_area}
-      -> Label(-text => 'Terp-mall fil:' )
-      -> pack(-side => 'left');
-
-  $win_r->{terp_file_button} = $win_r->{terp_tpt_area}
-      -> Button(
-                -command => [$self => '_chooseTerpFile'],
-                -state => 'normal',
-               )
-      -> pack(-side => 'left');
-
-  $win_r->{terp_tpt_note} = $win_r->{terp_tpt_area}
-      -> Label(-text => ' (Genererade Terp-filer sparas i samma katalog)')
-      -> pack(-side => 'left');
-
-  # Normal week worktime (temporary)
-  $win_r->{terp_worktime_area} = $win_r->{terp_tab}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '0', -fill => 'x');
-
-  $win_r->{terp_worktime_lb} = $win_r->{terp_worktime_area}
-      -> Label(-text => 'Normal veckoarbetstid: ')
-      -> pack(-side => 'left');
-
-  $win_r->{terp_worktime_entry} = $win_r->{terp_worktime_area}
-      -> Entry(-width    => 3,
-               -validate => 'key',
-               -justify  => 'center',
-               -textvariable    => \$self->{cfg}{terp_normal_worktime},
-               -validatecommand => [$self => '_number_entry_key'],
-              )
-      -> pack(-side => 'left');
-
-  $win_r->{terp_worktime_note} = $win_r->{terp_worktime_area}
-      -> Label(-text => ' (kan komma att ersättas med schema i senare versioner)')
-      -> pack(-side => 'left');
-
+  ### TABs: Add tab for all plugins that use it ###
+  while (my ($name, $ref) = each(%{$self->{plugin}})) {
+    if (exists($ref->{-area})) {
+      my $tab = $name . '_tab';
+      $win_r->{$tab} = $win_r->{notebook}
+          -> add($name, -label => $name);
+      $self->callback($ref->{-area}, $win_r->{$tab});
+    } # if #
+  } # while #
 
   ### Add buttons to the button area ###
 

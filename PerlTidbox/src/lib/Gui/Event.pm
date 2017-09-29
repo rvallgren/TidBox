@@ -2,20 +2,22 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.0   Created: 2017-03-15 15:29
+#   Version:  1.1   Created: 2017-09-25 11:52
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Event.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2017-03-15';
+my $VERSION = '1.1';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
 # 1.0  2015-12-07  Roland Vallgren
 #      Event Gui moved from EventCfg
+# 1.1  2017-05-02  Roland Vallgren
+#      Added get empty event => Already exists in EventCfg
 #
 
 #----------------------------------------------------------------------------
@@ -449,7 +451,6 @@ sub set($$;$) {
   my ($event_data, $nochk) = @_;
 
   my $win_r = $self->{win};
-
 
   my @event_datas = $self->_split_data($self->{str}, $event_data, $nochk);
 

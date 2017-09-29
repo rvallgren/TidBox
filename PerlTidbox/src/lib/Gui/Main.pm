@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.9   Created: 2017-03-22 09:45
+#   Version:  2.10   Created: 2017-09-26 10:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.9';
-my $DATEVER = '2017-03-22';
+my $VERSION = '2.10';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -28,7 +28,7 @@ my $DATEVER = '2017-03-22';
 #      Use error popup when fault is detected in week worktime
 #      Improved status message: configurable timeout and clear by Clear
 # 2.2  2006-12-19  Roland Vallgren
-#      Dont updatedaylist if no daylist is shown
+#      Dont update daylist if no daylist is shown
 # 2.3  2011-03-27  Roland Vallgren
 #      Save files before GUI is closed
 # 2.4  2012-08-19  Roland Vallgren
@@ -44,7 +44,12 @@ my $DATEVER = '2017-03-22';
 #      Stop repeat from clock when Tidbox quit
 # 2.9  2015-12-09  Roland Vallgren
 #      Moved Gui for Event to own Gui class
-#      Return in date will modify event if selected
+# 2.10  2017-04-11  Roland Vallgren
+#       Return in date will modify event if selected
+#       Corrected handling of modify and delete buttons when not using day list
+#       Keep event shown when selected in daylist
+#       Confirm discarding a change
+#       Removed hardcoding of undo button to Gui::Edit
 #
 
 #----------------------------------------------------------------------------
@@ -133,15 +138,7 @@ my %TEXT = (
 #              Create main GUI
 #
 # Arguments:
-#  0 - Object prototype
-# Additional arguments as hash
-#  -cfg        Reference to configuration hash
-#  -event_cfg  Event configuration object
-#  -title      Tool title
-#  -times      Reference to times object
-#  -calculate  Reference to calculator
-#  -clock      Reference to clock
-#  -earlier    Reference to earlier object
+#  - Object prototype
 # Returns:
 #  Object reference
 
@@ -209,7 +206,8 @@ sub _status($;$) {
 
   my $win_r = $self->{win};
   $win_r->{day_list}->see(undef, $now_hour . ':' . $now_minu)
-      if ($win_r->{day_list});
+      if ($win_r->{day_list}
+          and not defined($self->{edit_event_ref}));
 
   return $self->{message}--
       if ($self->{message});
@@ -450,16 +448,13 @@ sub _disableButtons($;$) {
 # Description: Clear event text
 #
 # Arguments:
-#  0 - Object reference
-# Optional Arguments:
-#  1 - If set clear event radio buttons
+#  - Object reference
 # Returns:
 #  -
 
-sub _clear($;$) {
+sub _clear($) {
   # parameters
   my $self = shift;
-  my ($clear) = @_;
 
 
   my $win_r = $self->{win};
@@ -468,7 +463,8 @@ sub _clear($;$) {
 
   if ($self->{edit_event_ref}) {
     $win_r->{time_area}->clear();
-    $win_r->{day_list}->clear();
+    $win_r->{day_list}->clear()
+        if ($win_r->{day_list});
     $self->{edit_event_type} = undef;
     $self->{edit_event_ref} = undef;
   } # if #
@@ -506,19 +502,58 @@ sub _isLocked($$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _evGet
+#
+# Description: Get event data from Gui without clearing or changing
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  Event
+#    If array wanted also date and time
+#  undef if no event
+
+sub _evGet($) {
+  # parameters
+  my $self = shift;
+
+
+  my $win_r = $self->{win};
+
+  my ($time, $date) = $win_r->{time_area}->get();
+
+  return undef
+      unless (defined($time) and defined($date));
+
+  my $action_text = $win_r->{event_handling}->get([$self, '_message']);
+
+  return undef
+      unless (defined($action_text));
+
+  my $line = join(',', $date, $time, $BEGINEVENT, $action_text);
+
+  return ($time, $date, $action_text, $line)
+      if (wantarray());
+
+  return $line;
+
+} # Method _evGet
+
+#----------------------------------------------------------------------------
+#
 # Method:      _get
 #
 # Description: Get event data from Gui
 #
 # Arguments:
 #  - Object reference
-# Optional Arguments:
 #  - Action
+# Optional Arguments:
 #  - Reference to event text to use
 # Returns:
 #  Event
 
-sub _get($;$$) {
+sub _get($$;$) {
   # parameters
   my $self = shift;
   my ($action, $ref) = @_;
@@ -526,7 +561,7 @@ sub _get($;$$) {
 
   my $win_r = $self->{win};
 
-  my ($time, $date) = $win_r->{time_area}->get();
+  my ($time, $date, $action_text, $line) = $self->_evGet();
 
   return undef
       unless (defined($time) and defined($date));
@@ -561,8 +596,6 @@ sub _get($;$$) {
            );
   } # if #
 
-  my $action_text = $win_r->{event_handling}->get([$self, '_message']);
-
   return undef
       unless (defined($action_text));
 
@@ -571,11 +604,7 @@ sub _get($;$$) {
 
   $self->{-earlier}->add($action_text);
 
-  return (join(',', $date,
-                    $time,
-                    $BEGINEVENT,
-                    $action_text)
-         );
+  return $line;
 } # Method _get
 
 #----------------------------------------------------------------------------
@@ -735,7 +764,7 @@ sub _buttons($$) {
       -> pack(-side => 'right');
 
   $win_r->{event_end} = $area
-      -> Button(-text => 'Sluta', -command => [$self, '_add', $ENDEVENT])
+      -> Button(-text => 'Sluta', -command => [$self, '_checkAdd', $ENDEVENT])
       -> pack(-side => 'right');
 
   $win_r->{event_start} = $area
@@ -867,6 +896,31 @@ sub _grabLock($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _goOn
+#
+# Description: Go on and skip changes
+#
+# Arguments:
+#  - Object reference
+# Optional Arguments:
+#  - Callback
+#  - Argument to callback
+# Returns:
+#  -
+
+sub _goOn($;$$) {
+  # parameters
+  my $self = shift;
+  my ($ext, $arg) = @_;
+
+  $self->{win}{time_area}->clear();
+  $self->_clear();
+  $ext->display($arg);
+  return 0;
+} # Method _goOn
+
+#----------------------------------------------------------------------------
+#
 # Method:      show
 #
 # Description: Callback for daylist selection.
@@ -889,7 +943,7 @@ sub show($$) {
     my ($date, $time, $type, $event_data) = ($1, $2, $3, $4);
     $self->{edit_event_ref} = undef;
     $self->{edit_event_type} = undef;
-    $self->_clear(1);
+    $self->_clear();
     my $win_r = $self->{win};
     $win_r->{time_area}->set($time, $date);
     $win_r->{event_handling}->set($event_data)
@@ -948,6 +1002,47 @@ sub showLocked($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      undo
+#
+# Description: Update undo button status when undo list is changed
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Number of undo steps performed,
+#      0 no undo, only update button
+#      <0 New undo event added
+#      >0 Number of undo events performed
+#  2 - Length of undo list
+# Returns:
+#  -
+
+sub undo($$$) {
+  # parameters
+  my $self = shift;
+  my ($steps, $size) = @_;
+
+
+  my $win_r = $self->{win};
+
+  return 0 if $win_r->{win}->state() eq 'withdrawn';
+
+  # Withdraw confirm popup
+  $win_r->{confirm} -> withdraw();
+
+
+  $self->_message('Ångrade ' . $steps . ' steg')
+      if ($steps > 0);
+
+  $win_r->{undo}
+     -> configure(-state =>
+                  ($size ? 'normal' : 'disabled')
+                 );
+
+  return 0;
+} # Method undo
+
+#----------------------------------------------------------------------------
+#
 # Method:      _dated
 #
 # Description: Open a subwindow, get date
@@ -980,14 +1075,231 @@ sub _dated($$) {
                 )
       if ($date le $self->{-cfg}->get('archive_date'));
 
-  $self->_clear()
-      if (ref($self->{edit_event_ref}));
+  return 0
+      unless ($self->_checkModified([
+                                     $self, '_goOn', $ext, $date,
+                                    ])
+             );
 
-  $win_r->{time_area}->clear();
-  $ext->display($date);
+  $self->_goOn($ext, $date);
 
   return 0;
 } # Method _dated
+
+#----------------------------------------------------------------------------
+#
+# Method:      _checkAdd
+#
+# Description: Check if an event is edited and confirm to discard the change
+#              Used when workday, paus or end event button is pressed
+#
+# Arguments:
+#  - Object reference
+#  - Action
+# Returns:
+#  - 1  No editing ongoing
+
+sub _checkAdd($$) {
+  # parameters
+  my $self = shift;
+  my ($action) = @_;
+
+
+  my ($date, $time, $evText, $line) = $self->_evGet();
+  return undef
+      unless (defined($date));
+
+  if ($self->{edit_event_ref}) {
+
+    my $event_ref = $self->{edit_event_ref};
+
+    return $self->_add($action)
+        unless (${$event_ref} =~ /^($DATE),($TIME),($TYPE),(.*)$/o);
+
+    if ($3 eq $BEGINEVENT) {
+
+      return $self->_add($action)
+          unless (defined($evText));
+
+      return $self->_add($action)
+          if ($4 eq $evText);
+
+    } else {
+
+      return $self->_add($action)
+          if ($evText eq $self->{-event_cfg}->getEmpty());
+
+    } # if #
+
+  } else {
+
+    return $self->_add($action)
+        if ($evText eq $self->{-event_cfg}->getEmpty());
+
+  } # if #
+
+  # Show popup to confirm forget changed event
+  $self->{win}->{confirm}
+          -> popup(-title  => 'avbryt ändring',
+                   -text   => [
+                               "En markerad händelse är ändrad\n" .
+                               "Kasta ändringen?",
+                              ],
+                   -data   => [$self->{-calculate}->format($line)],
+                   -action => [$self, '_add', $action],
+                  );
+
+  return 0;
+} # Method _checkAdd
+
+#----------------------------------------------------------------------------
+#
+# Method:      _checkModified
+#
+# Description: Check if an event is edited and confirm to discard the change
+#
+# Arguments:
+#  - Object reference
+#  - Reference to callback list
+# Returns:
+#  - 1  No editing ongoing
+
+sub _checkModified($$) {
+  # parameters
+  my $self = shift;
+  my ($callback) = @_;
+
+
+  my ($date, $time, $evText, $line) = $self->_evGet();
+  return $self->{win}->{confirm}
+            -> popup(-title  => 'avbryt ändring',
+                     -text   => [
+                                 "Redigerad händelse är ogiltig\n" .
+                                 "Kasta ändringen?",
+                                ],
+                     -action => $callback,
+                    )
+      unless (defined($date));
+
+  if ($self->{edit_event_ref}) {
+
+    return 1
+        if (${$self->{edit_event_ref}} eq $line);
+
+  } else {
+
+    return 1
+        if ($evText eq $self->{-event_cfg}->getEmpty());
+
+  } # if #
+
+  # Show popup to confirm forget changed event
+  $self->{win}->{confirm}
+          -> popup(-title  => 'avbryt ändring',
+                   -text   => [
+                               "En markerad händelse är ändrad\n" .
+                               "Kasta ändringen?",
+                              ],
+                   -data   => [$self->{-calculate}->format($line)],
+                   -action => $callback,
+                  );
+
+  return 0;
+} # Method _checkModified
+
+#----------------------------------------------------------------------------
+#
+# Method:      _quitModified
+#
+# Description: Check if an event is edited and confirm to discard the change
+#
+# Arguments:
+#  - Object reference
+#  - Callback to call if change is to be discarded
+#  - Argument to callback
+# Returns:
+#  - 1  No editing ongoing
+
+sub _quitModified($$$) {
+  # parameters
+  my $self = shift;
+  my ($ext, $arg) = @_;
+
+
+  my ($date, $time, $evText, $line) = $self->_evGet();
+  return $self->{win}->{confirm}
+            -> popup(-title  => 'avbryt ändring',
+                     -text   => [
+                                 "Redigerad händelse är ogiltig\n" .
+                                 "Kasta och avsluta Tidbox?",
+                                ],
+                     -action => [$self, 'destroy'],
+                    )
+      unless (defined($date));
+
+  if ($self->{edit_event_ref}) {
+
+    return $self->destroy()
+        if (${$self->{edit_event_ref}} eq $line);
+
+  } else {
+
+    return $self->destroy()
+        if ($evText eq $self->{-event_cfg}->getEmpty());
+
+  } # if #
+
+  # Show popup to confirm forget changed event
+  $self->{win}->{confirm}
+          -> popup(-title  => 'avbryt ändring',
+                   -text   => [
+                               "En markerad händelse är ändrad\n" .
+                               "Kasta ändringen och avsluta Tidbox?",
+                              ],
+                   -data   => [$self->{-calculate}->format($line)],
+                   -action => [$self, 'destroy'],
+                  );
+
+  return 0;
+} # Method _quitModified
+
+#----------------------------------------------------------------------------
+#
+# Method:      _dateReturn
+#
+# Description: Return pressed in date, modify or start edit
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub _dateReturn($) {
+  # parameters
+  my $self = shift;
+
+  if ($self->{edit_event_ref})
+  {
+
+    # Get reference as _get clears the reference
+    my $event_ref = $self->{edit_event_ref};
+
+    my $line = $self->_evGet();
+
+    return $self->_modify(1)
+        if (defined($line) and ${$event_ref} ne $line);
+
+  } # if #
+
+  my $win_r = $self->{win};
+
+  my $date = $win_r->{time_area}->get(1);
+  return undef
+      unless (defined($date));
+
+  $self->_goOn($self->{-edit_win}, $date);
+  return 0;
+} # Method _dateReturn
 
 #----------------------------------------------------------------------------
 #
@@ -1014,21 +1326,9 @@ sub _setup($) {
   $win_r->{title_timer} = $win_r->{win}
       -> repeat(1000, [tick => $self->{-clock}]);
 
-  ### Area for day list and main window ####
-  if ($self->{-cfg}->get('main_show_daylist')) {
-    $win_r->{left_area} = $win_r->{area}
-        -> Frame()
-        -> pack(-side => 'left', -expand => '1', -fill => 'both');
-    $win_r->{right_area} = $win_r->{area}
-        -> Frame()
-        -> pack(-side => 'right', -expand => '1', -fill => 'both');
-  } else {
-    $win_r->{right_area} = $win_r->{area};
-  } # if #
-
   # Day list listbox to the left
   $win_r->{day_list} =
-    new Gui::DayList(-area => $win_r->{left_area},
+    new Gui::DayList(-area => $win_r->{area},
                      -side => 'left',
                      -showEvent => [$self => 'show'],
                      -times     => $self->{-times},
@@ -1039,40 +1339,49 @@ sub _setup($) {
                     )
       if ($self->{-cfg}->get('main_show_daylist'));
 
+  ### Area for day list and main window ####
+  if ($self->{-cfg}->get('main_show_daylist')) {
+    $win_r->{right_area} = $win_r->{area}
+        -> Frame()
+        -> pack(-side => 'left', -expand => '1', -fill => 'both');
+  } else {
+    $win_r->{right_area} = $win_r->{area};
+  } # if #
+
   ## Time handling ##
   $win_r->{time_area} =
       new Gui::Time(
                     -area      => $win_r->{right_area},
                     -calculate => $self->{-calculate},
                     -time      => [$self, '_modify', 1],
-                    -date      => [$self, '_dated', $self->{-edit_win}],
+                    -date      => [$self, '_dateReturn'],
                     -invalid   => [$self, '_message'],
                    );
 
   ## Workday handling ##
   $win_r->{day_paus_area} = $win_r->{right_area}
       -> Frame()
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
+      -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{day_text} = $win_r->{day_paus_area}
       -> Label(-text => 'Arbetsdagen:')
       -> pack(-side => 'left');
 
   $win_r->{day_start} = $win_r->{day_paus_area}
-      -> Button(-text => 'Börja', -command => [$self, '_add', $BEGINWORKDAY])
+      -> Button(-text => 'Börja', -command => [$self, '_checkAdd', $BEGINWORKDAY])
       -> pack(-side => 'left');
 
   $win_r->{day_end} = $win_r->{day_paus_area}
-      -> Button(-text => 'Sluta', -command => [$self, '_add', $ENDWORKDAY])
+      -> Button(-text => 'Sluta', -command => [$self, '_checkAdd', $ENDWORKDAY])
       -> pack(-side => 'left');
 
   ## Paus handling ##
   $win_r->{paus_end} = $win_r->{day_paus_area}
-      -> Button(-text => 'Sluta', -command => [$self, '_add', $ENDPAUS])
+      -> Button(-text => 'Sluta', -command => [$self, '_checkAdd', $ENDPAUS])
       -> pack(-side => 'right');
 
   $win_r->{paus_start} = $win_r->{day_paus_area}
-      -> Button(-text => 'Börja', -command => [$self, '_add', $BEGINPAUS])
+      -> Button(-text => 'Börja', -command => [$self, '_checkAdd', $BEGINPAUS])
       -> pack(-side => 'right');
 
   $win_r->{paus_text} = $win_r->{day_paus_area}
@@ -1082,7 +1391,7 @@ sub _setup($) {
   ## Configurable event handling ##
   $win_r->{event_area} = $win_r->{right_area}
       -> Frame(-bd => '1', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
+      -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{event_handling} =
       new Gui::Event(
@@ -1097,7 +1406,7 @@ sub _setup($) {
   ### Previous handling ###
   $win_r->{previous_area} = $win_r->{right_area}
       -> Frame(-bd => '2', -relief => 'sunken')
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
+      -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{previous_text} = $win_r->{previous_area}
       -> Label(-text => 'Tidigare:')
@@ -1123,7 +1432,7 @@ sub _setup($) {
   ### Show data ###
   $win_r->{show_area} = $win_r->{right_area}
       -> Frame(-bd => '2', -relief => 'sunken')
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
+      -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{show_data} = $win_r->{show_area}
       -> Label()
@@ -1134,7 +1443,7 @@ sub _setup($) {
   # the buttons
   $win_r->{butt_area} = $win_r->{right_area}
       -> Frame()
-      -> pack(-side => 'top', -expand => '1', -fill => 'both');
+      -> pack(-side => 'top', -fill => 'both');
 
   ## calculate whole week ##
   $win_r->{week} = $win_r->{butt_area}
@@ -1157,15 +1466,28 @@ sub _setup($) {
   ## Quit ##
   $win_r->{quit} = $win_r->{butt_area}
       -> Button(-text => 'Avsluta',
-                -command => [$self => 'destroy'])
+                -command => [$self => '_quitModified'])
       -> pack(-side => 'right');
   $self->{done} = [$self => '_quit'];
 
+  # UnDo button
+  $win_r->{undo} = $win_r->{butt_area}
+      -> Button(-text => 'Ångra senaste',
+                -command => [$self->{-times}, 'undo', $self, 'popup'],
+               )
+      -> pack(-side => 'right');
+  $win_r->{undo} -> configure(-state => 'disabled')
+      unless($self->{-times}->undoGetLength());
+
   # Now we have enough to show status:
+  $self->_clear();
   $self->_status();
 
   # . Subscribe to updated event data
   $self->{-times}->setDisplay($win_r->{name}, [$self, '_updated']);
+
+  # Register for events from times and undo
+  $self->{-times}->setUndo($win_r->{name}, [$self => 'undo']);
 
   # . Set lock status in title clock
   my ($lock, $locked) = $self->{-cfg}->isSessionLocked();
@@ -1229,8 +1551,10 @@ sub _quit($) {
 
   $self->_disableButtons();
 
-  $win_r->{event_modify} -> configure(-state => 'disabled');
-  $win_r->{event_delete} -> configure(-state => 'disabled');
+  if ($win_r->{event_modify}) {
+    $win_r->{event_modify} -> configure(-state => 'disabled');
+    $win_r->{event_delete} -> configure(-state => 'disabled');
+  } # if #
   $win_r->{event_start}  -> configure(-state => 'disabled');
   $win_r->{event_clear}  -> configure(-state => 'disabled');
 

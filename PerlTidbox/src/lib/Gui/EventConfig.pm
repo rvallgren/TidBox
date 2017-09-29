@@ -2,21 +2,23 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.0   Created: 2017-03-14 17:28
+#   Version:  1.1   Created: 2017-09-26 09:34
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventConfig.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2017-03-14';
+my $VERSION = '1.1';
+my $DATEVER = '2017-09-26';
 
 # History information:
 
 # 1.0  2015-12-09  Roland Vallgren
 #      Event gui moved to own perl module
 #      New cfg is not added if equal to previous
+# 1.1  2017-05-02  Roland Vallgren
+#      Update min week number when last event cfg is removed
 #
 
 #----------------------------------------------------------------------------
@@ -141,17 +143,18 @@ sub new($%) {
 
   $self = {
            edit  => $edit_r,
-             -calculate => $args{-calculate},
-             -clock     => $args{-clock},
-             -cfg       => $args{-cfg},
-             -event_cfg => $args{-event_cfg},
-             -invalid   => $args{-invalid},
-             types_def  => $types_def,
-             EVENT_CFG  => $EVENT_CFG,
-             earlier_copy => {},
-             earlier_index => {},
-             earlier_removed => [],
-             earlier_selector => undef,
+           -calculate => $args{-calculate},
+           -clock     => $args{-clock},
+           -cfg       => $args{-cfg},
+           -event_cfg => $args{-event_cfg},
+           -invalid   => $args{-invalid},
+           types_def  => $types_def,
+           EVENT_CFG  => $EVENT_CFG,
+           earlier_copy => {},
+           earlier_index => {},
+           earlier_removed => [],
+           earlier_removed_was_last => undef,
+           earlier_selector => undef,
           };
 
   bless($self, $class);
@@ -172,7 +175,7 @@ sub new($%) {
                  -exportselection => 0);
   $edit_r->{edit_list_box}
       -> pack(-side => 'left', -expand => '1', -fill => 'both');
-  $edit_r->{edit_list_box} -> bind('<ButtonRelease-1>', [$self => 'display']);
+  $edit_r->{edit_list_box} -> bind('<<ListboxSelect>>' => [$self => 'display']);
 
   $edit_r->{edit_scrollbar} = $edit_r->{list_edit_area}
       -> Scrollbar(-command => ['yview', $edit_r->{edit_list_box}])
@@ -317,7 +320,7 @@ sub new($%) {
     $edit_r->{defaults_menu}
         -> add('radiobutton',
                -command => [selectTemplate => $self],
-               -label => ucfirst(lc($key)),
+               -label => $key,
                -variable => \$self->{templates_selector},
                -value => $key,
                -indicatoron => 0
@@ -555,10 +558,12 @@ sub _radioButtonGet($) {
   my $text_r = $edit_r->{radio_edit_text};
   $text_r->tagDelete('err');
   my $tmp = $text_r -> get('1.0', 'end');
-  $tmp =~ s/^\n+\s*//;
-  $tmp =~ s/\s*\n+$//;
+  $tmp =~ s/\n/;/g;
+  $tmp =~ s/^[\s;]+//;
+  $tmp =~ s/[\s;]+$//;
   $tmp =~ s/\s*=>\s*/=>/g;
-  $tmp =~ s/\s*\n\s*/;/g;
+  $tmp =~ s/;\s+/;/g;
+  $tmp =~ s/\s+;/;/g;
   return $self->_showStatus("Värde saknas")
       unless (length($tmp) > 0);
   return $self->_showStatus("Flera blankrader ej tillåtet")
@@ -688,6 +693,7 @@ sub display($;$) {
   $edit_r->{edit_list_box}->selectionSet($display)
       if (defined($display));
 
+  $edit_r->{edit_list_box}->focus();
   my $cur_selection = $edit_r->{edit_list_box}->curselection();
   $cur_selection = $cur_selection->[0]
       if ref($cur_selection);
@@ -1043,6 +1049,7 @@ sub apply($) {
       $return = $edit_r->{modified} - 1;
       $edit_r->{week_no} -> update(-min_date => $date);
       $self->{-event_cfg}->notifyClients($date);
+      $self->{earlier_removed_was_last} = undef;
 
     } # if #
 
@@ -1052,6 +1059,9 @@ sub apply($) {
   while (@{$self->{earlier_removed}}) {
     my $date = shift(@{$self->{earlier_removed}});
     $self->{-event_cfg}->removeCfg($date);
+
+    $self->{-event_cfg}->notifyClients($self->{earlier_removed_was_last});
+    $self->{earlier_removed_was_last} = undef;
   } # while #
 
   $self->_rebuildEarlier();
@@ -1237,11 +1247,19 @@ sub earlierRemove($) {
   delete($self->{earlier_copy}{$date});
   delete($self->{earlier_index}{$date});
   push(@{$self->{earlier_removed}}, $date);
+  my $dateBeforeRemoved = '0000-00-00';
   while (my ($key, $val) = each(%{$self->{earlier_index}})) {
-    if ($val > $ix) {
-      $self->{earlier_index}{$key}--;
-    } # if #
+    $self->{earlier_index}{$key}--
+        if ($val > $ix);
+    $dateBeforeRemoved = $key
+        if ($dateBeforeRemoved lt $key);
   } # while #
+
+  if ($dateBeforeRemoved lt $date) {
+    # Last removed, step to previous to be used
+    $edit_r->{week_no} -> update(-min_date => $dateBeforeRemoved);
+    $self->{earlier_removed_was_last} = $dateBeforeRemoved;
+  } # if #
 
   $self->callback($edit_r->{notify}, 'modified_event_cfg');
 

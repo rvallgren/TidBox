@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.6   Created: 2015-10-07
+#   Version:  4.7   Created: 2017-09-29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.6';
-my $DATEVER = '2015-10-07';
+my $VERSION = '4.7';
+my $DATEVER = '2017-09-29';
 
 #----------------------------------------------------------------------------
 #
@@ -33,6 +33,9 @@ my $DATEVER = '2015-10-07';
 # 4.6  2015-08-10  Roland Vallgren
 #      Perl Tk installation directory for Solaris/Linux not predefined
 #      Show version information in log
+# 4.7  2017-06-12  Roland Vallgren
+#      Week window need edit
+#      Added handling of plugins
 #
 
 #----------------------------------------------------------------------------
@@ -468,8 +471,6 @@ $fsv ->
     configure(
               -calculate   => $calculate,
               -clock       => $clock,
-              -earlier     => $earlier,
-              -edit        => $edit_win,
               -error_popup => \&error_popup,
              );
 
@@ -522,6 +523,7 @@ $week_win ->
               -event_cfg   => $fsv->getRef('-event_cfg'),
               -parent_win  => $main_win->getWin(),
               -year_win    => $year_win,
+              -edit_win    => $edit_win,
              );
 
 $year_win ->
@@ -549,12 +551,23 @@ $settings ->
               -earlier     => $earlier,
               -parent_win  => $main_win->getWin(),
               -week_win    => $week_win,
+# TODO Temporary. Main and Edit should subscribe on Cfg status
               -edit_update => [$edit_win => 'update'],
               -main_status => [$main_win => '_status'],
               -week_update => [$week_win => 'update'],
               -about_popup => \&about_popup,
              );
 
+
+$fsv->getRef('-plugin') ->
+    configure(
+              -earlier       => $earlier,
+              -main_win      => $main_win,
+              -week_win      => $week_win,
+              -edit_win      => $edit_win,
+              -year_win      => $year_win,
+              -sett_win      => $settings,
+             );
 
 # Tick clock once to initialize values and let things show up
 $clock -> tick();
@@ -564,13 +577,17 @@ my $time = $clock->getTime();
 my $date = $clock->getDate();
 
 # Load files
-$fsv->load($date, $time);
+$fsv->load($date, $time, $tool_info{VERSION});
 
 # Set starttime
 $fsv->start($date, $time, $args, $tool_info{version});
 
 # Setup main GUI
 $main_win->display();
+
+# Initiate plugins
+$fsv->getRef('-plugin')->loadPlugins();
+$fsv->getRef('-plugin')->registerPlugins();
 
 #----------------------------------------------------------------------------
 #
@@ -591,8 +608,6 @@ my $lock = $fsv->getRef('-lock');
 if ($lock->isLocked()) {
   $main_win->showLocked();
 } # if #
-
-
 
 
 {
@@ -696,7 +711,7 @@ Roland Vallgren
 This program is copyrighted by Roland Vallgren
 All Rights Reserved.
 
-    Copyright (c) 2015-10-07 Roland Vallgren All rights reserved
+    Copyright (c) 2017-09-29 Roland Vallgren All rights reserved
     This program is free software. It may be used, redistributed
     and/or modified under the same terms as Perl itself
 

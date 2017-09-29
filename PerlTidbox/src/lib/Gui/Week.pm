@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.12   Created: 2017-03-14 17:40
+#   Version:  1.13   Created: 2017-09-26 11:04
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.12';
-my $DATEVER = '2017-03-14';
+my $VERSION = '1.13';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -46,6 +46,12 @@ my $DATEVER = '2017-03-14';
 #       Use isLocked to check lock
 # 1.12  2017-02-24  Roland Vallgren
 #       Display flex time as +/- hours
+# 1.13  2017-06-13  Roland Vallgren
+#       Added links to start edit from weekdays
+#       Added export of week data
+#       Removed usage of Terp.pm
+#       Added handling of plugin to add buttons
+#       Setting terp_normal_worktime renamed to ordinary_week_work_time
 #
 
 #----------------------------------------------------------------------------
@@ -64,7 +70,6 @@ use Tk::ROText;
 use Tk::LabFrame;
 
 use Gui::Confirm;
-use Terp;
 
 # Register version information
 {
@@ -110,6 +115,7 @@ sub new($%) {
               @_,
               win       => {name => 'week'},
               condensed => 0,
+              plugin_can => {-button => undef},
              };
 
   $self->{-title} .= ': Beräkna veckoarbetstid';
@@ -189,14 +195,17 @@ sub _formatWeekRow($$$$$) {
   $insert_box->insert('end', $line . "\n");
 
   if (wantarray()) {
-    my $normal = $self->{-cfg}->get('terp_normal_worktime') * 60;
+    my $normal = $self->{-cfg}->get('ordinary_week_work_time') * 60;
     my ($flex, $sign);
     if ($row_time > $normal) {
       $flex = $row_time - $normal;
       $sign = '+';
-    } else {
+    } elsif ($row_time < $normal) {
       $flex = $normal - $row_time;
       $sign = '-';
+    } else {
+      $flex = '0';
+      $sign = '';
     } # if #
 
     return ($self->{-calculate}->hours($row_time),
@@ -399,10 +408,19 @@ sub _setup($) {
                 -command => [$self => '_adjust'])
       -> pack(-side => 'left');
 
-  # Terp
-  $win_r->{terp} = $win_r->{button_area}
-      -> Button(-text => 'Till Terp-mall', -command => [$self => '_terp'])
+  # Export
+  $win_r->{export} = $win_r->{button_area}
+      -> Button(-text => 'Exportera', -command => [$self => '_export'])
       -> pack(-side => 'left');
+
+  while (my ($name, $ref) = each(%{$self->{plugin}})) {
+    if (exists($ref->{-button})) {
+      my ($label, $callback) = $self->callback($ref->{-button});
+      $win_r->{'button_' . $name} = $win_r->{button_area}
+          -> Button(-text => $label, -command => $callback)
+          -> pack(-side => 'left');
+    } # if #
+  } # while #
 
   # Done button
   $win_r->{done} = $win_r->{button_area}
@@ -553,6 +571,18 @@ sub _display($;$) {
 
     $self->{textboxwidth} = $textboxwidth;
   } # unless #
+
+  # Add tags to weekdays
+  my $wDayCol = $event_text_max_length + 4;
+
+  for my $wday (1..6,0) {
+    my $day = 'day' . $wday;
+    $win_r->{weekdays} -> tagAdd($day,
+                                 '1.'.($wDayCol+($wday==4?0:1)),  '1.'.($wDayCol + 7));
+    $win_r->{weekdays} -> tagConfigure($day, -underline => "1");
+    $win_r->{weekdays} -> tagBind($day, '<Button-1>', [$self => '_edit', $wday] );
+    $wDayCol += 9;
+  } # for #
 
   # Update window header and buttons
   $self->_showHead();
@@ -727,6 +757,33 @@ sub tick($) {
   $self->update($self->{-clock}->getDate());
   return 0;
 } # Method tick
+
+#----------------------------------------------------------------------------
+#
+# Method:      _edit
+#
+# Description: Start editing the selected day
+#
+# Arguments:
+#  - Object reference
+#  - Day of week to edit
+# Returns:
+#  -
+
+sub _edit($$) {
+  # parameters
+  my $self = shift;
+  my ($wday) = @_;
+
+  my $date;
+  if($wday == 0) {
+    $date = $self->{last_date};
+  } else {
+    $date = $self->{-calculate}->stepDate($self->{last_date}, -(6-$wday)-1);
+  } # if #
+  $self->{-edit_win}->display($date);
+  return 0;
+} # Method _edit
 
 #----------------------------------------------------------------------------
 #
@@ -1016,25 +1073,52 @@ sub _adjust($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      _terp
+# Method:      get
 #
-# Description: Export week to terp template file
+# Description: Get a setting
+#
+# Arguments:
+#  - Object reference
+#  - Key to get
+# Returns:
+#  Value of setting
+
+sub get($$) {
+  # parameters
+  my $self = shift;
+  my ($key) = @_;
+
+  return $self->{win}{confirm}
+      if ($key eq 'confirm');
+
+  return $self->{$key};
+} # Method get
+
+#----------------------------------------------------------------------------
+#
+# Method:      _export
+#
+# Description: Calculate and export work times for the week
 #
 # Arguments:
 #  0 - Object reference
+# Optional Arguments:
+#  1 - New date to display
 # Returns:
 #  -
 
-sub _terp($) {
+sub _export($;$) {
   # parameters
   my $self = shift;
+  my ($date) = @_;
 
 
   my $win_r = $self->{win};
-  my $tpt = $self->{-cfg}->get('terp_template');
+  $date = $self->{last_date} unless $date;
 
-  $tpt = $win_r->{win}
-        -> getOpenFile(-defaultextension => '.csv',
+  # Get filename to export to
+  my $file = $win_r->{win}
+        -> getSaveFile(-defaultextension => '.csv',
                        -filetypes => [
                            ['csv files' , '.csv'],
                            ['Text files', '.txt'],
@@ -1042,50 +1126,129 @@ sub _terp($) {
                                      ],
                        -initialdir => ($^O eq 'MSWin32') ? $ENV{HOMEDRIVE} : $ENV{HOME},
                        -initialfile => 'export.csv',
-                       -title => $self->{-title} . ': Terp mall',
-                      )
-      unless ($tpt and (-f $tpt));
+                       -title => $self->{-title} . ': Export',
+                      );
+  return undef
+      unless ($file);
+  my $fh = new FileHandle($file, '>');
 
-  unless ($tpt) {
-    $win_r->{confirm}
-       ->popup(
-               -title => ': Fel',
-               -text  => ['Ingen TERP mall angiven!'
-                         ],
-              );
-    $self->{-cfg}->set(terp_template => undef);
-    return 0;
+  unless ($fh) {
+    $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
+    return 1;
   } # unless #
 
-  unless (-f $tpt) {
+
+  # Can not export an archived week
+  return
     $win_r->{confirm}
        -> popup(
-                -title => ': Fel',
-                -text  => ['Kan inte hitta TERP mall: '.
-                           $tpt
-                          ],
-               );
-    $self->{-cfg}->set(terp_template => undef);
-    return 0;
+                -title => $self->{-title} . ': Bekräfta',
+                -text  => ['Kan inte exportera veckan för ' . $date,
+                           'Registreringar till och med ' .
+                               $self->{-cfg}->get('archive_date') .
+                               ' är arkiverade.'],
+               )
+    if ($date le $self->{-cfg}->get('archive_date'));
+
+  # Calculate for all days in week
+  my $match_string;
+  ($match_string, $self->{condensed}) = $self->{-event_cfg}
+      -> matchString($self->{condensed}, $date);
+
+  @{$self->{problem}} = ();
+  my $week_events = {};
+  my $week_comments = {};
+  my $week_cmt_len = {};
+  my ($weekdays_r, $event_text_max_length, $comment_text_max_length) =
+       $self->{-calculate}
+           -> weekWorkTimes($date, $self->{condensed}, [$self => 'problem'],
+                            $week_events, $week_comments, $week_cmt_len);
+
+  # Record week dates if new date specified
+  $self->{first_date} = $weekdays_r->[0]{date};
+  $self->{last_date}  = $weekdays_r->[6]{date};
+  ($self->{year}, $self->{week}) =
+      $self->{-calculate}->weekNumber($self->{last_date});
+
+  # Print the data for the week
+
+  # Insert event times
+  # TODO We can not handle ',' in events right now
+  #      Comma ',' is replaced with semicolon ';' ...
+  #      Comma in event text can not be differentiated from comma in times.dat
+  my $activity = "\n";
+  for my $event (sort(keys(%{$week_events}))) {
+    my $line;
+    if ($self->{condensed}) {
+      # Insert condensed event
+
+      if ($event =~ /$match_string/) {
+
+        next if($1 eq $activity);
+        $activity = $1;
+
+        $line = $activity;
+        $line =~ s/,/;/g;
+
+        for my $day_r (@$weekdays_r) {
+          $line .= ';' . $self->{-calculate}->hours(
+                              $day_r->{activities}{$activity} || 0, ','
+                                                   );
+        } # for #
+
+        my $tmp .= join(';', sort(keys(%{$week_comments->{$activity}})));
+        $tmp =~ s/,/;/g;
+        $line .= ';' . $tmp;
+
+      } else {
+
+        $line = $event;
+
+        for my $day_r (@$weekdays_r) {
+          $line .= ';' . $self->{-calculate}->hours(
+                              $day_r->{events}{$event} || 0, ','
+                                                   );
+        } # for #
+
+      } # if #
+
+    } else {
+      # Insert normal event
+      $line = $event;
+      $line =~ s/,/;/g;
+
+      for my $day_r (@$weekdays_r) {
+          $line .= ';' . $self->{-calculate}->hours(
+                              $day_r->{events}{$event} || 0, ','
+                                                   );
+      } # for #
+
+    } # if #
+
+    $fh->print($line, "\n");
+
+  } # for #
+  # Close file
+  $self->{-log}->log('Saved', $file)
+      if ($self->{-log});
+
+  unless ($fh->close()) {
+    $self->callback($self->{-error_popup}, 'Kan inte skriva: "' . $file . '"' , $! );
+    return 1;
   } # unless #
 
-  my $res =
-    exportTo Terp(
-                  $self->{last_date} ,
-                  $self->{-event_cfg},
-                  $self->{-calculate},
-                  $self->{-cfg}      ,
-                  $win_r             ,
-                  $tpt,
-                 );
-  if (defined($res)) {
-    $self->{-cfg}->set(terp_template => $tpt);
-  } else {
-    $self->{-cfg}->set(terp_template => undef);
-  } # if #
+  # Problems detected during calculation
+  $win_r->{confirm}
+      -> popup(
+               -title => 'Problem',
+               -text  => ['Problem under beräkningen av av arbetstid'],
+               -data  => [join("\n", @{$self->{problem}})],
+              )
+    if (@{$self->{problem}});
+
 
   return 0;
-} # Method _terp
+} # Method _export
 
 1;
 __END__

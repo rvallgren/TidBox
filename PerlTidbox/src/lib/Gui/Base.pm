@@ -2,15 +2,15 @@
 package Gui::Base;
 #
 #   Document: Base class for Guis
-#   Version:  1.8   Created: 2011-04-03 15:19
+#   Version:  1.9   Created: 2017-09-29 13:43
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: GuiBase.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2011-04-03';
+my $VERSION = '1.9';
+my $DATEVER = '2017-09-29';
 
 # History information:
 #
@@ -35,6 +35,8 @@ my $DATEVER = '2011-04-03';
 #      Use Exco %+ to use same source to register version
 # 1.8  2011-04-03  Roland Vallgren
 #      Window positions data stored as session data
+# 1.9  2017-04-25  Roland Vallgren
+#      Do not withdraw a not existing Confirm 
 #
 
 #----------------------------------------------------------------------------
@@ -115,6 +117,7 @@ sub _getPos($) {
 # Method:      _displayFrame
 #
 # Description: Create a window or raise from withdrawn or iconised state
+#              If not exists call the method to setup the window
 #
 # Arguments:
 #  0 - Object reference
@@ -205,6 +208,10 @@ sub _displayFrame($@) {
 
   # Let window show up before any further actions
   $win_r->{win}->idletasks();
+  if (exists($win_r->{day_list})) {
+    $win_r->{day_list}->setDate();
+  } # if #
+
 
   return 0;
 } # Method _displayFrame
@@ -213,9 +220,7 @@ sub _displayFrame($@) {
 #
 # Method:      display
 #
-# Description: Show a window,
-#              Raise from withdrawn or iconised state
-#              If not exists call the method to setup the window
+# Description: Show a window and handle screen position
 #
 # Arguments:
 #  0 - Object reference
@@ -354,10 +359,10 @@ sub withdraw($;$) {
 
   if ($win_r->{name}) {
     $self -> _getPos();
-    $win_r->{win} -> withdraw() if (Exists($win_r->{win}));
     $win_r->{confirm} -> withdraw() if $win_r->{confirm};
+    $win_r->{win} -> withdraw() if (Exists($win_r->{win}));
   } else {
-    $win_r->{win} -> withdraw();
+    $win_r->{win} -> withdraw() if (Exists($win_r->{win}));
     $win_r->{pp_cont} -> destroy() if Exists($win_r->{pp_cont});
     $win_r->{pp_butt} -> destroy() if Exists($win_r->{pp_butt});
   } # if #

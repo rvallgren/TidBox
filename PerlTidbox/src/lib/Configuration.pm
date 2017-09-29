@@ -2,15 +2,15 @@
 package Configuration;
 #
 #   Document: Configuration class
-#   Version:  2.6   Created: 2015-11-04 12:06
+#   Version:  2.7   Created: 2017-09-25 11:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Configuration.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2015-11-04';
+my $VERSION = '2.7';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
@@ -35,6 +35,8 @@ my $DATEVER = '2015-11-04';
 # 2.6  2015-09-23  Roland Vallgren
 #      Added resume operation and time
 #      Configuration.pm should not have any Gui code
+# 2.7  2017-09-18  Roland Vallgren
+#      Setting terp_normal_worktime renamed to ordinary_week_work_time
 #
 
 #----------------------------------------------------------------------------
@@ -104,8 +106,8 @@ use constant BACKUP_DIR => $^O . '_backup_directory';
 #                       Default is 5 minutes
 #  adjust_level       Level to adjust events to
 #                       Default 0,1 hours represented as 6 minutes
-#  terp_normal_worktime  Normal week worktime, used for Terp hints
-#                          Default is 40 hours a week
+#  ordinary_week_work_time  Ordinary week worktime, used for Week hints
+#                           Default is 40 hours a week
 #  show_message_timeout  Timeout for status messages in main window
 #                          Default is 5 minutes
 #  main_show_daylist  Daylist is default on
@@ -123,7 +125,7 @@ my %DEFAULTS = (
     lock_date             => NO_DATE,
     save_threshold        => 5,
     adjust_level          => 6,
-    terp_normal_worktime  => 40,
+    ordinary_week_work_time  => 40,
     show_message_timeout  => 5,
     main_show_daylist     => 1,
    );
@@ -387,6 +389,27 @@ sub get($@) {
   } # for #
   return %copy;
 } # Method get
+
+#----------------------------------------------------------------------------
+#
+# Method:      Exists
+#
+# Description: Return true if a setting exists
+#
+# Arguments:
+#  - Object reference
+#  - Setting name to check
+# Returns:
+#  true if setting exists
+
+sub Exists($@) {
+  # parameters
+  my $self = shift;
+  my ($key) = @_;
+
+
+  return exists($self->{cfg}{$key});
+} # Method Exists
 
 #----------------------------------------------------------------------------
 #

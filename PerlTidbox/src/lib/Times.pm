@@ -2,15 +2,15 @@
 package Times;
 #
 #   Document: Times data
-#   Version:  1.9   Created: 2017-03-14 17:37
+#   Version:  1.10   Created: 2017-09-26 11:01
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.9';
-my $DATEVER = '2017-03-14';
+my $VERSION = '1.10';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -40,7 +40,9 @@ my $DATEVER = '2017-03-14';
 # 1.9  2016-01-15  Roland Vallgren
 #      setDisplay moved to TidBase
 #      Added handling of midnight
-#      
+# 1.10  2017-09-07  Roland Vallgren
+#       Removed undo button hardcoded to Gui::Edit
+#       Removed support for import of earlier Tidbox data
 #
 
 #----------------------------------------------------------------------------
@@ -54,7 +56,6 @@ use strict;
 use warnings;
 use Carp;
 use integer;
-
 
 # Register version information
 {
@@ -304,31 +305,6 @@ sub _append($$$) {
 
   return 0;
 } # Method _append
-
-#----------------------------------------------------------------------------
-#
-# Method:      importData
-#
-# Description: Put imported times data
-#
-# Arguments:
-#  - Object reference
-#  - Reference to times array
-# Returns:
-#  -
-
-sub importData($$) {
-  # parameters
-  my $self = shift;
-  my ($t_r) = @_;
-
-
-  $self->{times} = $t_r;
-
-  $self->dirty();
-
-  return 0;
-} # Method importData
 
 #----------------------------------------------------------------------------
 #
@@ -826,9 +802,10 @@ sub _undoSet($) {
 # Returns:
 #  -
 
-sub undo($) {
+sub undo($@) {
   # parameters
   my $self = shift;
+  my ($ref, $popup) = @_;
 
 
   return 0 unless (@{$self->{undo}});
@@ -839,8 +816,8 @@ sub undo($) {
     # Latest entry is change or delete
     if (defined(${$l->[0]})) {
       # Latest entry is change
-      $self->{-edit}{win}{confirm}
-        -> popup(-title  => 'bekräfta',
+      $self->callback([$ref->{win}{confirm}, $popup],
+                 -title  => 'bekräfta',
                  -text   => ['Vill du ångra:',
                              'och återställa till:'],
                  -data   => [$self->{-calculate}->format(${$l->[0]}),
@@ -850,8 +827,8 @@ sub undo($) {
 
     } else {
       # Latest entry is delete
-      $self->{-edit}{win}{confirm}
-        -> popup(-title  => 'bekräfta',
+      $self->callback([$ref->{win}{confirm}, $popup],
+                 -title  => 'bekräfta',
                  -text   => ['Vill du ångra borttagning av:'],
                  -data   => [$self->{-calculate}->format($l->[1])],
                  -action => [$self, '_undoAction'],
@@ -870,8 +847,8 @@ sub undo($) {
       $s = 'Vill du ångra upplåsning av vecka:';
       $w = join(' Vecka: ', $self->{-calculate}->weekNumber($o_date));
     } # if #
-    $self->{-edit}{win}{confirm}
-        -> popup(-title  => 'bekräfta',
+      $self->callback([$ref->{win}{confirm}, $popup],
+                 -title  => 'bekräfta',
                  -text   => [$s],
                  -data   => [$w],
                  -action => [$self, '_undoAction'],
@@ -882,8 +859,8 @@ sub undo($) {
     my $i = index($l, ':', 2);
     my ($s, $w) = split(',', substr($l, $i + 1));
 
-    $self->{-edit}{win}{confirm}
-        -> popup(-title  => 'bekräfta',
+      $self->callback([$ref->{win}{confirm}, $popup],
+                 -title  => 'bekräfta',
                  -text   => ['Vill du ångra ' . $s],
                  -data   => [$w],
                  -action => [$self, '_undoSet'],
@@ -891,8 +868,8 @@ sub undo($) {
 
   } else {
     # Latest undo entry is a new registration
-    $self->{-edit}{win}{confirm}
-        -> popup(-title  => 'bekräfta',
+      $self->callback([$ref->{win}{confirm}, $popup],
+                 -title  => 'bekräfta',
                  -text   => ['Vill du ångra registrering:'],
                  -data   => [$self->{-calculate}->format($self->{times}[$l])],
                  -action => [$self, '_undoAction'],

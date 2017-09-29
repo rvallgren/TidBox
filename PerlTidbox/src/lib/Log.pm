@@ -2,7 +2,7 @@
 package Log;
 #
 #   Document: Log to file
-#   Version:  1.3   Created: 2015-11-04 10:05
+#   Version:  1.3   Created: 2017-09-26 09:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Log;
 #
 
 my $VERSION = '1.3';
-my $DATEVER = '2015-11-04';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -45,6 +45,7 @@ use integer;
                    -date    => $DATEVER,
                   );
 }
+
 
 #----------------------------------------------------------------------------
 #

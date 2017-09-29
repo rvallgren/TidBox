@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.2   Created: 2013-04-28 21:33
+#   Version:  1.3   Created: 2017-09-25 11:46
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2013-04-28';
+my $VERSION = '1.3';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
@@ -20,6 +20,11 @@ my $DATEVER = '2013-04-28';
 #      New method quit
 # 1.2  2013-04-28  Roland Vallgren
 #      Use isLocked to check lock status
+# 1.3  2017-05-03  Roland Vallgren
+#      Return or space in listbox shows event
+#      Mouse wheel works in day list
+#      Use Tk::Adjuster to allow change of width
+#      Scrollbar only shows if part of list not shows
 #
 
 #----------------------------------------------------------------------------
@@ -34,6 +39,7 @@ use Carp;
 use integer;
 
 use Tk;
+use Tk::Adjuster;
 
 # Register version information
 {
@@ -61,6 +67,7 @@ my $TIME   = $HOUR . ':' . $MINUTE;
 
 my $TYPE = '[A-Z]+';
 
+
 #############################################################################
 #
 # Method section
@@ -78,13 +85,14 @@ my $TYPE = '[A-Z]+';
 # Returns:
 #  -
 
-sub _show($) {
+sub _show($$) {
   # parameters
   my $self = shift;
   my ($ref) = @_;
 
   my $win_r = $self->{win};
 
+  $win_r->{list_box}->focus();
   my $cur_selection = $win_r->{list_box}->curselection();
 
   if (defined($cur_selection)) {
@@ -148,10 +156,10 @@ sub update($;@) {
           not $self->{-calculate}->impactedDate($self->{date}, @dates));
 
   my $win_r = $self->{win};
-
+  my $list_box = $win_r->{list_box};
 
   my ($scroll_pos) = $win_r->{scrollbar}->get();
-  my $cur_selection = $win_r->{list_box}->curselection();
+  my $cur_selection = $list_box->curselection();
 
   $self->clear();
   $self->callback($self->{-showEvent})
@@ -160,11 +168,10 @@ sub update($;@) {
   my $refs = $self->{refs};
   %{$refs} = ();
 
-  $win_r->{list_box}->delete(0, 'end');
+  $list_box->delete(0, 'end');
   $self->{highlited} = -1;
 
   my $repeated = 1;
-  my $cnt = 0;
   my $date = $self->{date};
   for my $ref ($self->{-times}->getSortedRefs($date)) {
 
@@ -180,26 +187,42 @@ sub update($;@) {
     } # unless #
 
     $refs->{$entry} = $ref;
-    $win_r->{list_box} -> insert("end", $entry);
-    $cnt++;
+    $list_box -> insert("end", $entry);
 
   } # for #
 
-  $win_r->{list_box} -> yviewMoveto($scroll_pos)
+  $list_box -> yviewMoveto($scroll_pos)
       if ($scroll_pos);
 
-  if ($cnt) {
-    $win_r->{list_box} -> configure(-width => -1);
+  if ($list_box->size()) {
+    $list_box -> configure(-width => -1);
   } else {
-    $win_r->{list_box} -> configure(-width => 20);
+    $list_box -> configure(-width => 20);
+  } # if #
+
+  # Show scrollbar if needed
+  $list_box->idletasks();
+  my ($x1, $y1, $w1, $h1) = $list_box->bbox(0);
+  my ($x2, $y2, $w2, $h2) = $list_box->bbox('end');
+  if ((defined($y1) and defined($y2))
+      or
+      not (defined($y1) or defined($y2))) {
+    if ($win_r->{scrollbar_shown}) {
+      $win_r->{scrollbar}->configure(-width => 0);
+      $win_r->{scrollbar_shown} = 0;
+    } # if #
+  } else {
+    unless ($win_r->{scrollbar_shown}) {
+      $win_r->{scrollbar}->configure(-width => $win_r->{scrollbar_width});
+      $win_r->{scrollbar_shown} = 1;
+    } # unless #
   } # if #
 
   # Update lock display
-
   if ($self->{-cfg}->isLocked($date)) {
-    $win_r->{list_box} -> configure(-background => 'lightgrey');
+    $list_box -> configure(-background => 'lightgrey');
   } else {
-    $win_r->{list_box} -> configure(-background => 'white');
+    $list_box -> configure(-background => 'white');
   } # if #
 
   return 0;
@@ -225,7 +248,7 @@ sub setDate($;$) {
 
   if ($date) {
     $self->{date} = $date;
-  } else {
+  } elsif (exists($self->{-clock})) {
     $self->{date} = $self->{-clock}->getDate()
   } # if #
 
@@ -300,6 +323,7 @@ sub see($$;$$) {
 
   # Show time
   for my $i (reverse(0 .. $win_r->{list_box}->index('end'))) {
+# TODO Scrolls away from selected line
     my $e = $win_r->{list_box}->get($i);
     next
         if (not $e or ($time lt substr($e, 0, 5)));
@@ -371,16 +395,27 @@ sub new($%) {
       -> Frame(-bd => '2', -relief => 'raised')
       -> pack(-side => $args{-side}, -expand => '1', -fill => 'both');
 
-  $win_r->{list_box} = $win_r->{list_area}
-      -> Listbox(-height => 10, -exportselection => 0)
-      -> pack(-side => 'left', -expand => '1', -fill => 'both');
-
-  $win_r->{list_box}
-      -> bind("<ButtonRelease-1>", [$self => '_show']);
+  $win_r->{list_area_adjuster} = $args{-area}
+      -> Adjuster()
+      -> packAfter($win_r->{list_area}, -side => $args{-side});
 
   $win_r->{scrollbar} = $win_r->{list_area}
-      -> Scrollbar(-command => ['yview', $win_r->{list_box}])
-      -> pack(-side => 'left', -fill => 'y');
+      -> Scrollbar()
+      -> pack(-side => 'right', -fill => 'y');
+
+  $win_r->{list_box} = $win_r->{list_area}
+      -> Listbox(-height => 10, -exportselection => 0)
+      -> pack(-side => 'right', -expand => '1', -fill => 'both');
+
+  $win_r->{scrollbar}->configure(-command => ['yview', $win_r->{list_box}]);
+
+  $win_r->{scrollbar_width} = $win_r->{scrollbar}->cget(-width);
+  $win_r->{scrollbar}->configure(-width => 0);
+  $win_r->{scrollbar_shown} = 0;
+
+  $win_r->{list_box}
+      -> bind('<<ListboxSelect>>' => [$self => '_show']);
+
   $win_r->{list_box}
       -> configure(-yscrollcommand => ['set', $win_r->{scrollbar}]);
 
@@ -393,7 +428,6 @@ sub new($%) {
     # . Register change date for midnight ticks
     $self->{-clock}->repeat(-date => [$self, 'setDate']);
     # And show today
-    $self->setDate();
   } # if #
 
   return $self;

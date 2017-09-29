@@ -1,15 +1,15 @@
 #
 package Version;
 #
-#   Version:  1.5   Created: 2017-03-22
+#   Version:  1.6   Created: 2017-09-29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Version.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2017-03-22';
+my $VERSION = '1.6';
+my $DATEVER = '2017-09-29';
 
 # Register version information
 {
@@ -34,6 +34,8 @@ my $DATEVER = '2017-03-22';
 #      Dynamic session information
 # 1.5  2013-05-18  Roland Vallgren
 #      Handle session lock
+# 1.6  2017-04-19  Roland Vallgren
+#      Changed format in component list
 #
 
 #----------------------------------------------------------------------------
@@ -53,6 +55,7 @@ BEGIN {
        # symbols to export on request
        @EXPORT_OK = qw(%tool_info
                        register_version
+                       register_plugin_version
                        register_starttime
                        register_import
                        register_external
@@ -62,16 +65,17 @@ our (@EXPORT_OK);
 
 our %tool_info;
 
-
 my %components;
+my %plugins;
+# TODO When needed # my @plugin_names;
 
 # Version information
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2017-03-22',
+    date      => '2017-09-29',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.9',
+    VERSION   => '4.10',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -87,6 +91,7 @@ $tool_info{about_head} = [
    'Felrättningar',
    'Hemsida',
    'Komponenter',
+   'Insticksmoduler',
    'Externt',
                          ];
 $tool_info{about} = [
@@ -104,35 +109,45 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Inställningar -> Händelser
-- Hantering av tidigare inställningar tillagd.
-- Redigering av radioknappar omgjord.
-Kodförbättringar.
-Plus/minus-tid jämfört med planerad tid visas i veckan.
-Om aktivitet pågår vid midnatt så avslutas den vid 23:59
-och samma aktivitet startas 00:00 nästa dag.
-Tagit bort session.dat från loggen
+Retur i datum ändrar händelse om händelse är vald.
+Om en redigering inte är sparad bekräfta att ändringen skall kastas.
+Retur eller blanksteg i daglistan visar händelsen.
+Starta redigera från veckodag, klicka på dagens namn.
+Rullisten visas inte i lista med dagens aktiviteter om den inte behövs.
+Ny funktion exporterar veckan till en fil.
+Ångra senaste finns nu också i huvudfönstret.
+Stöd för insticksmoduler (plugin) infört.
+Tagit bort import av Tidbox data från Tidbox före utgåva 4.0
+  Tidbox 4.0 är från oktober 2007.
+MyTime insticksmodul ersätter Terp.
+Normal veckosrbetstid är nu en generell inställning
+
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Insällning av händelser hanterade inte ny vecka.
+Ta bort senaste händelsedefinitionen uppdaterade inte till föregående
+Huvudfönster utan daglista gick inte att avsluta
 '
 ,
 
+
 #------------------ Hemsida ------------------
-\'http://intra.tieto.com/profile/vallgrol'
+\'https://social.intra.tieto.com/tibbr/#!/messages/mention/filters/Roland%20Vallgren'
 ,
 
 #---------------- Komponenter ----------------
 \%components
 ,
 
-#----------------- Externals -----------------
-''
+#---------------- Plug-ins -------------------
+\%plugins
 ,
+
+#----------------- Externals -----------------
+#''  Externals is pushed on last
 
 ];
 
@@ -155,11 +170,37 @@ sub register_version(%) {
   my (%i) = @_;
 
   $components{$i{-name}} =
-                  '  =>  Version: ' . $i{-version} .
-                     '  Datum: ' . $i{-date} ;
-
+      sprintf('  =>  Version: %-6s  Datum: %s',
+              $i{-version}, $i{-date}
+             );
   return 0;
 } # sub register_version
+
+#----------------------------------------------------------------------------
+#
+# Function:    register_plugin_version
+#
+# Description: Register version of a plug-in
+#
+# Arguments:
+#  0 - Information hash
+#        -name     plugin name
+#        -version  Version string, number
+#        -date     Date when the version was created
+# Returns:
+#  -
+
+sub register_plugin_version(%) {
+  # parameters
+  my (%i) = @_;
+
+  $plugins{$i{-name}} =
+      sprintf('  =>  Version: %6s  Datum: %s',
+              $i{-version}, $i{-date}
+             );
+# TODO When needed #  push @plugin_names, $i{-name};
+  return 0;
+} # sub register_plugin_version
 
 #----------------------------------------------------------------------------
 #
@@ -221,7 +262,7 @@ sub register_import($$) {
 #  -
 
 sub register_external(@) {
-  $tool_info{about}[5] = join("\n", @_);
+  push @{$tool_info{about}}, join("\n", @_);
 
   return 0;
 } # sub register_external

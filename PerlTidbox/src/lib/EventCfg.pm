@@ -2,15 +2,15 @@
 package EventCfg;
 #
 #   Document: Event Configuration Data
-#   Version:  3.0   Created: 2016-04-22 17:41
+#   Version:  3.1   Created: 2017-09-25 11:56
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventCfg.pmx
 #
 
-my $VERSION = '3.0';
-my $DATEVER = '2016-04-22';
+my $VERSION = '3.1';
+my $DATEVER = '2017-09-25';
 
 # History information:
 
@@ -58,6 +58,10 @@ my $DATEVER = '2016-04-22';
 #      Event gui moved to own perl module
 #      Do not add cfg if equal to previous
 #      New method removeCfg
+# 3.1  2017-09-14  Roland Vallgren
+#      Added handling of plugin to define templates for EVENT_CFG
+#      Removed Terp, handling moved to MyTime plugin
+#      Removed support for import of earlier Tidbox data
 #
 
 #----------------------------------------------------------------------------
@@ -92,25 +96,13 @@ use integer;
 use constant EVENT_START => '0000-00-00';
 
 my %EVENT_CFG = (
-    COPERNICUS => [ 'Proj:w:8',
-                    'Typ:d:4',
-                    'Art:r:-;+;Ö;KÖ;Res',
-                    'Not:.:24',
-                  ],
-    ENKEL => [ 'Aktivitet:.:24',
+    Enkel => [ 'Aktivitet:.:24',
              ],
-    TERP => [ 'Project:d:6',
-              'Task:D:6',
-              'Type:R:' .
-                'N'  . '=>'. 'Normal -SE'                          . ';' .
-                'F+' . '=>'. 'Normal /flex -SE'                    . ';' .
-                'Ö+' . '=>'. 'Overtime Single /saved -SE-Overtime' . ';' .
-                'Res'. '=>'. 'Travelling I /paid -SE-Overtime'     . ';' .
-                'F-' . '=>'. 'Normal /used flex timi -SE'          . ';' .
-                'Ö-' . '=>'. 'Compensation for Overtime -SE'       . ';' .
-                'Sem'. '=>'. 'Vacation -SE'                                ,
-              'Details:.:24',
-            ],
+    Avancerad => [ 'Proj:w:8',
+                   'Typ:d:4',
+                   'Art:r:-;+;Ö;KÖ;Res',
+                   'Not:.:24',
+                 ],
                 );
 
 # Event types definitions
@@ -207,6 +199,7 @@ sub new($%) {
 
     $self = {
              -display => {},
+             plugin_can   => {-template => undef},
             };
 
     bless($self, $class);
@@ -266,7 +259,7 @@ sub _clear($) {
 
 
   $self->{date} = EVENT_START;
-  @{$self->{cfg}} = @{$EVENT_CFG{TERP}};
+  @{$self->{cfg}} = @{$EVENT_CFG{Enkel}};
   %{$self->{earlier}} = ()
       if (exists($self->{earlier}));
   $self->strings();
@@ -321,31 +314,6 @@ sub _save($$) {
 
   return 0;
 } # Method _save
-
-#----------------------------------------------------------------------------
-#
-# Method:      importData
-#
-# Description: Put imported event configuration data
-#
-# Arguments:
-#  - Object reference
-#  - Date
-#  - Reference to event cfg data
-# Returns:
-#  -
-
-sub importData($$$) {
-  # parameters
-  my $self = shift;
-  my ($date, $cfg_r) = @_;
-
-
-  $self->addSet('cfg', $cfg_r, $date);
-  $self->dirty();
-
-  return 0;
-} # Method importData
 
 #----------------------------------------------------------------------------
 #
@@ -544,7 +512,17 @@ sub getDefinition($;$) {
 
   return \%types_def
       unless (defined($event_cfg));
-  return \%EVENT_CFG;
+
+  my $tpt = { %EVENT_CFG };
+  while (my ($name, $ref) = each(%{$self->{plugin}})) {
+    if (exists($ref->{-template})) {
+      my $evref = $self->callback($ref->{-template});
+      while (my ($key, $val) = each(%{$evref})) {
+        $tpt->{$key} = $val;
+      } # while #
+    } # if #
+  } # while #
+  return $tpt;
 } # Method getDefinition
 
 #----------------------------------------------------------------------------

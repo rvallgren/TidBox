@@ -2,15 +2,15 @@
 package FileBase;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.6   Created: 2016-01-18 13:56
+#   Version:  2.7   Created: 2017-09-21 16:08
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2016-01-18';
+my $VERSION = '2.7';
+my $DATEVER = '2017-09-21';
 
 # History information:
 #
@@ -36,6 +36,8 @@ my $DATEVER = '2016-01-18';
 #      Improved handling of backup
 # 2.6  2015-12-09  Roland Vallgren
 #      Load the newest of file and backup restored, lost in previous version
+# 2.7  2017-09-08  Roland Vallgren
+#      Stop load if filekey not found
 #
 
 #----------------------------------------------------------------------------
@@ -438,6 +440,8 @@ sub load($) {
   return 0
       unless ($fh);
 
+  my $found = 0;
+
   while (defined(my $line = $fh->getline())) {
 
     next
@@ -448,17 +452,26 @@ sub load($) {
       croak 'Not known section head: [', $1, "]\n"
           if ($1 ne $self->{-filekey});
 
+      $found = 1;
       last;
 
     } # if #
 
   } # while #
 
-  $self->_load($fh) or
-      croak 'Failed to load data for [', $self->{-filekey}, ']';
+  if ($found) {
 
-  $self->{-log}->log('Loaded', $., 'lines from', $file)
-      if ($self->{-log});
+    $self->_load($fh) or
+        croak 'Failed to load data for [', $self->{-filekey}, ']';
+
+    $self->{-log}->log('Loaded', $., 'lines from', $file)
+        if ($self->{-log});
+
+  } else {
+
+    croak 'No data for [', $self->{-filekey}, '] found in file ', $file;
+
+  } # if #
 
   $fh->close();
 
@@ -597,6 +610,7 @@ sub _saveFile($$) {
 # Description: Save to disk if there is unchanged data
 #              Use copyBackup to save to backup, if backup directory is defined
 #              No save happens if data is already save
+#  TODO Dirty should not change if save did not succeed
 #
 # Arguments:
 #  0 - Object reference
@@ -638,7 +652,6 @@ sub save($;$) {
       $self->dirty(1, 'bak');
     } # if #
   } # if #
-
 
   return 1;
 } # Method save

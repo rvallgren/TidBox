@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.3   Created: 2016-01-26 09:15
+#   Version:  2.4   Created: 2017-09-25 11:50
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.3';
-my $DATEVER = '2016-01-26';
+my $VERSION = '2.4';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
@@ -26,6 +26,9 @@ my $DATEVER = '2016-01-26';
 #      Configuration.pm should not have any Gui code
 # 2.3  2015-12-10  Roland Vallgren
 #      Moved Gui for Event to own Gui class
+# 2.4  2017-05-30  Roland Vallgren
+#      Adaption for Tk::Adjuster used in DayList
+#      Removed hardcoding of undo button to Gui::Edit
 #
 
 #----------------------------------------------------------------------------
@@ -1025,9 +1028,6 @@ sub _setup($) {
 
   my $win_r = $self->{win};
 
-  # Set some defaults
-  $self->{textboxwidth} = 0;
-
   ### Listbox ###
   $win_r->{day_list} =
     new Gui::DayList(-area       => $win_r->{area},
@@ -1041,8 +1041,8 @@ sub _setup($) {
   ### Entry edit ###
   ### Entry edit area ###
   $win_r->{entry_area} = $win_r->{area}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'left', -fill => 'both');
+      -> Frame()
+      -> pack(-side => 'left', -expand => '1', -fill => 'both');
 
   ### Entry edit time ###
   $win_r->{time_area} =
@@ -1239,7 +1239,7 @@ sub _setup($) {
   # UnDo button
   $win_r->{undo} = $win_r->{button_area}
       -> Button(-text => 'Ångra senaste',
-                -command => [$self->{-times} => 'undo'],
+                -command => [$self->{-times} => 'undo', $self, 'popup'],
                )
       -> pack(-side => 'right');
   $win_r->{undo} -> configure(-state => 'disabled')

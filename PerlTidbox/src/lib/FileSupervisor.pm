@@ -2,15 +2,15 @@
 package FileSupervisor;
 #
 #   Document: Handle all files
-#   Version:  2.2   Created: 2017-03-14 17:30
+#   Version:  2.3   Created: 2017-09-25 12:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileSupervisor.pmx
 #
 
-my $VERSION = '2.2';
-my $DATEVER = '2017-03-14';
+my $VERSION = '2.3';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
@@ -27,6 +27,10 @@ my $DATEVER = '2017-03-14';
 #      Added supervision of backup
 # 2.2  2017-03-08  Roland Vallgren
 #      Don't log when session.dat is written
+# 2.3  2017-09-13  Roland Vallgren
+#      Added support for plug-in
+#      Removed support for import of earlier Tidbox data
+#      Added handling for migration of data between versions
 #
 
 #----------------------------------------------------------------------------
@@ -48,6 +52,7 @@ use Session;
 use Times;
 use EventCfg;
 use Supervision;
+use Plugin;
 use Archive;
 
 # Register version information
@@ -58,6 +63,7 @@ use Archive;
                    -date    => $DATEVER,
                   );
 }
+
 
 #############################################################################
 #
@@ -82,7 +88,7 @@ sub new($$) {
   $class = ref($class) || $class;
   my ($args) = @_;
 
-  my $order = [ qw(-lock -cfg -session -event_cfg -supervision -times) ];
+  my $order = [ qw(-lock -cfg -session -event_cfg -supervision -plugin -times) ];
   my $extra = [ qw(-archive) ];
 
   my $files = {
@@ -99,6 +105,8 @@ sub new($$) {
               -supervision => new Supervision(),
 
               -times       => new Times(),
+
+              -plugin      => new Plugin(),
 
               -archive     => new Archive(),
 
@@ -127,7 +135,8 @@ sub new($$) {
 # Description: Setup needed references
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
+#  - Hash with needed references
 # Returns:
 #  -
 
@@ -148,7 +157,6 @@ sub configure($%) {
                 -event_cfg   => $files->{-event_cfg},
                 -log         => $files->{-log},
                 -clock       => $args{-clock},
-                -earlier     => $args{-earlier},
                 -error_popup => $args{-error_popup},
                );
 
@@ -190,7 +198,6 @@ sub configure($%) {
                 -event_cfg   => $files->{-event_cfg},
                 -session     => $files->{-session},
                 -calculate   => $args{-calculate},
-                -edit        => $args{-edit},
                 -clock       => $args{-clock},
                 -log         => $files->{-log},
                 -error_popup => $args{-error_popup},
@@ -204,7 +211,19 @@ sub configure($%) {
                 -event_cfg   => $files->{-event_cfg},
                 -clock       => $args{-clock},
                 -calculate   => $args{-calculate},
-                -earlier     => $args{-earlier},
+                -error_popup => $args{-error_popup},
+               );
+
+  $files->{-plugin} ->
+      configure(
+                -cfg         => $files->{-cfg},
+                -session     => $files->{-session},
+                -times       => $files->{-times},
+                -log         => $files->{-log},
+                -event_cfg   => $files->{-event_cfg},
+                -plugin      => $files->{-plugin},
+                -calculate   => $args{-calculate},
+                -clock       => $args{-clock},
                 -error_popup => $args{-error_popup},
                );
 
@@ -232,44 +251,34 @@ sub configure($%) {
 #  - Object reference
 #  - Date
 #  - Time
+#  - Version
 # Returns:
 #  -
 
-sub load($$$) {
+sub load($$$$) {
   # parameters
   my $self = shift;
-  my ($date, $time) = @_;
+  my ($date, $time, $version) = @_;
 
   my $files = $self->{files};
 
-  # Import earlier version tidbox files if they exists
-  my $imported;
-  unless ($files->{-cfg}->Exists()) {
-    eval {
-           require Import_E;
-         };
-    unless ($@) {
-      $imported =
-        Import_E::import_query($files->{-cfg},
-                               $files->{-event_cfg},
-                               $files->{-supervision},
-                               $files->{-times},
-                               $self->{-calculate},
-                               $files->{-archive},
-                               $self->{-error_popup},
-                              );
-      exit 0
-          unless (defined($imported));
-    } # unless #
-
-  } # unless #
-
   # Read old data for configuration and times, do not read archive
-  unless ($imported) {
-    for my $k (@{$self->{order}}) {
-      $files->{$k}->load();
-    } # for #
-  } # unless #
+  for my $k (@{$self->{order}}) {
+    $files->{$k}->load();
+  } # for #
+
+  # Migrate data between Tidbox versions
+  if ($files->{-session}->get('last_version') ne $version) {
+    require MigrateVersion;
+    MigrateVersion->MigrateData(
+                  -cfg         => $files->{-cfg},
+                  -session     => $files->{-session},
+                  -times       => $files->{-times},
+                  -log         => $files->{-log},
+                  -event_cfg   => $files->{-event_cfg},
+                  -plugin      => $files->{-plugin},
+                  );
+  } # if #
 
   # Lock session
   $files->{-lock}->lock($date, $time);
@@ -301,7 +310,9 @@ sub getRef($$) {
   my $self = shift;
   my ($name) = @_;
 
-  return $self->{files}{$name};
+  return $self->{files}{$name}
+      if (exists($self->{files}{$name}));
+  return undef;
 } # Method getRef
 
 #----------------------------------------------------------------------------

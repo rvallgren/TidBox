@@ -2,7 +2,7 @@
 package Lock;
 #
 #   Document: Lockfile handler
-#   Version:  1.1   Created: 2015-10-13 16:30
+#   Version:  1.1   Created: 2017-08-25 16:58
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Lock;
 #
 
 my $VERSION = '1.1';
-my $DATEVER = '2015-10-13';
+my $DATEVER = '2017-08-25';
 
 # History information:
 #
@@ -40,6 +40,7 @@ use integer;
                    -date    => $DATEVER,
                   );
 }
+
 
 #----------------------------------------------------------------------------
 #

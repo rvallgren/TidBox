@@ -2,15 +2,15 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.5   Created: 2016-01-27 11:02
+#   Version:  1.6   Created: 2017-09-26 10:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidBase.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2016-01-27';
+my $VERSION = '1.6';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -26,6 +26,8 @@ my $DATEVER = '2016-01-27';
 # 1.5  2016-01-15  Roland Vallgren
 #      Added common methods to handle subscriptions (displays)
 #      callback croaks if it can not handle a callback
+# 1.6  2017-09-14  Roland Vallgren
+#      Add registration of plugin
 #
 
 #----------------------------------------------------------------------------
@@ -79,7 +81,6 @@ sub callback($;$@) {
   my ($callback, @arg) = @_;
 
   return 0 unless $callback;
-
 
   return &$callback(@arg) if (ref($callback) eq 'CODE');
 
@@ -181,6 +182,38 @@ sub _doDisplay($;@) {
 
   return 0;
 } # Method _doDisplay
+
+#----------------------------------------------------------------------------
+#
+# Method:      addPlugin
+#
+# Description: Add plugin callbacks
+#
+# Arguments:
+#  - Object reference
+#  - Name of plugin
+# Optional Arguments:
+#  - Callbacks hash
+# Returns:
+#  -
+
+sub addPlugin($$%) {
+  # parameters
+  my $self = shift;
+  my ($name, %callbacks) = @_;
+
+
+  croak "Plugin not supported in ", ref($self)
+      unless (exists($self->{plugin_can}));
+
+  while (my ($key, $val) = each(%callbacks)) {
+    croak 'Not allowed plugin action "', $key, '" for ', ref($self)
+        unless (exists($self->{plugin_can}{$key}));
+    $self->{plugin}{$name}{$key} = $val;
+  } # while #
+
+  return 0;
+} # Method addPlugin
 
 1;
 __END__

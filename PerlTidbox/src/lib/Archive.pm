@@ -2,15 +2,15 @@
 package Archive;
 #
 #   Document: Archive data
-#   Version:  1.2   Created: 2011-03-13 07:21
+#   Version:  1.3   Created: 2017-09-25 11:33
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Archive.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2011-03-13';
+my $VERSION = '1.3';
+my $DATEVER = '2017-09-25';
 
 # History information:
 #
@@ -20,6 +20,9 @@ my $DATEVER = '2011-03-13';
 #      Use Exco %+ to use same source to register version
 # 1.2  2011-03-12  Roland Vallgren
 #      Use FileHandle for file handling
+# 1.3  2017-09-11  Roland Vallgren
+#      Remove not used constants
+#      Removed support for import of earlier Tidbox data
 #
 
 #----------------------------------------------------------------------------
@@ -57,15 +60,12 @@ use constant FILENAME  => 'archive.dat';
 use constant FILEKEY   => 'ARCHIVED TIME EVENTS';
 
 use constant ARCHIVE_INFO      => 'ARCHIVE INFORMATION';
-use constant INFO              => 1;
-# date_time     : När arkiveringen gjordes
-# start_date    : Första registrering i arkivet
-# end_date      : Sista datum i arkivet
+# date_time     : When the archive set was added
+# start_date    : Date of first registration in the archive
+# end_date      : Date of the last registration in the archive
 
 use constant ARCHIVE_EVENT_CFG => 'EVENT CONFIGURATION';
-use constant EVNTC             => 2;
 use constant ARCHIVE_TIMES     => 'REGISTERED TIME EVENTS';
-use constant TIMES             => 3;
       
 
 #############################################################################
@@ -497,30 +497,6 @@ sub archive($$) {
 
   return 0;
 } # Method archive
-
-#----------------------------------------------------------------------------
-#
-# Method:      importData
-#
-# Description: Put imported archive data into a set
-#
-# Arguments:
-#  - Object reference
-#  - Reference archive set
-# Returns:
-#  -
-
-sub importData($$) {
-  # parameters
-  my $self = shift;
-  my ($set) = @_;
-
-
-  $self->{sets}{$set->{end_date}} = $set;
-  $self->dirty();
-
-  return 0;
-} # Method importData
 
 1;
 __END__

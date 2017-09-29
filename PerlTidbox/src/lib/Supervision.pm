@@ -2,15 +2,15 @@
 package Supervision;
 #
 #   Document: Supervision class
-#   Version:  1.5   Created: 2016-01-28 14:37
+#   Version:  1.6   Created: 2017-09-26 10:39
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Supervision.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2016-01-28';
+my $VERSION = '1.6';
+my $DATEVER = '2017-09-26';
 
 # History information:
 #
@@ -27,6 +27,8 @@ my $DATEVER = '2016-01-28';
 #      Times::getSortedRefs does join
 # 1.5  2016-01-19  Roland Vallgren
 #      Gui handling moved to Gui::SupervisionConfig
+# 1.6  2017-09-15  Roland Vallgren
+#      Removed support for import of earlier Tidbox data
 #
 
 #----------------------------------------------------------------------------
@@ -203,32 +205,6 @@ sub _save($$) {
 
   return 0;
 } # Method _save
-
-#----------------------------------------------------------------------------
-#
-# Method:      importData
-#
-# Description: Put imported supervision data
-#
-# Arguments:
-#  - Object reference
-#  - Enable
-#  - Date
-#  - Event data
-# Returns:
-#  -
-
-sub importData($$$$) {
-  # parameters
-  my $self = shift;
-  my ($enable, $date, $event) = @_;
-
-  $self->{cfg}{sup_enable} = $enable;
-  $self->{cfg}{start_date} = $date;
-  $self->{cfg}{sup_event}  = $event;
-  $self->dirty();
-  return 0;
-} # Method importData
 
 #----------------------------------------------------------------------------
 #
