@@ -2,15 +2,15 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.6   Created: 2017-09-26 10:41
+#   Version:  1.7   Created: 2018-02-22 17:33
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidBase.pmx
 #
 
-my $VERSION = '1.6';
-my $DATEVER = '2017-09-26';
+my $VERSION = '1.7';
+my $DATEVER = '2018-02-22';
 
 # History information:
 #
@@ -28,6 +28,8 @@ my $DATEVER = '2017-09-26';
 #      callback croaks if it can not handle a callback
 # 1.6  2017-09-14  Roland Vallgren
 #      Add registration of plugin
+# 1.7  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -85,7 +87,8 @@ sub callback($;$@) {
   return &$callback(@arg) if (ref($callback) eq 'CODE');
 
   unless (ref($callback) eq 'ARRAY') {
-    croak "callback issued: \"" . ref($callback) . "\" Not ARRAY, afraid no good way to handle this\n";
+    croak "callback issued: \"" . ref($callback) .
+          "\" Not ARRAY, afraid no good way to handle this\n";
     return 1;
   }
 
@@ -107,12 +110,11 @@ sub callback($;$@) {
 #
 # Method:      configure
 #
-# Description: Add setting to an object
+# Description: Add references to an object
 #
 # Arguments:
-#  0 - Object reference
-# Additional arguments as hash
-#  
+#  - Object reference
+#  - Additional arguments as hash
 # Returns:
 #  -
 
@@ -121,11 +123,14 @@ sub configure($%) {
   my $self = shift;
   my %args = @_;
 
+  $self->{erefs} = {}
+      unless(ref($self->{erefs}));
+  my $erefs = $self->{erefs};
   while (my ($key, $val) = each(%args)) {
-    $self->{$key} = $val;
+    $erefs->{$key} = $val;
     # To improve performance when Tidbox is shut down,
     # weaken references to other objects
-    weaken($self->{$key})
+    weaken($erefs->{$key})
         if (blessed($val));
   } # while #
 

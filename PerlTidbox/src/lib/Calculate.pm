@@ -2,15 +2,15 @@
 package Calculate;
 #
 #   Document: Calculator for TidBox
-#   Version:  1.9   Created: 2011-05-01 18:22
+#   Version:  1.10   Created: 2017-11-10 19:15
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Calculate.pmx
 #
 
-my $VERSION = '1.9';
-my $DATEVER = '2011-05-01';
+my $VERSION = '1.10';
+my $DATEVER = '2017-11-10';
 
 # History information:
 #
@@ -38,6 +38,8 @@ my $DATEVER = '2011-05-01';
 #      Improved regexp handling
 # 1.9  2011-05-01  Roland Vallgren
 #      Impacted handled ranges wrong
+# 1.10  2017-10-16  Roland Vallgren
+#       References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -271,17 +273,17 @@ sub stepTimeDate($$;$$) {
   if ($time) {
     ($hour, $minu) = split(':', $time);
   } else {
-    $hour = $self->{-clock}->getHour();
-    $minu = $self->{-clock}->getMinute();
+    $hour = $self->{erefs}{-clock}->getHour();
+    $minu = $self->{erefs}{-clock}->getMinute();
   } # if #
 
   my ($year, $month, $day);
   if ($date) {
     ($year, $month, $day) = split('-', $date);
   } else {
-      $year  = $self->{-clock}->getYear() ;
-      $month = $self->{-clock}->getMonth();
-      $day   = $self->{-clock}->getDay()  ;
+      $year  = $self->{erefs}{-clock}->getYear() ;
+      $month = $self->{erefs}{-clock}->getMonth();
+      $day   = $self->{erefs}{-clock}->getDay()  ;
   } # if #
 
   # Carefully try if the date or time is valid
@@ -430,7 +432,7 @@ sub dayInWeek($$$;$) {
 
   # OK, now we have Thursday of specified week
   # If no weekday is specified use today of the week
-  $weekday = $self->{-clock}->getWeekday() unless (defined($weekday));
+  $weekday = $self->{erefs}{-clock}->getWeekday() unless (defined($weekday));
 
   # Sunday is last day in week
   $weekday = 7 unless ($weekday);
@@ -490,8 +492,8 @@ sub findYear($;$) {
   my $self = shift;
   my ($y) = @_;
 
-  return $self->{-clock}->getYear() unless defined($y);
-  return substr($self->{-clock}->getYear(), 0, 4-length($y)) . $y;
+  return $self->{erefs}{-clock}->getYear() unless defined($y);
+  return substr($self->{erefs}{-clock}->getYear(), 0, 4-length($y)) . $y;
 } # Method findYear
 
 #----------------------------------------------------------------------------
@@ -643,22 +645,22 @@ sub evalTimeDate($;$$$) {
 
     if (length($date_info) == 0 or $date_info eq 'idag') {
       # No date given, use today
-      $date_res = $self->{-clock}->getDate();
+      $date_res = $self->{erefs}{-clock}->getDate();
 
     } elsif ($date_info eq 'igår') {
       # Yesterday
-      $date_res = $self->stepDate($self->{-clock}->getDate(), -1);
+      $date_res = $self->stepDate($self->{erefs}{-clock}->getDate(), -1);
 
     } elsif ($date_info eq 'imorgon') {
       # Tomorrow
-      $date_res = $self->stepDate($self->{-clock}->getDate(), +1);
+      $date_res = $self->stepDate($self->{erefs}{-clock}->getDate(), +1);
 
     } elsif ($date_info =~ /^(?:[1-9]|[0-2]\d|3[01])$/o) {
       # One or two digits, only a day in current month
       $date_res = $self
           -> yyyyMmDd(
-                      $self->{-clock}->getYear(),
-                      $self->{-clock}->getMonth(),
+                      $self->{erefs}{-clock}->getYear(),
+                      $self->{erefs}{-clock}->getMonth(),
                       $date_info,
                      );
 
@@ -715,8 +717,8 @@ sub evalTimeDate($;$$$) {
       my $day = $self -> findWeekday($1);
       $date_res = $self
           -> dayInWeek(
-                       $self->{-clock}->getYear(),
-                       $self->{-clock}->getWeek(),
+                       $self->{erefs}{-clock}->getYear(),
+                       $self->{erefs}{-clock}->getWeek(),
                        $day
                       )
           if $day;
@@ -730,7 +732,7 @@ sub evalTimeDate($;$$$) {
       my ($month, $date) = ($self -> findMonth($1), $2);
       $date_res = $self
           -> yyyyMmDd(
-                      $self->{-clock}->getYear(),
+                      $self->{erefs}{-clock}->getYear(),
                       $month,
                       $date
                      )
@@ -762,7 +764,7 @@ sub evalTimeDate($;$$$) {
 
     if (length($time_info) == 0) {
       # No time, use current time
-      $time_res = $self->{-clock}->getTime(),
+      $time_res = $self->{erefs}{-clock}->getTime(),
 
     } elsif ($time_info =~ /^
                ([01]?\d|2[0-3]|)[\s:.\/]?([0-5]?\d)   # hours, minutes
@@ -948,7 +950,6 @@ sub dayWorkTimes($$$;$$$$) {
 
   # Find out system time for day to calculate
   my ($year, $month, $day) = split('-', $date);
-  my @wt = localtime(timelocal(1, 1, 1, $day, $month-1, $year));
 
   # Initiate data for the day
   my $day_r = {
@@ -965,7 +966,7 @@ sub dayWorkTimes($$$;$$$$) {
               };
 
   # Intialize max comment lengths
-  my $match_string = $self->{-event_cfg}->matchString($condensed, $date);
+  my $match_string = $self->{erefs}{-event_cfg}->matchString($condensed, $date);
 
   # Default shortest event text length
   my $event_text_max_length = 0;
@@ -980,7 +981,7 @@ sub dayWorkTimes($$$;$$$$) {
   my ($event_begin_hour, $event_begin_minu, $event_time, $event_text);
 
   # Get time artifacts from registered time
-  for my $ref ($self->{-times}->getSortedRefs($date)) {
+  for my $ref ($self->{erefs}{-times}->getSortedRefs($date)) {
     next
        unless ($$ref =~ /^$date,($HOUR):($MINUTE),($TYPE),(.*)$/);
     ($hour, $minut, $typ, $txt) = ($1, $2, $3, $4);
@@ -1164,9 +1165,9 @@ sub dayWorkTimes($$$;$$$$) {
   if ($state != BEFOREWORK) {
     # If end of day not is set and today, set end of day now
     unless ($end_hour and $end_minu) {
-      if ($date eq $self->{-clock}->getDate()) {
-        $end_hour = $self->{-clock}->getHour();
-        $end_minu = $self->{-clock}->getMinute();
+      if ($date eq $self->{erefs}{-clock}->getDate()) {
+        $end_hour = $self->{erefs}{-clock}->getHour();
+        $end_minu = $self->{erefs}{-clock}->getMinute();
       } else {
         ($end_hour, $end_minu) = ($hour, $minut);
         # Consider last event to be end of workday
@@ -1259,7 +1260,6 @@ sub weekWorkTimes($$$;$$$$) {
       $week_events_r, $week_comments_r, $week_com_length_r) = @_;
 
   my ($year, $month, $day) = split('-', $date);
-
   my @wt = localtime(timelocal(1, 1, 1, $day, $month-1, $year));
 
   if($wt[6] > 1) {
@@ -1342,7 +1342,7 @@ sub _adjustEvent($$$;$) {
     return undef;
   } # if #
   substr($new, 11, 5) = $new_time;
-  $self->{-times}->change($ref, $new);
+  $self->{erefs}{-times}->change($ref, $new);
   return $new_time;
 } # Method _adjustEvent
 
@@ -1382,7 +1382,7 @@ sub _adjustOneDay($$$;$) {
   my ($date, $adjust, $problem) = @_;
 
   # Get references to all events, sorted by time, this day
-  my @refs = reverse($self->{-times}->getSortedRefs($date));
+  my @refs = reverse($self->{erefs}{-times}->getSortedRefs($date));
 
   # Skip end of the workday
   if (@refs == 1) {
@@ -1472,7 +1472,7 @@ sub _adjustOneDay($$$;$) {
     {
       # Remove only if this is not the first event of the day
       if (@refs) {
-        $self->{-times}->change($r);
+        $self->{erefs}{-times}->change($r);
         $rmvd++;
       } # if #
 
@@ -1523,8 +1523,10 @@ sub _adjustOneDay($$$;$) {
     for $r (@refs) {
       next unless $$r;
       next unless ($$r =~ /^$date,($TIME),($TYPE),(.*)$/);
-      # If paus or already adjusted or on same time, Adjust as much as last adjust
-      # Paus should be adjusted to avoid that the length of the workday is increased
+      # If paus or already adjusted or on same time,
+      #    Adjust as much as last adjust
+      # Paus should be adjusted to avoid that the length of the workday is
+      #   increased
       if (($2 eq $BEGINPAUS) or
           ($3 and $adjusted{$3}) or
           ($prev_time eq $1))
@@ -1542,7 +1544,7 @@ sub _adjustOneDay($$$;$) {
 
       # If event time is to short, remove it
       if ($3 and exists($short{$3})) {
-        $self->{-times}->change($r);
+        $self->{erefs}{-times}->change($r);
         $rmvd++;
         $changed = 1;
         next;
@@ -1593,7 +1595,7 @@ sub adjustDays($$$;$$) {
 
 
   # Setup an undo set for day times adjust
-  $self->{-times}->undoSetBegin();
+  $self->{erefs}{-times}->undoSetBegin();
 
   # Adjust all days, as long as no problems are encountered
   my ($chgd, $rmvd) = (0, 0);
@@ -1625,10 +1627,10 @@ sub adjustDays($$$;$$) {
       if $result;
 
   if ($chgd or $rmvd) {
-    $self->{-times} ->
+    $self->{erefs}{-times} ->
         undoSetEnd('justering av arbetstid:,' . $str);
   } else {
-    $self->{-times} ->
+    $self->{erefs}{-times} ->
         undoSetEnd('inga justeringar gjordes:,' . $str);
   } # if #
 

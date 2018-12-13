@@ -2,22 +2,24 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.1   Created: 2017-09-25 11:52
+#   Version:  1.2   Created: 2018-02-20 17:31
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Event.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2017-09-25';
+my $VERSION = '1.2';
+my $DATEVER = '2018-02-20';
 
 # History information:
 #
-# 1.0  2015-12-07  Roland Vallgren
-#      Event Gui moved from EventCfg
+# 1.2  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
 # 1.1  2017-05-02  Roland Vallgren
 #      Added get empty event => Already exists in EventCfg
+# 1.0  2015-12-07  Roland Vallgren
+#      Event Gui moved from EventCfg
 #
 
 #----------------------------------------------------------------------------
@@ -194,25 +196,25 @@ sub new($%) {
                name => $opt{-parentName} . 'EC',
               };
 
-  # Get event configuration information
-  my ($cfg_r, $str_r) = $opt{-event_cfg}->getEventCfg($opt{-date});
-
   my $self = {
               win        => $win_r,
               validate   => $opt{-validate},
               buttons    => $opt{-buttons},
               return     => $opt{-return},
-              -event_cfg => $opt{-event_cfg},
-              types_def  => $opt{-event_cfg}->getDefinition(),
+              erefs      => $opt{erefs},
               date       => $opt{-date},
              };
 
 
   bless($self, $class);
 
-  $self->{-event_cfg}->setDisplay($win_r->{name}, [$self, 'replaceArea']);
+  # Get event configuration information
+  $self->{types_def}  = $self->{erefs}{-event_cfg}->getDefinition(),
 
-  $self->_replace_area($cfg_r, $str_r);
+  $self->{erefs}{-event_cfg}->setDisplay($win_r->{name},
+                                         [$self, 'replaceArea']);
+
+  $self->_replace_area($self->{erefs}{-event_cfg}->getEventCfg($opt{-date}));
 
   return $self;
 } # Method new
@@ -236,7 +238,7 @@ sub modifyArea($$) {
   my ($date) = @_;
 
 
-  my ($cfg_r, $str_r) = $self->{-event_cfg}->getEventCfg($date);
+  my ($cfg_r, $str_r) = $self->{erefs}{-event_cfg}->getEventCfg($date);
 
   $self->{date} = $date
       if ($self->{date});
@@ -265,11 +267,13 @@ sub replaceArea($$) {
   my $self = shift;
   my ($date) = @_;
 
+  $self->{erefs}{-log}->trace('Dates:', @_)
+      if ($self->{erefs}{-log});
 
   return 0
        unless (not $self->{date} or ($self->{date} ge $date));
 
-  my ($cfg_r, $str_r) = $self->{-event_cfg}->getEventCfg($date);
+  my ($cfg_r, $str_r) = $self->{erefs}{-event_cfg}->getEventCfg($date);
 
   $self->_replace_area($cfg_r, $str_r);
 

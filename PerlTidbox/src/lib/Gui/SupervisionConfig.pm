@@ -2,18 +2,22 @@
 package Gui::SupervisionConfig;
 #
 #   Document: Supervision Configuration class
-#   Version:  1.0   Created: 2016-01-27 11:02
+#   Version:  1.2   Created: 2018-11-09 15:39
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: SupervisionConfig.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2016-01-27';
+my $VERSION = '1.2';
+my $DATEVER = '2018-11-09';
 
 # History information:
 #
+# 1.2  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
+# 1.1  2017-10-05  Roland Vallgren
+#      Don't need FileBase
 # 1.0  2016-01-26  Roland Vallgren
 #      First issue.
 #
@@ -23,7 +27,6 @@ my $DATEVER = '2016-01-27';
 # Setup
 #
 use base TidBase;
-use base FileBase;
 
 use strict;
 use warnings;
@@ -82,10 +85,7 @@ sub new($) {
 
   my $self = {
                 edit         => $edit_r,
-                -supervision => $args{-supervision},
-                -calculate   => $args{-calculate},
-                -event_cfg   => $args{-event_cfg},
-                -earlier     => $args{-earlier},
+                erefs => $args{erefs},
                 -notify      => $args{-modified},
                 -invalid     => $args{-invalid} ,
                 condensed    =>   0,
@@ -117,8 +117,9 @@ sub new($) {
 
   ### Event cfg ##
   $edit_r->{event_handling} =
-      new Gui::Event(
-                    -event_cfg  => $self->{-event_cfg},
+      new Gui::Event(erefs => {
+                      -event_cfg  => $self->{erefs}{-event_cfg},
+                              },
                     -area       => $edit_r->{set_area},
                     -parentName => $edit_r->{name},
                     -validate   => [$self => '_eventKey'],
@@ -132,7 +133,9 @@ sub new($) {
   $edit_r->{time_area} =
       new Gui::Time(
                     -area      => $edit_r->{date_area},
-                    -calculate => $self->{-calculate},
+                    erefs => {
+                      -calculate => $self->{erefs}{-calculate},
+                             },
                     -date      => 1,
                     -invalid   => $self->{-invalid},
                     -notify    => $self->{-notify},
@@ -245,8 +248,8 @@ sub apply($) {
   }
 
   # Save supervision settings
-  $self->{-supervision}->setCfg($self->{cfg});
-  $self->{-supervision}->setup();
+  $self->{erefs}{-supervision}->setCfg($self->{cfg});
+  $self->{erefs}{-supervision}->setup();
 
   return 1;
 } # Method apply
@@ -328,11 +331,10 @@ sub _update($) {
 sub showEdit($) {
   # parameters
   my $self = shift;
-  my ($copy) = @_;
 
 
   # Copy supervision settings
-  my $ref = $self->{-supervision}->getCfg();
+  my $ref = $self->{erefs}{-supervision}->getCfg();
   %{$self->{cfg}} = %{$ref};
 
 
@@ -357,7 +359,7 @@ sub _addButtons($$) {
   my $self = shift;
   my ($area) = @_;
 
-  $self->{-earlier}->create($area, 'right', [$self => '_previous']);
+  $self->{erefs}{-earlier}->create($area, 'right', [$self => '_previous']);
   return 0;
 } # Method _addButtons
 

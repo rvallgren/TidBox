@@ -2,15 +2,15 @@
 package Gui::Base;
 #
 #   Document: Base class for Guis
-#   Version:  1.9   Created: 2017-09-29 13:43
+#   Version:  1.10   Created: 2018-02-20 12:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: GuiBase.pmx
 #
 
-my $VERSION = '1.9';
-my $DATEVER = '2017-09-29';
+my $VERSION = '1.10';
+my $DATEVER = '2018-02-20';
 
 # History information:
 #
@@ -37,6 +37,9 @@ my $DATEVER = '2017-09-29';
 #      Window positions data stored as session data
 # 1.9  2017-04-25  Roland Vallgren
 #      Do not withdraw a not existing Confirm 
+# 1.10  2017-10-16  Roland Vallgren
+#       References to other objects in own hash
+#       Done action can not be used to destroy window
 #
 
 #----------------------------------------------------------------------------
@@ -92,16 +95,16 @@ sub _getPos($) {
   if ($win_r->{win} -> geometry() =~ /(\+-?\d+\+-?\d+$)/o) {
 
     my $key = $win_r->{name} . '_geometry';
-    my $val = $self->{-session}->get($key);
+    my $val = $self->{erefs}{-session}->get($key);
 
-    if ($self->{-cfg}->get('remember_positions')) {
+    if ($self->{erefs}{-cfg}->get('remember_positions')) {
 
-      $self->{-session}->set($key => $1)
+      $self->{erefs}{-session}->set($key => $1)
           if (not defined($val) or ($val ne $1));
 
     } else {
 
-      $self->{-session}->set($key => undef)
+      $self->{erefs}{-session}->set($key => undef)
           if (defined($val));
 
       $self->{-geometry} = $1;
@@ -137,20 +140,20 @@ sub _displayFrame($@) {
     # Create the window
 
     ### Toplevel ###
-    unless (exists($self->{-parent_win})) {
+    unless (exists($self->{erefs}{-parent_win})) {
 
       $win_r->{win} =
           new MainWindow(-title => $self->{-title});
 
       # This is the parent window
-      $self->{-parent_win}{win} = $win_r;
+      $self->{erefs}{-parent_win}{win} = $win_r;
 
       $win_r->{win}
           -> protocol('WM_DELETE_WINDOW', [$self => 'destroy']);
 
     } else {
 
-      $win_r->{win} = $self->{-parent_win}{win}
+      $win_r->{win} = $self->{erefs}{-parent_win}{win}
           -> Toplevel(-title => $self->{-title});
 
       $win_r->{win}
@@ -188,7 +191,9 @@ sub _displayFrame($@) {
 
     # Add a confirm instance for a named window. Confirm windows are not named
     $win_r->{confirm} = new Gui::Confirm(
-                              -parent_win => $win_r,
+                              erefs => {
+                                -parent_win => $win_r,
+                              },
                               -title      => $self->{-title},
                                          )
         if(exists($win_r->{name}));
@@ -245,9 +250,9 @@ sub display($@) {
   {
     (undef, $pos_x, $pos_y) = split(/\+/, $self->{-geometry});
   }
-  elsif ($self->{-cfg} and
-         $self->{-cfg}->get('remember_positions') and
-         (my $val = $self->{-session}->get($key))
+  elsif ($self->{erefs}{-cfg} and
+         $self->{erefs}{-cfg}->get('remember_positions') and
+         (my $val = $self->{erefs}{-session}->get($key))
         )
   {
     (undef, $pos_x, $pos_y) = split(/\+/, $val);
@@ -359,7 +364,7 @@ sub withdraw($;$) {
 
   if ($win_r->{name}) {
     $self -> _getPos();
-    $win_r->{confirm} -> withdraw() if $win_r->{confirm};
+    $win_r->{confirm} -> withdraw('exit') if $win_r->{confirm};
     $win_r->{win} -> withdraw() if (Exists($win_r->{win}));
   } else {
     $win_r->{win} -> withdraw() if (Exists($win_r->{win}));
@@ -416,7 +421,7 @@ sub popup($$;@) {
 
   $self -> withdraw('cancel');
 
-  my $parent = $self->{-parent_win}{win};
+  my $parent = $self->{erefs}{-parent_win}{win};
   $parent -> idletasks();
 
   $self->_displayFrame(@_);

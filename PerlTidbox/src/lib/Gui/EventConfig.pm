@@ -2,15 +2,15 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.1   Created: 2017-09-26 09:34
+#   Version:  1.2   Created: 2018-11-09 15:39
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventConfig.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2017-09-26';
+my $VERSION = '1.2';
+my $DATEVER = '2018-11-09';
 
 # History information:
 
@@ -19,6 +19,10 @@ my $DATEVER = '2017-09-26';
 #      New cfg is not added if equal to previous
 # 1.1  2017-05-02  Roland Vallgren
 #      Update min week number when last event cfg is removed
+# 1.2  2017-10-05  Roland Vallgren
+#      Don't need FileBase
+#      Renamed EventCfg::addCfg to EventCfg::addNewCfg
+#      References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -26,7 +30,6 @@ my $DATEVER = '2017-09-26';
 # Setup
 #
 use base TidBase;
-use base FileBase;
 
 use strict;
 use warnings;
@@ -138,15 +141,12 @@ sub new($%) {
   my $self;
 
   my $edit_r = {notify => $args{-modified}};
-  my $types_def = $args{-event_cfg}->getDefinition();
-  my $EVENT_CFG = $args{-event_cfg}->getDefinition(1);
+  my $types_def = $args{erefs}{-event_cfg}->getDefinition();
+  my $EVENT_CFG = $args{erefs}{-event_cfg}->getDefinition(1);
 
   $self = {
            edit  => $edit_r,
-           -calculate => $args{-calculate},
-           -clock     => $args{-clock},
-           -cfg       => $args{-cfg},
-           -event_cfg => $args{-event_cfg},
+           erefs => $args{erefs},
            -invalid   => $args{-invalid},
            types_def  => $types_def,
            EVENT_CFG  => $EVENT_CFG,
@@ -243,7 +243,8 @@ sub new($%) {
   $edit_r->{type_edit_menu} -> entryconfigure('end', -state => 'disabled');
 
   # Associate Menubutton with Menu.
-  $edit_r->{type_edit_menu_but} -> configure(-menu => $edit_r->{type_edit_menu});
+  $edit_r->{type_edit_menu_but} ->
+                 configure(-menu => $edit_r->{type_edit_menu});
 
   # Size or radio button values
   $edit_r->{size_edit_frame} = $edit_r->{entry_edit_area}
@@ -350,7 +351,9 @@ sub new($%) {
   $edit_r->{week_no} =
       new Gui::Time(
                     -area      => $edit_r->{week_area},
-                    -calculate => $self->{-calculate},
+                    erefs => {
+                      -calculate => $self->{erefs}{-calculate},
+                             },
                     -week      => 1,
                     -invalid   => $args{-invalid},
                     -notify    => $args{-modified},
@@ -396,7 +399,7 @@ sub new($%) {
   $self->setMaxDate();
 
   # Change -max_date for Time widget at midnight
-  $self->{-clock}->repeat(-date => [$self, 'setMaxDate']);
+  $self->{erefs}{-clock}->repeat(-date => [$self, 'setMaxDate']);
   
 
   return ($self);
@@ -839,10 +842,12 @@ sub update($;$) {
     $edit_r->{label_edit_entry}   -> configure(-state => 'disabled');
     $edit_r->{size_edit_frame}    -> configure(-label => 'Bredd:');
     $edit_r->{size_edit_entry}    -> delete(0, 'end');
-    $edit_r->{size_edit_entry}    -> configure(-width => EDIT_WIDTH, -state => 'disabled');
+    $edit_r->{size_edit_entry}    -> configure(-width => EDIT_WIDTH,
+                                               -state => 'disabled');
     $edit_r->{radio_edit_text}    -> delete('1.0', 'end');
     $edit_r->{radio_edit_text}    -> configure(-state => 'disabled');
-    $edit_r->{type_edit_menu_but} -> configure(-text => '-', -state => 'disabled');
+    $edit_r->{type_edit_menu_but} -> configure(-text => '-',
+                                               -state => 'disabled');
     $edit_r->{button_set}         -> configure(-state => 'disabled');
     $edit_r->{button_add}         -> configure(-state => 'disabled');
     $edit_r->{button_remove}      -> configure(-state => 'disabled');
@@ -1013,7 +1018,7 @@ sub isLocked($) {
   return 0
       unless $date;
 
-  return ($self->{-cfg}->isLocked($date), $date);
+  return ($self->{erefs}{-cfg}->isLocked($date), $date);
 } # Method isLocked
 
 #----------------------------------------------------------------------------
@@ -1042,13 +1047,13 @@ sub apply($) {
         unless $date;
 
     return 0
-        if ($self->{-cfg}->isLocked($date));
+        if ($self->{erefs}{-cfg}->isLocked($date));
 
-    if ($self->{-event_cfg}->addCfg($date, $self->{cfg})) {
+    if ($self->{erefs}{-event_cfg}->addCfg($self->{cfg}, $date)) {
 
       $return = $edit_r->{modified} - 1;
       $edit_r->{week_no} -> update(-min_date => $date);
-      $self->{-event_cfg}->notifyClients($date);
+      $self->{erefs}{-event_cfg}->notifyClients($date);
       $self->{earlier_removed_was_last} = undef;
 
     } # if #
@@ -1058,9 +1063,10 @@ sub apply($) {
 
   while (@{$self->{earlier_removed}}) {
     my $date = shift(@{$self->{earlier_removed}});
-    $self->{-event_cfg}->removeCfg($date);
+    $self->{erefs}{-event_cfg}->removeCfg($date);
 
-    $self->{-event_cfg}->notifyClients($self->{earlier_removed_was_last});
+    $self->{erefs}{-event_cfg}->
+           notifyClients($self->{earlier_removed_was_last});
     $self->{earlier_removed_was_last} = undef;
   } # while #
 
@@ -1088,7 +1094,7 @@ sub _showWeekNo($$) {
 
   return 'tidigare'
       if ($date eq '0000-00-00');
-  return join('v', $self->{-calculate}->weekNumber($date));
+  return join('v', $self->{erefs}{-calculate}->weekNumber($date));
 } # Method _showWeekNo
 
 #----------------------------------------------------------------------------
@@ -1113,14 +1119,14 @@ sub _rebuildEarlier($) {
   my $edit_r = $self->{edit};
 
   # Make a copy of the configuration
-  my $get = $self->{-event_cfg}->getEarlierEventCfg();
+  my $get = $self->{erefs}{-event_cfg}->getEarlierEventCfg();
   my $ref = {};
   $self->{earlier_copy} = $ref;
   while (my ($d, $r) = each(%$get)) {
     $ref->{$d} = [@{$r}];
   } # while #
   {
-    my ($d, $r) = $self->{-event_cfg}->getDateEventCfg();
+    my ($d, $r) = $self->{erefs}{-event_cfg}->getDateEventCfg();
     $ref->{$d} = [@{$r}];
   }
 
@@ -1142,7 +1148,7 @@ sub _rebuildEarlier($) {
   $cnt = 0;
   for my $date (sort(keys(%{$ref}))) {
     if ($prev_r and 
-        $self->{-event_cfg}->compareCfg($prev_r, $ref->{$date})
+        $self->{erefs}{-event_cfg}->compareCfg($prev_r, $ref->{$date}) == 0
        )
     {
        $msg = ' (lika som föregående)';
@@ -1236,9 +1242,9 @@ sub earlierRemove($) {
 
   return $self->callback($self->{-invalid},
                       'Vecka före ' .
-                      join('v', $self->{-calculate}->weekNumber($date)) .
+                      join('v', $self->{erefs}{-calculate}->weekNumber($date)) .
                       ' är låst')
-      if ($self->{-cfg}->isLocked($date));
+      if ($self->{erefs}{-cfg}->isLocked($date));
 
   my $edit_r = $self->{edit};
 
@@ -1320,19 +1326,18 @@ sub selectEarlier($) {
 sub showEdit($$$) {
   # parameters
   my $self = shift;
-  my ($win, $notify_r) = @_;
 
 
   my $edit_r = $self->{edit};
 
   # Copy event configuration
-  my @tmp = $self->{-event_cfg}->getDateEventCfg();
+  my @tmp = $self->{erefs}{-event_cfg}->getDateEventCfg();
   $edit_r->{week_no} -> update(-min_date => $tmp[0]);
   @{$self->{cfg}} = @{$tmp[1]};
 
   $self->_rebuildEarlier();
   $self->update();
-  $edit_r->{week_no} -> set(undef, $self->{-clock}->getDate());
+  $edit_r->{week_no} -> set(undef, $self->{erefs}{-clock}->getDate());
   $edit_r->{modified} = 0;
 
   return 0;
@@ -1354,9 +1359,9 @@ sub setMaxDate($) {
   my $self = shift;
 
   $self->{edit}{week_no} -> update(
-                    -max_date  => $self->{-calculate} ->
-                                  dayInWeek($self->{-clock}->getYear(),
-                                            $self->{-clock}->getWeek(), 7),
+                  -max_date  => $self->{erefs}{-calculate} ->
+                                dayInWeek($self->{erefs}{-clock}->getYear(),
+                                          $self->{erefs}{-clock}->getWeek(), 7),
                                    );
 
   return 0;

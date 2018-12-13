@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.3   Created: 2017-09-25 11:46
+#   Version:  1.4   Created: 2018-02-01 16:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2017-09-25';
+my $VERSION = '1.4';
+my $DATEVER = '2018-02-01';
 
 # History information:
 #
@@ -25,6 +25,8 @@ my $DATEVER = '2017-09-25';
 #      Mouse wheel works in day list
 #      Use Tk::Adjuster to allow change of width
 #      Scrollbar only shows if part of list not shows
+# 1.4  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -153,7 +155,7 @@ sub update($;@) {
 
   return 0
       if (@dates and
-          not $self->{-calculate}->impactedDate($self->{date}, @dates));
+          not $self->{erefs}{-calculate}->impactedDate($self->{date}, @dates));
 
   my $win_r = $self->{win};
   my $list_box = $win_r->{list_box};
@@ -173,11 +175,11 @@ sub update($;@) {
 
   my $repeated = 1;
   my $date = $self->{date};
-  for my $ref ($self->{-times}->getSortedRefs($date)) {
+  for my $ref ($self->{erefs}{-times}->getSortedRefs($date)) {
 
     next unless ($$ref =~ /^$date,($TIME),($TYPE),(.*)$/);
 
-    my $entry = $self->{-calculate}->format(undef, $1, $2, $3);
+    my $entry = $self->{erefs}{-calculate}->format(undef, $1, $2, $3);
 
     unless (exists($refs->{$entry})) {
       $repeated = 1;
@@ -219,7 +221,7 @@ sub update($;@) {
   } # if #
 
   # Update lock display
-  if ($self->{-cfg}->isLocked($date)) {
+  if ($self->{erefs}{-cfg}->isLocked($date)) {
     $list_box -> configure(-background => 'lightgrey');
   } else {
     $list_box -> configure(-background => 'white');
@@ -248,8 +250,8 @@ sub setDate($;$) {
 
   if ($date) {
     $self->{date} = $date;
-  } elsif (exists($self->{-clock})) {
-    $self->{date} = $self->{-clock}->getDate()
+  } elsif (exists($self->{erefs}{-clock})) {
+    $self->{date} = $self->{erefs}{-clock}->getDate()
   } # if #
 
   $self->update();
@@ -329,7 +331,8 @@ sub see($$;$$) {
         if (not $e or ($time lt substr($e, 0, 5)));
     unless ($i == $self->{highlited}) {
       if ($self->{itemconfig}) {
-        $win_r->{list_box}->itemconfigure($self->{highlited}, -background => 'white')
+        $win_r->{list_box}->itemconfigure($self->{highlited},
+                                          -background => 'white')
              if ($self->{highlited} > -1);
         $win_r->{list_box}->itemconfigure($i, -background => 'lightgrey');
       } else {
@@ -422,11 +425,12 @@ sub new($%) {
   $self->{itemconfig} = $win_r->{list_box}->can('itemconfigure');
 
   # . Subscribe to updated event data
-  $self->{-times}->setDisplay($self->{-parentName} . 'dl', [$self, 'update']);
+  $self->{erefs}{-times}->
+          setDisplay($self->{-parentName} . 'dl', [$self, 'update']);
 
-  if ($self->{-clock}) {
+  if ($self->{erefs}{-clock}) {
     # . Register change date for midnight ticks
-    $self->{-clock}->repeat(-date => [$self, 'setDate']);
+    $self->{erefs}{-clock}->repeat(-date => [$self, 'setDate']);
     # And show today
   } # if #
 

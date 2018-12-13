@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.7   Created: 2017-09-29
+#   Version:  4.9   Created: 2018-12-12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.7';
-my $DATEVER = '2017-09-29';
+my $VERSION = '4.9';
+my $DATEVER = '2018-12-12';
 
 #----------------------------------------------------------------------------
 #
@@ -36,6 +36,11 @@ my $DATEVER = '2017-09-29';
 # 4.7  2017-06-12  Roland Vallgren
 #      Week window need edit
 #      Added handling of plugins
+# 4.8  2017-10-05  Roland Vallgren
+#      Move files to TbFile::
+#      References to other objects in own hash
+# 4.9  2018-12-05  Roland Vallgren
+#      Updated pod
 #
 
 #----------------------------------------------------------------------------
@@ -61,7 +66,7 @@ use lib "$FindBin::RealBin/lib";
 use Version qw(%tool_info);
 use TitleClock;
 use Calculate;
-use FileSupervisor;
+use TbFile;
 use Gui::Time;
 use Gui::Edit;
 use Gui::Week;
@@ -412,8 +417,8 @@ my $args = parse_commandline($0);
 # Create Calculator
 my $calculate = new Calculate();
 
-# Create Log
-my $fsv = new FileSupervisor($args);
+# Create TbFile
+my $tbFile = new TbFile($args);
 
 # Create TitleClock
 my $clock = new TitleClock();
@@ -456,8 +461,8 @@ my $settings =
 $calculate ->
     configure(
               -clock       => $clock,
-              -event_cfg   => $fsv->getRef('-event_cfg'),
-              -times       => $fsv->getRef('-times'),
+              -event_cfg   => $tbFile->getRef('-event_cfg'),
+              -times       => $tbFile->getRef('-times'),
              );
 
 $clock ->
@@ -466,8 +471,7 @@ $clock ->
              );
 
 
-# Create Log
-$fsv ->
+$tbFile ->
     configure(
               -calculate   => $calculate,
               -clock       => $clock,
@@ -477,7 +481,7 @@ $fsv ->
 
 $earlier ->
     configure(
-              -cfg => $fsv->getRef('-cfg'),
+              -cfg => $tbFile->getRef('-cfg'),
              );
 
 
@@ -485,13 +489,13 @@ $main_win ->
     configure(
               -clock         => $clock,
               -calculate     => $calculate,
-              -fsv           => $fsv,
-              -cfg           => $fsv->getRef('-cfg'),
-              -lock          => $fsv->getRef('-lock'),
-              -session       => $fsv->getRef('-session'),
-              -times         => $fsv->getRef('-times'),
-              -event_cfg     => $fsv->getRef('-event_cfg'),
-              -supervision   => $fsv->getRef('-supervision'),
+              -tbfile        => $tbFile,
+              -cfg           => $tbFile->getRef('-cfg'),
+              -lock          => $tbFile->getRef('-lock'),
+              -session       => $tbFile->getRef('-session'),
+              -times         => $tbFile->getRef('-times'),
+              -event_cfg     => $tbFile->getRef('-event_cfg'),
+              -supervision   => $tbFile->getRef('-supervision'),
               -start_warning => \&warning_popup,
               -earlier       => $earlier,
               -week_win      => $week_win,
@@ -505,22 +509,23 @@ $edit_win ->
     configure(
               -clock       => $clock,
               -calculate   => $calculate,
-              -cfg         => $fsv->getRef('-cfg'),
-              -times       => $fsv->getRef('-times'),
-              -session     => $fsv->getRef('-session'),
-              -event_cfg   => $fsv->getRef('-event_cfg'),
+              -cfg         => $tbFile->getRef('-cfg'),
+              -times       => $tbFile->getRef('-times'),
+              -session     => $tbFile->getRef('-session'),
+              -event_cfg   => $tbFile->getRef('-event_cfg'),
               -earlier     => $earlier,
               -parent_win  => $main_win->getWin(),
+              -week_win    => $week_win,
              );
 
 $week_win ->
     configure(
               -clock       => $clock,
               -calculate   => $calculate,
-              -cfg         => $fsv->getRef('-cfg'),
-              -session     => $fsv->getRef('-session'),
-              -times       => $fsv->getRef('-times'),
-              -event_cfg   => $fsv->getRef('-event_cfg'),
+              -cfg         => $tbFile->getRef('-cfg'),
+              -session     => $tbFile->getRef('-session'),
+              -times       => $tbFile->getRef('-times'),
+              -event_cfg   => $tbFile->getRef('-event_cfg'),
               -parent_win  => $main_win->getWin(),
               -year_win    => $year_win,
               -edit_win    => $edit_win,
@@ -530,10 +535,10 @@ $year_win ->
     configure(
               -clock       => $clock,
               -calculate   => $calculate,
-              -cfg         => $fsv->getRef('-cfg'),
-              -session     => $fsv->getRef('-session'),
-              -times       => $fsv->getRef('-times'),
-              -archive     => $fsv->getRef('-archive'),
+              -cfg         => $tbFile->getRef('-cfg'),
+              -session     => $tbFile->getRef('-session'),
+              -times       => $tbFile->getRef('-times'),
+              -archive     => $tbFile->getRef('-archive'),
               -parent_win  => $main_win->getWin(),
               -week_win    => $week_win,
               -edit_win    => $edit_win,
@@ -543,11 +548,14 @@ $settings ->
     configure(
               -clock       => $clock,
               -calculate   => $calculate,
-              -cfg         => $fsv->getRef('-cfg'),
-              -session     => $fsv->getRef('-session'),
-              -times       => $fsv->getRef('-times'),
-              -event_cfg   => $fsv->getRef('-event_cfg'),
-              -supervision => $fsv->getRef('-supervision'),
+              -cfg         => $tbFile->getRef('-cfg'),
+              -session     => $tbFile->getRef('-session'),
+              -times       => $tbFile->getRef('-times'),
+              -event_cfg   => $tbFile->getRef('-event_cfg'),
+              -supervision => $tbFile->getRef('-supervision'),
+              -log         => $tbFile->getRef('-log'),
+              -plugin      => $tbFile->getRef('-plugin'),
+              -tbfile      => $tbFile,
               -earlier     => $earlier,
               -parent_win  => $main_win->getWin(),
               -week_win    => $week_win,
@@ -559,7 +567,7 @@ $settings ->
              );
 
 
-$fsv->getRef('-plugin') ->
+$tbFile->getRef('-plugin') ->
     configure(
               -earlier       => $earlier,
               -main_win      => $main_win,
@@ -576,44 +584,42 @@ $clock -> tick();
 my $time = $clock->getTime();
 my $date = $clock->getDate();
 
-# Load files
-$fsv->load($date, $time, $tool_info{VERSION});
+# Load files and initiate session
+$tbFile->load();
+$tbFile->init($date, $time, $tool_info{VERSION});
 
 # Set starttime
-$fsv->start($date, $time, $args, $tool_info{version});
+$tbFile->start($date, $time, $args, $tool_info{version});
 
 # Setup main GUI
 $main_win->display();
 
 # Initiate plugins
-$fsv->getRef('-plugin')->loadPlugins();
-$fsv->getRef('-plugin')->registerPlugins();
+$tbFile->getRef('-plugin')->loadPlugins();
+$tbFile->getRef('-plugin')->registerPlugins();
 
 #----------------------------------------------------------------------------
 #
 # main loop
 #
 
-$earlier->build($fsv->getRef('-times'));
+$earlier->build($tbFile->getRef('-times'));
 
 # Show about if new version is used
-my $session = $fsv->getRef('-session');
+my $session = $tbFile->getRef('-session');
 if ($session->get('last_version') ne $tool_info{VERSION}) {
   about_popup($main_win->getWin());
   $session->set('last_version', $tool_info{VERSION});
 } # if #
 
 # Show session lock popup if session is locked
-my $lock = $fsv->getRef('-lock');
-if ($lock->isLocked()) {
-  $main_win->showLocked();
-} # if #
+$tbFile->checkSessionLock([$main_win, 'showLocked']);
 
 
 {
   local($SIG{__WARN__}) = \&warning_handler;
   # Send errors and warnings to log
-  $fsv->error_warning($error, $warning);
+  $tbFile->error_warning($error, $warning);
 
   MainLoop;
 }
@@ -659,11 +665,14 @@ and located in your home directory. That is B<$HOME/.tidbox>.
 
 On B<Windows> the default directory is named B<Tidbox>
 and located in your B<Application data> directory as defined by Windows.
-The backup directory is defaulted to B<H:\.tidbox>.
+There is no default backup directory.
+Select a backup directory in settings.
+Suggestion is to use a cloud storage directory managed by Google Drive,
+OneDrive, Dropbox, etcetera.
 
 =back
 
-The backup directory can be enabled and defined in settings.
+Backup directory is defined and enabled in settings.
 
 =head1 OPTIONS
 
@@ -711,7 +720,7 @@ Roland Vallgren
 This program is copyrighted by Roland Vallgren
 All Rights Reserved.
 
-    Copyright (c) 2017-09-29 Roland Vallgren All rights reserved
+    Copyright (c) 2018-12-12 Roland Vallgren All rights reserved
     This program is free software. It may be used, redistributed
     and/or modified under the same terms as Perl itself
 

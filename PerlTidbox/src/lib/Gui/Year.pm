@@ -2,15 +2,15 @@
 package Gui::Year;
 #
 #   Document: Display all weeks in the years
-#   Version:  1.3   Created: 2013-05-18 17:29
+#   Version:  1.4   Created: 2018-07-23 21:09
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Year.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2013-05-18';
+my $VERSION = '1.4';
+my $DATEVER = '2018-07-23';
 
 # History information:
 #
@@ -22,6 +22,8 @@ my $DATEVER = '2013-05-18';
 #      Use Exco %+ to use same source to register version
 # 1.3  2013-05-18  Roland Vallgren
 #      Handle session lock
+# 1.4  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -126,17 +128,17 @@ sub _weeks($;$) {
   my ($year) = @_;
 
 
-  my $calc = $self->{-calculate};
+  my $calc = $self->{erefs}{-calculate};
   my $wref = $self->{weeks};
   my $c = 0;
 
   my ($date, $t_y, $t_w, $t_yw, $t_d, $wr);
   my ($p_date, $p_yw)= ('', '');
 
-  my $arch = $self->{-cfg}->get('archive_date');
-  my $lock = $self->{-cfg}->get('lock_date');
+  my $arch = $self->{erefs}{-cfg}->get('archive_date');
+  my $lock = $self->{erefs}{-cfg}->get('lock_date');
 
-  for my $ref ($self->{-times}->getSortedRefs($year)) {
+  for my $ref ($self->{erefs}{-times}->getSortedRefs($year)) {
 
     $date = substr($$ref, 0, 10);
 
@@ -291,17 +293,17 @@ sub _reviseTab($;$) {
           -> Button(-text => 'Ladda in arkiv',
                     -command => [$self => '_loadArchive'])
           -> pack(-side => 'top')
-          unless ($self->{-archive}->isLoaded());
+          unless ($self->{erefs}{-archive}->isLoaded());
 
     } # unless #
 
-    my $ad = $self->{-cfg}->get('archive_date');
+    my $ad = $self->{erefs}{-cfg}->get('archive_date');
     $a_r->{archive_date}->
         configure(-text => ($ad ne NO_DATE ? $ad : '(saknas)'));
 
     if (Exists($a_r->{archive_load_button})) {
       $a_r->{archive_load_button}->
-          configure(-state => ($self->{-archive}->Exists() ?
+          configure(-state => ($self->{erefs}{-archive}->fileExists() ?
                                   'normal' : 'disabled')
                    );
     } else {
@@ -310,14 +312,15 @@ sub _reviseTab($;$) {
       my $n = 0;
       my $but;
 
-      for my $date ($self->{-archive}->getSets()) {
+      for my $date ($self->{erefs}{-archive}->getSets()) {
         $n++;
         $but = 'but_' . $n;
 
         my $text = 'Set nr ' . $n .
-                   ': ' .  $self->{-archive}->getSets($date) .
+                   ': ' .  $self->{erefs}{-archive}->getSets($date) .
                    ' - ' . $date .
-                   "\tArkiverat: " . $self->{-archive}->getSets($date, 'date_time');
+                   "\tArkiverat: " .
+                      $self->{erefs}{-archive}->getSets($date, 'date_time');
 
         if (not exists($a_r->{$but})) {
           # Create a new button
@@ -403,7 +406,8 @@ sub _reviseTab($;$) {
       my $but = 'but_' . $c . '_' . $n;
 
       my $text = 'Vecka: ' . $week .
-                 ' Datum: ' . $ref->{$week}{first} . ' - ' . $ref->{$week}{last};
+                 ' Datum: ' . $ref->{$week}{first} .
+                      ' - ' . $ref->{$week}{last};
 
       $text .= ' : Låst!'
           unless ($ref->{$week}{lock} == UNLOCKED);
@@ -497,9 +501,11 @@ sub _viewTab($;$) {
     $win_r->{button_right} -> configure(
         -text => 'Arkivera till och med år ' . $name,
         -state => ((exists($self->{weeks}{$name}{last}) and
-                    ($self->{weeks}{$name}{last} lt $self->{-clock}->getDate()) and
-                    ($self->{-cfg}->get('archive_date') lt $self->{weeks}{$name}{last}) and
-                     not $self->{-cfg}->isSessionLocked()
+                    ($self->{weeks}{$name}{last} lt
+                                 $self->{erefs}{-clock}->getDate()) and
+                    ($self->{erefs}{-cfg}->get('archive_date') lt
+                                       $self->{weeks}{$name}{last}) and
+                     not $self->{erefs}{-cfg}->isSessionLocked()
                    )
                    ? 'normal' : 'disabled'
                   ));
@@ -566,8 +572,8 @@ sub _viewWeek($) {
 
   # Archive week button
   $win_r->{button_midd} -> configure(
-       -state => (  ($self->{-clock}->getDate() le $self->{date} or
-                     $self->{-cfg}->isSessionLocked())
+       -state => (  ($self->{erefs}{-clock}->getDate() le $self->{date} or
+                     $self->{erefs}{-cfg}->isSessionLocked())
                   ? 'disabled' : 'normal'
                  ));
 
@@ -597,7 +603,7 @@ sub _viewArchive($) {
   my $but;
 
   # Enable buttons
-  for my $date ($self->{-archive}->getSets()) {
+  for my $date ($self->{erefs}{-archive}->getSets()) {
     $n++;
     $but = undef;
     next
@@ -606,27 +612,27 @@ sub _viewArchive($) {
     if (exists($a_r->{$but})) {
       if ($n == 1) {
         # Remove only allowed for the oldest
-        $win_r->{button_right} -> configure(-state =>
-                                            $self->{-cfg}->isSessionLocked()
+        $win_r->{button_right} ->
+             configure(-state => $self->{erefs}{-cfg}->isSessionLocked()
                                               ? 'disabled' : 'normal'
-                                           );
+                       );
         $win_r->{button_left}  -> configure(-state => 'disabled');
       } else {
         # There must be a previous to allow join
         $win_r->{button_right} -> configure(-state => 'disabled');
-        $win_r->{button_left}  -> configure(-state =>
-                                            $self->{-cfg}->isSessionLocked()
-                                              ? 'disabled' : 'normal'
+        $win_r->{button_left}  -> configure(
+                    -state => $self->{erefs}{-cfg}->isSessionLocked()
+                               ? 'disabled' : 'normal'
                                            );
 
       } # if #
     } # if #
   } # while #
 
-  $win_r->{button_midd}  -> configure(-state =>
-                                       (($but and
-                                         not $self->{-cfg}->isSessionLocked())
-                                          ? 'normal' : 'disabled'));
+  $win_r->{button_midd}  -> configure(
+               -state => (($but and
+                            not $self->{erefs}{-cfg}->isSessionLocked())
+                              ? 'normal' : 'disabled'));
 
   return 0;
 } # Method _viewArchive
@@ -649,12 +655,12 @@ sub _doArchive($$) {
   my ($date) = @_;
 
 
-  $self->{-week_win}->withdraw();
-  $self->{-edit_win}->withdraw();
-  $self->{-archive}->archive($date);
+  $self->{erefs}{-week_win}->withdraw();
+  $self->{erefs}{-edit_win}->withdraw();
+  $self->{erefs}{-archive}->archive($date);
   $self->{dirty}{+HEAD_ARCHIVE} = 1;
   $self->update('-',
-                $self->{-archive}->getSets($date),
+                $self->{erefs}{-archive}->getSets($date),
                 $date, 
                );
 
@@ -693,7 +699,8 @@ sub _askArchive($;$) {
   } else {
 
     $last_date = $self->{date};
-    $period = join(' vecka ', $self->{-calculate}->weekNumber($last_date))
+    $period = join(' vecka ',
+                   $self->{erefs}{-calculate}->weekNumber($last_date));
 
   } # if #
 
@@ -704,7 +711,7 @@ sub _askArchive($;$) {
                 -text  => ['Idag eller senare datum ingår i perioden för arkivering.',
                            'Det kan inte arkiveras.'],
                )
-      if ($last_date ge $self->{-clock}->getDate());
+      if ($last_date ge $self->{erefs}{-clock}->getDate());
 
 
   # Confirm to archive period
@@ -738,7 +745,7 @@ sub _loadArchive($) {
   my $self = shift;
 
 
-  $self->{-archive}->load();
+  $self->{erefs}{-archive}->load();
   my $a_r = $self->{win}{+HEAD_ARCHIVE};
 
   $a_r->{archive_area}->destroy();
@@ -783,7 +790,7 @@ sub _button($$;@) {
 
       # Show the selected week
       $self->withdraw();
-      $self->{-week_win}->display($self->{date});
+      $self->{erefs}{-week_win}->display($self->{date});
 
       return 0;
 
@@ -800,12 +807,12 @@ sub _button($$;@) {
 
   if ($button == 0) {
     # Join selected set with previous set
-    $self->{-archive} -> joinSets($self->{date});
+    $self->{erefs}{-archive} -> joinSets($self->{date});
     $self->{dirty}{+HEAD_ARCHIVE} = 1;
 
   } elsif ($button == 1) {
     # Import archive set
-    $self->{-archive} -> importSet($self->{date});
+    $self->{erefs}{-archive} -> importSet($self->{date});
     $self->{dirty}{+HEAD_ARCHIVE} = 1;
     return $self->_display()
 
@@ -822,7 +829,7 @@ sub _button($$;@) {
 
   } elsif ($button == 3) {
     # Remove archive set
-    $self->{-archive} -> removeSet($args[0]);
+    $self->{erefs}{-archive} -> removeSet($args[0]);
     $self->{dirty}{+HEAD_ARCHIVE} = 1;
 
     # Clear weeks of any removed dates
@@ -857,7 +864,7 @@ sub _setup($$) {
   my $win_r = $self->{win};
 
   # Show clock as window heading
-  $self->{-clock}->setDisplay($win_r->{name}, $win_r->{title});
+  $self->{erefs}{-clock}->setDisplay($win_r->{name}, $win_r->{title});
 
   # Create a notebook
   $win_r->{notebook} = $win_r->{area}
@@ -905,16 +912,16 @@ sub _setup($$) {
 
   # Activate the tab for the wanted year
   unless (exists($self->{weeks}{$year})) {
-    if ($year le substr($self->{-cfg}->get('archive_date'), 0, 4)) {
+    if ($year le substr($self->{erefs}{-cfg}->get('archive_date'), 0, 4)) {
       $year = HEAD_ARCHIVE;
     } else {
-      $year = $self->{-clock}->getYear();
+      $year = $self->{erefs}{-clock}->getYear();
     } # if #
   } # if #
   $self->{win}{notebook}->raise($year);
 
   ### Register for event changes ###
-  $self->{-times}->setDisplay($win_r->{name}, [$self => 'update']);
+  $self->{erefs}{-times}->setDisplay($win_r->{name}, [$self => 'update']);
 
   return 0;
 } # Method _setup
@@ -951,10 +958,10 @@ sub _display($;$) {
 
     # Show another tab if requested tab does not exist
     if ($year and not exists($self->{weeks}{$year})) {
-      if ($year le substr($self->{-cfg}->get('archive_date'), 0, 4)) {
+      if ($year le substr($self->{erefs}{-cfg}->get('archive_date'), 0, 4)) {
         $year = HEAD_ARCHIVE;
       } else {
-        $year = $self->{-clock}->getYear();
+        $year = $self->{erefs}{-clock}->getYear();
       } # if #
     } # if #
 
@@ -1019,7 +1026,8 @@ sub update($;@) {
     my $y_r = $self->{weeks}{$year};
 
     $self->_display()
-        if ($self->{-calculate}->impactedDate([$y_r->{first}, $y_r->{last}], @dates));
+        if ($self->{erefs}{-calculate}->
+                  impactedDate([$y_r->{first}, $y_r->{last}], @dates));
 
   } # if #
 

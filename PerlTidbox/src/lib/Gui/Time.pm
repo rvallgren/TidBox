@@ -2,15 +2,15 @@
 package Gui::Time;
 #
 #   Document: Time entry area
-#   Version:  1.6   Created: 2016-01-27 12:12
+#   Version:  1.7   Created: 2017-10-20 14:58
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Time.pmx
 #
 
-my $VERSION = '1.6';
-my $DATEVER = '2016-01-27';
+my $VERSION = '1.7';
+my $DATEVER = '2017-10-20';
 
 # History information:
 #
@@ -28,6 +28,8 @@ my $DATEVER = '2016-01-27';
 #      New method quit
 # 1.6  2016-01-27  Roland Vallgren
 #      Default action of <Return> in a field is to reevaluate the information
+# 1.7  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -104,7 +106,7 @@ sub new($%) {
               win        => $win_r,
              };
 
-  for my $k ('-invalid', '-current', '-calculate', '-notify',
+  for my $k ('erefs', '-invalid', '-current', '-notify',
              '-max_date', '-min_date') {
     $self->{$k} = $opt{$k}
         if exists($opt{$k});
@@ -231,7 +233,7 @@ sub get($;$) {
   if (exists($win_r->{date_data})) {
     $date_info = $win_r->{date_data} -> get();
     if ($date_only) {
-      (undef, $date) = $self->{-calculate}
+      (undef, $date) = $self->{erefs}{-calculate}
           -> evalTimeDate($self->{-invalid}, undef, $date_info);
 
       return (undef, $date);
@@ -240,12 +242,13 @@ sub get($;$) {
   if (exists($win_r->{week_data})) {
     $date_info = $win_r->{week_data} -> get();
     if ($date_only) {
-      (undef, $date) = $self->{-calculate}
+      (undef, $date) = $self->{erefs}{-calculate}
           -> evalTimeDate($self->{-invalid}, undef, $date_info);
-      (undef, $date) = $self->{-calculate}
+      (undef, $date) = $self->{erefs}{-calculate}
           -> evalTimeDate(undef,
                           undef,
-                          join('v', $self->{-calculate}->weekNumber($date)).'m',
+                          join('v',
+                             $self->{erefs}{-calculate}->weekNumber($date)).'m',
                          );
 
       return (undef, $date);
@@ -257,7 +260,7 @@ sub get($;$) {
   my $time_info = '';
   $time_info = $win_r->{time_data} -> get() if (exists($win_r->{time_data}));
 
-  ($time, $date) = $self->{-calculate}
+  ($time, $date) = $self->{erefs}{-calculate}
         -> evalTimeDate($self->{-invalid}, $time_info, $date_info);
 
   return ($time, $date);
@@ -295,7 +298,7 @@ sub set($;$$) {
       if (exists($win_r->{date_data}));
 
   $win_r->{week_data} -> insert(0,
-                             join('v', $self->{-calculate}->weekNumber($date)))
+                    join('v', $self->{erefs}{-calculate}->weekNumber($date)))
       if (exists($win_r->{week_data}));
 
 } # Method set
@@ -447,7 +450,7 @@ sub _show($) {
   # Here we do not have current time and date.
   # So use use the calculator to get 0 seconds from now
   $self->set(
-             $self->{-calculate}->stepTimeDate(0)
+             $self->{erefs}{-calculate}->stepTimeDate(0)
             );
   return 0;
 } # Method _show
@@ -473,14 +476,17 @@ sub _step($) {
 
   my ($time, $date) = $self->get();
   return 0 unless $date;
-  ($time, $date) = $self->{-calculate}->stepTimeDate($seconds, $time, $date);
+  ($time, $date) = 
+              $self->{erefs}{-calculate}->stepTimeDate($seconds, $time, $date);
   return 0 unless $date;
 
   if (exists($self->{-min_date}) and $date lt $self->{-min_date}) {
     if ($self->{-week}) {
       $self->callback($self->{-invalid},
                       'Vecka före ' .
-                      join('v', $self->{-calculate}->weekNumber($self->{-min_date})) .
+                        join('v',
+                             $self->{erefs}{-calculate}->
+                                    weekNumber($self->{-min_date})) .
                       ' ej tillåtet');
     } else {
       $self->callback($self->{-invalid},
@@ -494,7 +500,9 @@ sub _step($) {
     if ($self->{-week}) {
       $self->callback($self->{-invalid},
                       'Vecka efter ' . 
-                      join('v', $self->{-calculate}->weekNumber($self->{-max_date})) .
+                      join('v',
+                              $self->{erefs}{-calculate}->
+                                  weekNumber($self->{-max_date})) .
                       ' ej tillåtet');
     } else {
       $self->callback($self->{-invalid},

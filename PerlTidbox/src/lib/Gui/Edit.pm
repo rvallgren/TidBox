@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.4   Created: 2017-09-25 11:50
+#   Version:  2.5   Created: 2018-12-12 21:31
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.4';
-my $DATEVER = '2017-09-25';
+my $VERSION = '2.5';
+my $DATEVER = '2018-12-12';
 
 # History information:
 #
@@ -29,6 +29,9 @@ my $DATEVER = '2017-09-25';
 # 2.4  2017-05-30  Roland Vallgren
 #      Adaption for Tk::Adjuster used in DayList
 #      Removed hardcoding of undo button to Gui::Edit
+# 2.5  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
+#      Improved handling of return in date field
 #
 
 #----------------------------------------------------------------------------
@@ -192,7 +195,7 @@ sub _isLocked($$) {
   my ($date) = @_;
 
 
-  my ($lock, $txt, $lockdate) = $self->{-cfg}->isLocked($date);
+  my ($lock, $txt, $lockdate) = $self->{erefs}{-cfg}->isLocked($date);
   if ($lock == 1) {
     $self->{win}->{confirm}
         -> popup(-title => 'information',
@@ -458,7 +461,7 @@ sub update($;@) {
 
   return 0
       if (@dates and
-          not $self->{-calculate}->impactedDate($self->{date}, @dates));
+          not $self->{erefs}{-calculate}->impactedDate($self->{date}, @dates));
 
   my $date = $self->{date};
   $win_r->{day_list}->setDate($date);
@@ -466,31 +469,31 @@ sub update($;@) {
   $self->_clear();
 
   # Update lock display
-  my ($lock, $locked) = $self->{-cfg}->isLocked($self->{date});
+  my ($lock, $locked) = $self->{erefs}{-cfg}->isLocked($self->{date});
 
-  if (($self->{date} eq $self->{-clock}->getDate()) and
+  if (($self->{date} eq $self->{erefs}{-clock}->getDate()) and
       (not $lock))
   {
 
-    $self->{-clock}->setDisplay($win_r->{name}, $win_r->{title});
+    $self->{erefs}{-clock}->setDisplay($win_r->{name}, $win_r->{title});
 
   } else {
 
-    $self->{-clock}->setDisplay($win_r->{name}, undef);
+    $self->{erefs}{-clock}->setDisplay($win_r->{name}, undef);
 
     $win_r->{title}
         -> configure(
       -text =>
-        $self->{-calculate}
-           -> dayStr($self->{-calculate}->weekDay($self->{date})) .
-        ' Vecka: ' . $self->{-calculate}->weekNumber($self->{date}) .
+        $self->{erefs}{-calculate}
+           -> dayStr($self->{erefs}{-calculate}->weekDay($self->{date})) .
+        ' Vecka: ' . $self->{erefs}{-calculate}->weekNumber($self->{date}) .
         ' Datum: ' . $self->{date} .
         '  ' . $locked
                     );
   } # if #
 
   # Update undo button
-  $self->undo(0, $self->{-times}->undoGetLength());
+  $self->undo(0, $self->{erefs}{-times}->undoGetLength());
 
   return 0;
 } # Method update
@@ -558,7 +561,7 @@ sub _search($;$) {
   my $fnd;
 
   if ($back) {
-    for my $ref (reverse($self->{-times}
+    for my $ref (reverse($self->{erefs}{-times}
         -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
                 ))
     {
@@ -569,7 +572,7 @@ sub _search($;$) {
     } # for #
 
   } else {
-    for my $ref ($self->{-times}
+    for my $ref ($self->{erefs}{-times}
         -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
                 )
     {
@@ -587,7 +590,7 @@ sub _search($;$) {
   $self->_display(substr($$fnd, 0, 10));
 
   if ($win_r->{day_list}->see($fnd)) {
-    $self->{-earlier}->add($action_text);
+    $self->{erefs}{-earlier}->add($action_text);
     $win_r->{event_handling}->set($action_text, 1);
   } # if #
 
@@ -638,8 +641,8 @@ sub _doAdd($$$$) {
   my ($line, $action_text, $date) = @_;
 
 
-  $self->{-times}->add($line);
-  $self->{-earlier}->add($action_text);
+  $self->{erefs}{-times}->add($line);
+  $self->{erefs}{-earlier}->add($action_text);
 
   $self->update();
 
@@ -647,7 +650,7 @@ sub _doAdd($$$$) {
   if ($date eq $self->{date}) {
     $self->_message('Ny registrering tillagd');
 
-  } elsif ($date eq $self->{-clock}->getDate()) {
+  } elsif ($date eq $self->{erefs}{-clock}->getDate()) {
     $self->_message('Ny registrering tillagd idag');
 
   } else {
@@ -689,7 +692,7 @@ sub _add($) {
       $win_r->{confirm}
           -> popup(-title  => 'bekräfta',
                    -text   => ['Lägg till för annan dag?'],
-                   -data   => [$self->{-calculate}->format($line)],
+                   -data   => [$self->{erefs}{-calculate}->format($line)],
                    -action => [$self, '_doAdd', $line, $action_text, $date],
                   );
 
@@ -720,16 +723,16 @@ sub _doChange($@) {
   my ($event_ref, $line, $action_text, $date) = @_;
 
 
-  $self->{-earlier}->add($action_text);
+  $self->{erefs}{-earlier}->add($action_text);
 
-  $self->{-times}->change($event_ref, $line);
+  $self->{erefs}{-times}->change($event_ref, $line);
 
   $self->update();
 
   if ($date eq $self->{date}) {
     $self->_message('Registrering ändrad');
 
-  } elsif ($date eq $self->{-clock}->getDate()) {
+  } elsif ($date eq $self->{erefs}{-clock}->getDate()) {
     $self->_message('Registrering flyttat till idag');
 
   } else {
@@ -779,7 +782,7 @@ sub _change($) {
             $win_r->{confirm}
                 -> popup(-title  => 'bekräfta',
                          -text   => ['Flytta till annan dag?'],
-                         -data   => [$self->{-calculate}->format($line)],
+                         -data   => [$self->{erefs}{-calculate}->format($line)],
                          -action => [$self, '_doChange',
                                      $event_ref, $line, $action_text, $date],
                         );
@@ -826,7 +829,7 @@ sub _delete($) {
     return 0
         if ($self->_isLocked($self->{date}));
 
-    $self->{-times}->change($event_ref);
+    $self->{erefs}{-times}->change($event_ref);
 
     $self->update();
 
@@ -837,6 +840,30 @@ sub _delete($) {
   } # if #
   return 0;
 } # Method _delete
+
+#----------------------------------------------------------------------------
+#
+# Method:      _week
+#
+# Description: Open week window for the date
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub _week($;$) {
+  # parameters
+  my $self = shift;
+
+
+  my $date = $self->{win}{time_area}->get(1);
+    
+  $self->{erefs}{-week_win}->display($date)
+      if $date;
+
+  return 0;
+} # Method _week
 
 #----------------------------------------------------------------------------
 #
@@ -857,7 +884,6 @@ sub _forw($;$) {
   my $self = shift;
   my ($date) = @_;
 
-  push(@{$self->{back}}, $self->{date});
   if ($date) {
     @{$self->{forw}} = ();
   } else {
@@ -915,12 +941,46 @@ sub _goto($) {
   # parameters
   my $self = shift;
 
-
   my $date = $self->{win}{time_area}->get(1);
   $self->_display($date)
       if $date;
   return 0;
 } # Method _goto
+
+#----------------------------------------------------------------------------
+#
+# Method:      _dateReturn
+#
+# Description: Return pressed in date, change event or goto specified edit day
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub _dateReturn($) {
+  # parameters
+  my $self = shift;
+
+
+  my $win_r = $self->{win};
+
+  my $event_ref = $win_r->{day_list}->curselection();
+
+  if (ref($event_ref)) {
+
+    my ($line, $action_text, $date) = $self->_get([$self, '_message']);
+
+    return $self->_change(1)
+        if (defined($line) and ${$event_ref} ne $line);
+  } # if #
+
+  my $date = $win_r->{time_area}->get(1);
+  $self->_display($date)
+      if $date;
+
+  return 0;
+} # Method _dateReturn
 
 #----------------------------------------------------------------------------
 #
@@ -940,7 +1000,7 @@ sub _prev($) {
 
   my $date = $self->{win}{time_area}->get(1);
   $self->_display(
-           $self->{-calculate}->stepDate($date, -1))
+           $self->{erefs}{-calculate}->stepDate($date, -1))
       if $date;
   return 0;
 } # Method _prev
@@ -963,7 +1023,7 @@ sub _next($) {
 
   my $date = $self->{win}{time_area}->get(1);
   $self->_display(
-           $self->{-calculate}->stepDate($date, 1))
+           $self->{erefs}{-calculate}->stepDate($date, 1))
       if $date;
   return 0;
 } # Method _next
@@ -984,7 +1044,7 @@ sub done($) {
   my $self = shift;
 
 
-  $self->{-times}->save();
+  $self->{erefs}{-times}->save();
 
   return 0;
 } # Method done
@@ -1006,7 +1066,7 @@ sub _earlierAdd($$) {
   my $self = shift;
   my ($area) = @_;
 
-  $self->{-earlier}->create($area, 'right', [ $self, '_previous' ]);
+  $self->{erefs}{-earlier}->create($area, 'right', [ $self, '_previous' ]);
   return 0;
 } # Method _earlierAdd
 
@@ -1033,9 +1093,11 @@ sub _setup($) {
     new Gui::DayList(-area       => $win_r->{area},
                      -side       => 'left',
                      -showEvent  => [$self => 'show'],
-                     -times      => $self->{-times},
-                     -calculate  => $self->{-calculate},
-                     -cfg        => $self->{-cfg},
+                     erefs => {
+                       -times      => $self->{erefs}{-times},
+                       -calculate  => $self->{erefs}{-calculate},
+                       -cfg        => $self->{erefs}{-cfg},
+                              },
                      -parentName => $win_r->{name},
                     );
   ### Entry edit ###
@@ -1048,9 +1110,11 @@ sub _setup($) {
   $win_r->{time_area} =
     new Gui::Time(
                   -area      => $win_r->{entry_area},
-                  -calculate => $self->{-calculate},
+                  erefs => {
+                    -calculate => $self->{erefs}{-calculate},
+                           },
                   -time      => [$self, '_change'],
-                  -date      => [$self => '_goto'],
+                  -date      => [$self, '_dateReturn'],
                   -invalid   => [$self => '_message'],
                  );
 
@@ -1124,12 +1188,14 @@ sub _setup($) {
       -> pack(-side => 'top', -fill => 'both');
   $win_r->{event_handling} =
       new Gui::Event(
-                    -event_cfg => $self->{-event_cfg},
+                    erefs => {
+                      -event_cfg => $self->{erefs}{-event_cfg},
+                      -date      => $self->{erefs}{-clock}->getDate(),
+                             },
                     -area      => $win_r->{entry_event_area},
                     -validate  => [$self => '_validate'],
                     -buttons   => [$self => '_earlierAdd'],
                     -return    => [$self => '_change'],
-                    -date      => $self->{-clock}->getDate(),
                     -parentName => $win_r->{name},
                    );
 
@@ -1228,6 +1294,13 @@ sub _setup($) {
                )
       -> pack(-side => 'left');
 
+  # Week window button
+  $win_r->{week} = $win_r->{button_area}
+      -> Button(-text => 'Veckan',
+                -command => [_week => $self],
+               )
+      -> pack(-side => 'left');
+
   # Done button
   $win_r->{done} = $win_r->{button_area}
       -> Button(-text => 'Klart',
@@ -1239,14 +1312,14 @@ sub _setup($) {
   # UnDo button
   $win_r->{undo} = $win_r->{button_area}
       -> Button(-text => 'Ångra senaste',
-                -command => [$self->{-times} => 'undo', $self, 'popup'],
+                -command => [$self->{erefs}{-times} => 'undo', $self, 'popup'],
                )
       -> pack(-side => 'right');
   $win_r->{undo} -> configure(-state => 'disabled')
-      unless($self->{-times}->undoGetLength());
+      unless($self->{erefs}{-times}->undoGetLength());
 
   # Register for events from times and undo
-  $self->{-times}->setUndo($win_r->{name}, [$self => 'undo']);
+  $self->{erefs}{-times}->setUndo($win_r->{name}, [$self => 'undo']);
 
   return 0;
 } # Method _setup
@@ -1279,10 +1352,10 @@ sub _display($;$$) {
             -> popup(-title  => 'arkiverade',
                      -text  => ['Kan inte redigera för ' . $date,
                                 'Registreringar till och med ' .
-                                    $self->{-cfg}->get('archive_date') .
+                                    $self->{erefs}{-cfg}->get('archive_date') .
                                     ' är arkiverade.'],
                     )
-        if ($date le $self->{-cfg}->get('archive_date'));
+        if ($date le $self->{erefs}{-cfg}->get('archive_date'));
 
     $self->_forw($date)
         if (not $bwfw     and
@@ -1296,7 +1369,7 @@ sub _display($;$$) {
   } # if #
 
   # Save times data
-  $self->{-times}->save();
+  $self->{erefs}{-times}->save();
 
   # Update event configuration
   $win_r->{event_handling}->modifyArea($date);

@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.10   Created: 2017-09-26 10:36
+#   Version:  2.11   Created: 2018-09-13 18:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.10';
-my $DATEVER = '2017-09-26';
+my $VERSION = '2.11';
+my $DATEVER = '2018-09-13';
 
 # History information:
 #
@@ -50,6 +50,10 @@ my $DATEVER = '2017-09-26';
 #       Keep event shown when selected in daylist
 #       Confirm discarding a change
 #       Removed hardcoding of undo button to Gui::Edit
+# 2.11  2017-10-05  Roland Vallgren
+#       Move files to TbFile::
+#       References to other objects in own hash
+#       Handle lost lock or lock taken by another session
 #
 
 #----------------------------------------------------------------------------
@@ -200,9 +204,9 @@ sub _status($;$) {
   $self->{message} = 0
       if ($update);
 
-  my $now_date = $self->{-clock}->getDate();
-  my $now_hour = $self->{-clock}->getHour();
-  my $now_minu = $self->{-clock}->getMinute();
+  my $now_date = $self->{erefs}{-clock}->getDate();
+  my $now_hour = $self->{erefs}{-clock}->getHour();
+  my $now_minu = $self->{erefs}{-clock}->getMinute();
 
   my $win_r = $self->{win};
   $win_r->{day_list}->see(undef, $now_hour . ':' . $now_minu)
@@ -219,7 +223,7 @@ sub _status($;$) {
   my ($last_hour, $last_minu) = (0, 0);
 
   # Find out ongoing activity
-  for my $ref (reverse($self->{-times}->getSortedRefs($now_date))) {
+  for my $ref (reverse($self->{erefs}{-times}->getSortedRefs($now_date))) {
 
     next unless (substr($$ref, 17) =~ /^($TYPE),(.*)$/);
     my ($state, $text) = ($1, $2);
@@ -230,12 +234,12 @@ sub _status($;$) {
              ($now_hour < $hour));
 
     if (not defined($entry_text)) {
-      if ($self->{-cfg}->get('show_reg_date')) {
-        $show_data_text=
-            $self->{-calculate}->format($now_date, $hour.':'.$minu, $state, $text);
+      if ($self->{erefs}{-cfg}->get('show_reg_date')) {
+        $show_data_text = $self->{erefs}{-calculate}
+               -> format($now_date, $hour.':'.$minu, $state, $text);
       } else {
-        $show_data_text=
-            $self->{-calculate}->format(undef, $hour.':'.$minu, $state, $text);
+        $show_data_text = $self->{erefs}{-calculate}
+                -> format(undef, $hour.':'.$minu, $state, $text);
       } # if #
 
       if ($state eq $BEGINEVENT or
@@ -253,46 +257,46 @@ sub _status($;$) {
       $entry_text = $text;
 
     } elsif ($state eq $BEGINEVENT and $entry_text ne $text) {
-      $self->{-earlier}->setPrev($text);
+      $self->{erefs}{-earlier}->setPrev($text);
       last;
     } # if #
 
   } # for #
 
 
-  my $show_data = $self->{-cfg}->get('show_data');
+  my $show_data = $self->{erefs}{-cfg}->get('show_data');
 
   if ($last_state eq $BEGINPAUS and $show_data == 3) {
     # Show paus time
     $win_r->{show_data}
         -> configure(-text=> 'Paus : ' .
-        $self->{-calculate}->hours(
-               $self->{-calculate}->deltaMinutes($last_hour, $last_minu,
+        $self->{erefs}{-calculate}->hours(
+               $self->{erefs}{-calculate}->deltaMinutes($last_hour, $last_minu,
                                                  $now_hour , $now_minu )
                          ) . ' timmar');
 
   } elsif ($last_state eq $WORKDAY and
-           $self->{-supervision}->is($last_event))
+           $self->{erefs}{-supervision}->is($last_event))
   {
     # Show time for supervised activity
-    my ($m, $e) = $self->{-supervision}->calc();
+    my ($m, $e) = $self->{erefs}{-supervision}->calc();
     $win_r->{show_data}
         -> configure(-text=> 'Bevaka: ' .
-                     $self->{-calculate}->hours($m) .
+                     $self->{erefs}{-calculate}->hours($m) .
                      ' timmar: ' .
                      $e
                     );
 
   } elsif ($last_state eq $WORKDAY and $show_data) {
-    $self->{-supervision}->clear();
+    $self->{erefs}{-supervision}->clear();
     if ($show_data == 1) {
       # Show worktime for today
-      my $day_r = $self->{-calculate}
+      my $day_r = $self->{erefs}{-calculate}
           -> dayWorkTimes($now_date, 0, $self->{-error_popup});
       $win_r->{show_data}
           -> configure(-text =>
                        'Arbetstid idag: ' .
-                       $self->{-calculate}->hours($day_r->{work_time}) .
+                       $self->{erefs}{-calculate}->hours($day_r->{work_time}) .
                        ' timmar');
 
     } elsif ($show_data == 2) {
@@ -300,8 +304,8 @@ sub _status($;$) {
       $win_r->{show_data}
           -> configure(-text =>
                  'Arbetstid denna vecka: ' .
-                 $self->{-calculate}->hours(scalar(
-                     $self->{-calculate}->weekWorkTimes($now_date, 0,
+                 $self->{erefs}{-calculate}->hours(scalar(
+                     $self->{erefs}{-calculate}->weekWorkTimes($now_date, 0,
                                                         $self->{-error_popup})
                  )) .
                  ' timmar');
@@ -311,10 +315,11 @@ sub _status($;$) {
       $entry_text = 'Arbete' unless $entry_text;
       $win_r->{show_data}
           -> configure(-text=> $entry_text . ' : ' .
-          $self->{-calculate}->hours(
-                 $self->{-calculate}->deltaMinutes($last_hour, $last_minu,
-                                                   $now_hour , $now_minu )
-                           ) . ' timmar');
+          $self->{erefs}{-calculate}->hours(
+                 $self->{erefs}{-calculate}
+                      -> deltaMinutes($last_hour, $last_minu,
+                                      $now_hour , $now_minu )
+                                           ) . ' timmar');
 
     } # if #
 
@@ -345,7 +350,7 @@ sub _message($$) {
 
 
   $self->{win}{show_data} -> configure(-text=>$text);
-  $self->{message} = $self->{-cfg}->get('show_message_timeout');
+  $self->{message} = $self->{erefs}{-cfg}->get('show_message_timeout');
 
   return 0;
 } # Method _message
@@ -494,7 +499,7 @@ sub _isLocked($$) {
   my $self = shift;
   my ($date) = @_;
 
-  my ($lock, $locked) = $self->{-cfg}->isLocked($date);
+  my ($lock, $locked) = $self->{erefs}{-cfg}->isLocked($date);
   $self->_message($lock == 1 ? "$date är låst" : $locked)
       if ($lock);
   return $lock;
@@ -587,7 +592,7 @@ sub _get($$;$) {
     $win_r->{time_area}->clear();
     $self->_clear();
 
-    $self->{-earlier}->add($$ref);
+    $self->{erefs}{-earlier}->add($$ref);
 
     return (join(',', $date,
                       $time,
@@ -602,7 +607,7 @@ sub _get($$;$) {
   $win_r->{time_area}->clear();
   $self->_clear();
 
-  $self->{-earlier}->add($action_text);
+  $self->{erefs}{-earlier}->add($action_text);
 
   return $line;
 } # Method _get
@@ -632,7 +637,7 @@ sub _add($$;$) {
   return 0
       unless (defined($line));
 
-  $self->{-times}->add($line);
+  $self->{erefs}{-times}->add($line);
   $self->_message('Ny registrering tillagd');
   return 0;
 } # Method _add
@@ -673,7 +678,7 @@ sub _modify($;$) {
   return $self->_message('Ingen ändring')
       if (${$event_ref} eq $line);
 
-  $self->{-times}->change($event_ref, $line);
+  $self->{erefs}{-times}->change($event_ref, $line);
   $self->_message('Registrering ändrad');
   return 0;
 } # Method _modify
@@ -707,7 +712,7 @@ sub _delete($) {
   return $self->_message('Inget markerat att ta bort')
       unless (ref($self->{edit_event_ref}));
 
-  $self->{-times}->change($self->{edit_event_ref});
+  $self->{erefs}{-times}->change($self->{edit_event_ref});
   $self->_message('Registrering borttagen');
   return 0;
 } # Method _delete
@@ -720,8 +725,8 @@ sub _delete($) {
 #
 # Arguments:
 #  0 - Object reference
-#    1 .. n - Dates impacted by the update
-#    1, 2, 3 - '-', d1, d2 Range of dates impacted by the update
+#  1 .. n - Dates impacted by the update
+#  1, 2, 3 - '-', d1, d2 Range of dates impacted by the update
 # Returns:
 #  -
 
@@ -732,7 +737,8 @@ sub _updated($@) {
 
 
   $self->_status(1)
-      if ($self->{-calculate}->impactedDate($self->{-clock}->getDate(), @dates));
+      if ($self->{erefs}{-calculate}
+             -> impactedDate($self->{erefs}{-clock}->getDate(), @_));
 
   return 0;
 } # Method _updated
@@ -876,21 +882,21 @@ sub _grabLock($) {
   # parameters
   my $self = shift;
 
-  my $date = $self->{-clock}->getDate();
-  my $time = $self->{-clock}->getTime();
-  $self->{-lock}->lock($date, $time, 1);
-  $self->{-clock}->setLocked(undef);
+  my $date = $self->{erefs}{-clock}->getDate();
+  my $time = $self->{erefs}{-clock}->getTime();
+  $self->{erefs}{-lock}->lock($date, $time, 1);
+  $self->{erefs}{-clock}->setLocked(undef);
   my $win_r = $self->{win};
   $win_r->{day_list}->update($date)
       if ($win_r->{day_list});
-  $self->{-edit_win}->update();
-  $self->{-week_win}->update();
+  $self->{erefs}{-edit_win}->update();
+  $self->{erefs}{-week_win}->update();
   Version->register_locked_session("Du låste upp Tidbox:" .
                                    "\n  Datum: " . $date .
                                    "\n  Tid: " . $time
                                   );
-  my $ev = $self->{-event_cfg}->getEmpty('Du låste upp Tidbox');
-  $self->{-times}->joinAdd($date, $time, $BEGINEVENT, $ev);
+  my $ev = $self->{erefs}{-event_cfg}->getEmpty('Du låste upp Tidbox');
+  $self->{erefs}{-times}->joinAdd($date, $time, $BEGINEVENT, $ev);
   return 0;
 } # Method _grabLock
 
@@ -970,33 +976,120 @@ sub show($$) {
 # Description: Show session locked dialog
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
+#  - Information about reason for lock
 # Returns:
 #  -
 
-sub showLocked($) {
+sub showLocked($$) {
   # parameters
   my $self = shift;
+  my ($reason) = @_;
 
-  # Show popup due to session lock
-  $self->{win}->{confirm}
-          -> popup(-title  => 'Tidbox är låst',
-                   -text   => ["Tidbox är låst!\n" .
-                               "En låsfil hittades:",
-                               "En annan instans av Tidbox kan vara aktiv eller \n" .
-                               "så finns låsfilen kvar efter att Tidbox har avslutats\n" .
-                               "på ett felaktigt sätt.",
-                               "Om du är helt övertygad om att ingen annan\n" .
-                               "Tidbox är igång så kan du låsa upp och ta\n" .
-                               "över låset.\n"
-                              ],
-                   -data   => [$self->{-lock}->get()],
-                   -buttons => [
-                                'Enbart läsning', undef,
-                                'Lås upp',        [ $self, '_grabLock', 0 ],
-                               ]
+  my $win_r = $self->{win};
+  if ($reason eq 'locked') {
+    # Show popup due to session is locked by another session
+    $win_r->{confirm}
+      -> popup(-title  => 'Tidbox är låst',
+               -text   => ["Tidbox är låst!\n" .
+                           "En låsfil hittades:",
+                           "En annan instans av Tidbox kan vara aktiv eller\n" .
+                      "så finns låsfilen kvar efter att Tidbox har avslutats\n" .
+                           "på ett felaktigt sätt.",
+                           "Om du är helt övertygad om att ingen annan\n" .
+                           "Tidbox är igång så kan du låsa upp och ta\n" .
+                           "över låset.\n"
+                          ],
+               -data   => [$self->{erefs}{-lock}->get()],
+               -buttons => [
+                            'Enbart läsning', undef,
+                            'Lås upp',        [ $self, '_grabLock', 0 ],
+                           ]
 
-                  );
+              );
+
+  } elsif ($reason eq 'different_locked') {
+    # Show popup due to session is locked by another session
+    $win_r->{confirm}
+      -> popup(-title  => 'Tidbox är låst',
+               -text   => ["Tidbox är låst!\n" .
+                           "Olika låsfiler hittades:",
+                           "En annan instans av Tidbox kan vara aktiv eller\n" .
+                      "så finns låsfilen kvar efter att Tidbox har avslutats\n" .
+                           "på ett felaktigt sätt.",
+                           "Det finns en annan låsfil i backup katalogen\n" .
+                           "från en annan session av Tidbox\n" .
+                           "Datat är troligen olika i de båda sessionerna.",
+                           "Verifiera att datat är korrekt!",
+                           "Om du är helt övertygad om att ingen annan\n" .
+                           "Tidbox är igång och att datat är korrekt så\n" .
+                           "kan du låsa upp och ta över låset.\n"
+                          ],
+               -data   => [$self->{erefs}{-lock}->get()],
+               -buttons => [
+                            'Enbart läsning', undef,
+                            'Lås upp',        [ $self, '_grabLock', 0 ],
+                           ]
+
+              );
+
+  } elsif ($reason eq 'claimed') {
+    # Show popup due to lock claimed by other
+    $self->{erefs}{-clock}->setLocked('Tidbox låstes ute');
+    my $date = $self->{erefs}{-clock}->getDate();
+    my $time = $self->{erefs}{-clock}->getTime();
+    $win_r->{day_list}->update()
+        if ($win_r->{day_list});
+    $self->{erefs}{-edit_win}->update();
+    $self->{erefs}{-week_win}->update();
+    Version->register_locked_session("Tidbox lås togs av en annan session:" .
+                                     "\n  Datum: " . $date .
+                                     "\n  Tid: " . $time
+                                    );
+    $win_r->{confirm}
+      -> popup(-title  => 'Tidbox är låst',
+               -text   => ["En annan instans av Tidbox har tagit låset!\n" .
+                           "De lagrade registreringarna kan vara korrupta.\n" .
+                           "Kontrollera dina registreringar och\n" .
+                           "starta om Tidbox.\n"
+                          ],
+               -data   => [$self->{erefs}{-lock}->get()],
+               -buttons => [
+                            'Enbart läsning', undef,
+                           ]
+
+              );
+
+  } else { # ($reason eq 'lost')
+    # Show popup due to has been lost, someone removed the lock file
+    $self->{erefs}{-clock}->setLocked('Tidbox förlorat lås');
+    my $date = $self->{erefs}{-clock}->getDate();
+    my $time = $self->{erefs}{-clock}->getTime();
+    $win_r->{day_list}->update()
+        if ($win_r->{day_list});
+    $self->{erefs}{-edit_win}->update();
+    $self->{erefs}{-week_win}->update();
+    Version->register_locked_session("Tidbox lås har förlorats:" .
+                                     "\n  Datum: " . $date .
+                                     "\n  Tid: " . $time
+                                    );
+    $win_r->{confirm}
+      -> popup(-title  => 'Tidbox är låst',
+               -text   => ["Tidbox lås till har förlorats, låsfilen finns\n" .
+                           "inte kvar!\n" .
+                           "De lagrade registreringarna kan vara korrupta.\n" .
+                           "Kontrollera dina registreringar och\n" .
+                           "starta om Tidbox.\n"
+                          ],
+               -data   => [$self->{erefs}{-lock}->get()],
+               -buttons => [
+                            'Enbart läsning', undef,
+                           ]
+
+              );
+
+  } # unless #
+
   return 0;
 } # Method showLocked
 
@@ -1070,10 +1163,10 @@ sub _dated($$) {
         -> popup(-title  => 'arkiverade',
                  -text  => ['Kan inte hantera ' . $date,
                             'Registreringar till och med ' .
-                                $self->{-cfg}->get('archive_date') .
+                                $self->{erefs}{-cfg}->get('archive_date') .
                                 ' är arkiverade.'],
                 )
-      if ($date le $self->{-cfg}->get('archive_date'));
+      if ($date le $self->{erefs}{-cfg}->get('archive_date'));
 
   return 0
       unless ($self->_checkModified([
@@ -1127,14 +1220,14 @@ sub _checkAdd($$) {
     } else {
 
       return $self->_add($action)
-          if ($evText eq $self->{-event_cfg}->getEmpty());
+          if ($evText eq $self->{erefs}{-event_cfg}->getEmpty());
 
     } # if #
 
   } else {
 
     return $self->_add($action)
-        if ($evText eq $self->{-event_cfg}->getEmpty());
+        if ($evText eq $self->{erefs}{-event_cfg}->getEmpty());
 
   } # if #
 
@@ -1145,7 +1238,7 @@ sub _checkAdd($$) {
                                "En markerad händelse är ändrad\n" .
                                "Kasta ändringen?",
                               ],
-                   -data   => [$self->{-calculate}->format($line)],
+                   -data   => [$self->{erefs}{-calculate}->format($line)],
                    -action => [$self, '_add', $action],
                   );
 
@@ -1189,7 +1282,7 @@ sub _checkModified($$) {
   } else {
 
     return 1
-        if ($evText eq $self->{-event_cfg}->getEmpty());
+        if ($evText eq $self->{erefs}{-event_cfg}->getEmpty());
 
   } # if #
 
@@ -1200,7 +1293,7 @@ sub _checkModified($$) {
                                "En markerad händelse är ändrad\n" .
                                "Kasta ändringen?",
                               ],
-                   -data   => [$self->{-calculate}->format($line)],
+                   -data   => [$self->{erefs}{-calculate}->format($line)],
                    -action => $callback,
                   );
 
@@ -1245,7 +1338,7 @@ sub _quitModified($$$) {
   } else {
 
     return $self->destroy()
-        if ($evText eq $self->{-event_cfg}->getEmpty());
+        if ($evText eq $self->{erefs}{-event_cfg}->getEmpty());
 
   } # if #
 
@@ -1256,7 +1349,7 @@ sub _quitModified($$$) {
                                "En markerad händelse är ändrad\n" .
                                "Kasta ändringen och avsluta Tidbox?",
                               ],
-                   -data   => [$self->{-calculate}->format($line)],
+                   -data   => [$self->{erefs}{-calculate}->format($line)],
                    -action => [$self, 'destroy'],
                   );
 
@@ -1297,7 +1390,7 @@ sub _dateReturn($) {
   return undef
       unless (defined($date));
 
-  $self->_goOn($self->{-edit_win}, $date);
+  $self->_goOn($self->{erefs}{-edit_win}, $date);
   return 0;
 } # Method _dateReturn
 
@@ -1320,27 +1413,39 @@ sub _setup($) {
   my $win_r = $self->{win};
 
   ### Heading ####
-  $self->{-clock}->setDisplay($win_r->{name}, $win_r->{title});
+  $self->{erefs}{-clock}->setDisplay($win_r->{name}, $win_r->{title});
 
   # Start timer for clock
   $win_r->{title_timer} = $win_r->{win}
-      -> repeat(1000, [tick => $self->{-clock}]);
+      -> repeat(1000, [tick => $self->{erefs}{-clock}]);
 
   # Day list listbox to the left
-  $win_r->{day_list} =
-    new Gui::DayList(-area => $win_r->{area},
-                     -side => 'left',
-                     -showEvent => [$self => 'show'],
-                     -times     => $self->{-times},
-                     -calculate => $self->{-calculate},
-                     -clock     => $self->{-clock},  # List should show today
-                     -cfg       => $self->{-cfg},
-                     -parentName => $win_r->{name},
-                    )
-      if ($self->{-cfg}->get('main_show_daylist'));
+  if ($self->{erefs}{-cfg}->get('main_show_daylist')) {
+    $win_r->{day_list} =
+      new Gui::DayList(-area => $win_r->{area},
+                       -side => 'left',
+                       erefs => {
+                         -times     => $self->{erefs}{-times},
+                         -calculate => $self->{erefs}{-calculate},
+                              # List should show today
+                         -clock     => $self->{erefs}{-clock},
+                         -cfg       => $self->{erefs}{-cfg},
+                       },
+                       -showEvent => [$self => 'show'],
+                       -parentName => $win_r->{name},
+                      );
+    $win_r->{day_list}->configure(
+                       -times     => $self->{erefs}{-times},
+                       -calculate => $self->{erefs}{-calculate},
+                                # List should show today
+                       -clock     => $self->{erefs}{-clock},
+                       -cfg       => $self->{erefs}{-cfg},
+                                  );
+  } # if #
+
 
   ### Area for day list and main window ####
-  if ($self->{-cfg}->get('main_show_daylist')) {
+  if ($self->{erefs}{-cfg}->get('main_show_daylist')) {
     $win_r->{right_area} = $win_r->{area}
         -> Frame()
         -> pack(-side => 'left', -expand => '1', -fill => 'both');
@@ -1352,7 +1457,9 @@ sub _setup($) {
   $win_r->{time_area} =
       new Gui::Time(
                     -area      => $win_r->{right_area},
-                    -calculate => $self->{-calculate},
+                    erefs => {
+                      -calculate => $self->{erefs}{-calculate},
+                             },
                     -time      => [$self, '_modify', 1],
                     -date      => [$self, '_dateReturn'],
                     -invalid   => [$self, '_message'],
@@ -1394,8 +1501,9 @@ sub _setup($) {
       -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{event_handling} =
-      new Gui::Event(
-                    -event_cfg => $self->{-event_cfg},
+      new Gui::Event(erefs => {
+                                -event_cfg => $self->{erefs}{-event_cfg},
+                              },
                     -area      => $win_r->{event_area},
                     -validate  => [$self, '_validate'],
                     -buttons   => [$self, '_buttons'],
@@ -1413,20 +1521,20 @@ sub _setup($) {
       -> pack(-side => 'left');
 
   ### Previous menu ###
-  $win_r->{previous_add} = $self->{-earlier}->
+  $win_r->{previous_add} = $self->{erefs}{-earlier}->
       create($win_r->{previous_area},
              'left',
              [$self, '_add', $BEGINEVENT],
              'Lägg till');
 
-  $win_r->{previous_show} = $self->{-earlier}->
+  $win_r->{previous_show} = $self->{erefs}{-earlier}->
       create($win_r->{previous_area},
              'left',
              [$self, '_earlier'],
              'Visa');
 
   ### Previous button ###
-  $win_r->{previous_prevbut} = $self->{-earlier}->
+  $win_r->{previous_prevbut} = $self->{erefs}{-earlier}->
       prevBut($win_r->{previous_area}, [$self, '_add', $BEGINEVENT]);
 
   ### Show data ###
@@ -1443,24 +1551,24 @@ sub _setup($) {
   # the buttons
   $win_r->{butt_area} = $win_r->{right_area}
       -> Frame()
-      -> pack(-side => 'top', -fill => 'both');
+      -> pack(-side => 'bottom', -fill => 'both');
 
   ## calculate whole week ##
   $win_r->{week} = $win_r->{butt_area}
       -> Button(-text => 'Veckan',
-                -command => [$self, '_dated', $self->{-week_win}])
+                -command => [$self, '_dated', $self->{erefs}{-week_win}])
       -> pack(-side => 'left');
 
   ## Edit entrys ##
   $win_r->{edit} = $win_r->{butt_area}
       -> Button(-text => 'Redigera',
-                -command => [$self, '_dated', $self->{-edit_win}])
+                -command => [$self, '_dated', $self->{erefs}{-edit_win}])
       -> pack(-side => 'left');
 
   ## Settings ##
   $win_r->{sett} = $win_r->{butt_area}
       -> Button(-text => 'Inställningar',
-                -command => [$self->{-sett_win} => 'display'])
+                -command => [$self->{erefs}{-sett_win} => 'display'])
       -> pack(-side => 'left');
 
   ## Quit ##
@@ -1473,29 +1581,29 @@ sub _setup($) {
   # UnDo button
   $win_r->{undo} = $win_r->{butt_area}
       -> Button(-text => 'Ångra senaste',
-                -command => [$self->{-times}, 'undo', $self, 'popup'],
+                -command => [$self->{erefs}{-times}, 'undo', $self, 'popup'],
                )
       -> pack(-side => 'right');
   $win_r->{undo} -> configure(-state => 'disabled')
-      unless($self->{-times}->undoGetLength());
+      unless($self->{erefs}{-times}->undoGetLength());
 
   # Now we have enough to show status:
   $self->_clear();
   $self->_status();
 
   # . Subscribe to updated event data
-  $self->{-times}->setDisplay($win_r->{name}, [$self, '_updated']);
+  $self->{erefs}{-times}->setDisplay($win_r->{name}, [$self, '_updated']);
 
   # Register for events from times and undo
-  $self->{-times}->setUndo($win_r->{name}, [$self => 'undo']);
+  $self->{erefs}{-times}->setUndo($win_r->{name}, [$self => 'undo']);
 
   # . Set lock status in title clock
-  my ($lock, $locked) = $self->{-cfg}->isSessionLocked();
-  $self->{-clock}->setLocked($locked)
+  my ($lock, $locked) = $self->{erefs}{-cfg}->isSessionLocked();
+  $self->{erefs}{-clock}->setLocked($locked)
       if ($lock);
 
   # . Register _status for one minute ticks
-  $self->{-clock}->repeat(-minute => [$self, '_status']);
+  $self->{erefs}{-clock}->repeat(-minute => [$self, '_status']);
 
   # Warnings during startup, show popup
   $self->callback($self->{-start_warning});
@@ -1542,8 +1650,8 @@ sub _quit($) {
   $self->_msgUpdate("Avslutar.");
   for my $w (qw(-year_win -sett_win -edit_win -week_win)) {
     $self->_msgUpdate();
-    $self->{$w} -> quit();
-    $self->{$w} -> withdraw();
+    $self->{erefs}{$w} -> quit();
+    $self->{erefs}{$w} -> withdraw();
   } # for #
 
   $self->_getPos();
@@ -1577,10 +1685,10 @@ sub _quit($) {
   $win_r->{previous_show}    -> configure(-state => 'disabled');
   $win_r->{previous_prevbut} -> configure(-state => 'disabled');
 
-  $self->{-clock}->quit();
+  $self->{erefs}{-clock}->quit();
 
   $self->_msgUpdate($self->{message_text}.'Sparar.');
-  $self->{-fsv}->end([$self, '_msgUpdate']);
+  $self->{erefs}{-tbfile}->end([$self, '_msgUpdate']);
   $self->_msgUpdate('Avslutar');
 
   return 0;

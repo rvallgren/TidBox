@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.2   Created: 2017-09-26 10:38
+#   Version:  2.3   Created: 2018-11-09 17:32
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.2';
-my $DATEVER = '2017-09-26';
+my $VERSION = '2.3';
+my $DATEVER = '2018-11-09';
 
 # History information:
 #
@@ -46,6 +46,10 @@ my $DATEVER = '2017-09-26';
 #      Added plugin handling
 #      Removed Terp, moved to MyTime plugin
 #      Setting for ordinary work time for a week is now a common setting
+# 2.3  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
+#      Check backup directory: Same as main directory, empty, tidbox files
+#      Added handling of new backup directory that contains tidbox data
 #
 
 #----------------------------------------------------------------------------
@@ -61,11 +65,13 @@ use integer;
 
 use Tk;
 use Tk::NoteBook;
+use Tk::ProgressBar;
 
 use Gui::Confirm;
 use Gui::Event;
 use Gui::EventConfig;
 use Gui::SupervisionConfig;
+use Gui::PluginConfig;
 
 # Register version information
 {
@@ -304,7 +310,7 @@ sub _restore($) {
   $self->{modified} = undef;
 
   # Copy editable configuration data
-  my %tmp = $self->{-cfg}->get(SETTABLE_CFGS,
+  my %tmp = $self->{erefs}{-cfg}->get(SETTABLE_CFGS,
                                BACKUP_ENA(),
                                BACKUP_DIR());
   while (my ($key, $val) = each(%tmp)) {
@@ -318,6 +324,8 @@ sub _restore($) {
 
   $self->{-supervision_cfg_setup}->showEdit();
 
+  $self->{-plugin_cfg_setup}->showEdit();
+
   if ($self->{cfg}{BACKUP_ENA()}) {
     $win_r->{backup_button}->
         configure(-state => "normal",
@@ -329,8 +337,6 @@ sub _restore($) {
                   -text => 'Välj katalog',
                  );
   } # if #
-
-
 
   $self->{start_tidbox_win_r}{event_handling}
       -> set($self->{cfg}{start_operation_event}, 1);
@@ -395,9 +401,11 @@ sub _apply($) {
   $self->{errors} = [];
   $self->_not_allow_add('Tidigare menyn måste har minst en rad.')
       if ($self->{cfg}{earlier_menu_size} <= 0);
-  $self->_not_allow_add('Tiden för "Autospara redigeringar" måste vara minst en minut.')
+  $self->_not_allow_add(
+       'Tiden för "Autospara redigeringar" måste vara minst en minut.')
       if ($self->{cfg}{save_threshold} <= 0);
-  $self->_not_allow_add('Säkerhetskopia vald för "' . $^O . '" men ingen katalog är definierad.')
+  $self->_not_allow_add(
+       'Säkerhetskopia vald för "' . $^O . '" men ingen katalog är definierad.')
       if ($self->{cfg}{BACKUP_ENA()} and not $self->{cfg}{BACKUP_DIR()});
 
   $self->{-supervision_cfg_setup}->getData();
@@ -418,8 +426,8 @@ sub _apply($) {
     if ($self->{mod}{event_cfg}) {
 
       if ($self->{-event_cfg_setup}->apply()) {
-        $self->{-week_win}->withdraw();
-        $self->{-event_cfg}->save(1);
+        $self->{erefs}{-week_win}->withdraw();
+        $self->{erefs}{-event_cfg}->save(1);
       } # if #
 
       $self->{mod}{event_cfg} = 0;
@@ -444,29 +452,39 @@ sub _apply($) {
 
     } # if #
 
-  ### Insert plugin configuration data ###
-  while (my ($name, $ref) = each(%{$self->{plugin}})) {
-    $self->callback($ref->{-apply})
-        if (exists($ref->{-apply}));
-  } # while #
+    ### Handle plugin configuration ###
+    if ($self->{mod}{plugin_cfg}) {
+
+      $self->{erefs}{-plugin}->save(1)
+          if ($self->{-plugin_cfg_setup}->apply());
+      $self->{mod}{plugin_cfg} = 0;
+
+    } # if #
+
+    ### Handle configuration data for all used plugins ###
+    while (my ($name, $ref) = each(%{$self->{plugin}})) {
+      $self->callback($ref->{-apply})
+          if (exists($ref->{-apply}));
+    } # while #
 
     # Update configuration data
-    $self->{-cfg}->set(%{$self->{cfg}});
-    $self->{-cfg}->save(1);
-    $self->{-cfg}->bakInit();
+    $self->{erefs}{-cfg}->set(%{$self->{cfg}});
+    $self->{erefs}{-cfg}->save(1);
+    $self->{erefs}{-cfg}->bakInit();
+    $self->{erefs}{-tbfile}->resetCheckBackup(1);
 
     # Update supervision
     if ($self->{mod}{supervision}) {
 
-      $self->{-supervision}->save(1)
+      $self->{erefs}{-supervision}->save(1)
           if ($self->{-supervision_cfg_setup}->apply());
       $self->{mod}{supervision} = 0;
     } # if #
 
     # Update windows
-    $self->callback($self->{-edit_update});
-    $self->callback($self->{-main_status});
-    $self->callback($self->{-week_update});
+    $self->callback($self->{erefs}{-edit_update});
+    $self->callback($self->{erefs}{-main_status});
+    $self->callback($self->{erefs}{-week_update});
 
   } # if #
   $self->_restore();
@@ -519,7 +537,7 @@ sub _modified($;$) {
       $self->{mod}{$setting} = 1;
     } # if #
   } # if #
-  my $state = $self->{-cfg}->isSessionLocked()
+  my $state = $self->{erefs}{-cfg}->isSessionLocked()
                 ? 'disabled' : 'normal';
 
   $win_r->{button_ok}      -> configure(-state => $state);
@@ -557,6 +575,51 @@ sub _number_entry_key() {
 
 #----------------------------------------------------------------------------
 #
+# Method:      applyNewBackupDirectory
+#
+# Description: Set new value in configuration, then call method to handle
+#              new directory. That is replace, merge, over write, etc.
+#
+# Arguments:
+#  - Object reference
+#  - Callback to operation to perform
+# Returns:
+#  - Result from callback
+
+sub applyNewBackupDirectory($@) {
+  # parameters
+  my $self = shift;
+  my ($cdir, @opCallback) = @_;
+
+
+  $self->{win}{confirm}
+       -> popup(
+                -title    => ': Infogar data',
+                -progress => 'Infogar data från säkerhetskopia, andel klart',
+               );
+
+  $self->{cfg}{BACKUP_ENA()} = 1;
+  $self->{cfg}{BACKUP_DIR()} = $cdir;
+  my $log = $self->{erefs}{-log};
+  $log->trace('Arguments:', $cdir, '>', $opCallback[1], '<');
+  $log->trace('New backup settings:', $self->{cfg}{BACKUP_ENA()}, ':',
+                                      $self->{cfg}{BACKUP_DIR()});
+  $self->{erefs}{-cfg}->set(
+                            BACKUP_ENA() => $self->{cfg}{BACKUP_ENA()},
+                            BACKUP_DIR() => $self->{cfg}{BACKUP_DIR()},
+                           );
+
+  $self->callback(\@opCallback, [$self->{win}{confirm}, 'step_progress_bar']);
+
+  # Update windows
+  $self->_modified('_do_backup');
+  $self->_restore();
+  # TODO Add plugins
+  return 0;
+} # Method applyNewBackupDirectory
+
+#----------------------------------------------------------------------------
+#
 # Method:      _chooseBakDirectory
 #
 # Description: Choose a backup directory
@@ -586,14 +649,194 @@ sub _chooseBakDirectory($) {
   my $dir = $win_r->{win}
         -> chooseDirectory(-initialdir => $startdir,
                            -parent => $win_r->{win},
-                           -title => $self->{-title} . ': Katalog för säkerhetskopia',
+                           -title => $self->{-title} .
+                                       ': Katalog för säkerhetskopia',
                           );
 
-  return 0
-      unless $dir;
+  # Normalize directory path from chooseDirectory()
+  # Make sure '/' and '\' are for the actual filesystem, Windows or Unix
+  my $cdir = File::Spec->canonpath($dir) ;
 
-  $self->{cfg}{BACKUP_DIR()} = $dir;
-  $self->_modified('_do_backup');
+  my $tbFile = $self->{erefs}{-tbfile};
+  my $log = $self->{erefs}{-log};
+
+  # Does the directory contain Tidbox data?
+  # TODO log.rotate är en annan fil
+  # TODO Kolla om samma som arbetskatalogen först.
+  my $res = $tbFile->checkBackupDirectory($cdir);
+
+  # No name provided
+  return 0
+      unless (defined($res));
+
+  my $msg;
+
+  if ($res eq 'sameAsActiveDirectory') {
+    # Do not allow backup to be same as session directory
+    $msg = 'Backupkatalogen kan inte vara samma som de ordinarie katalogen:';
+  } elsif ($res eq 'notADirectory') {
+    # Should be a directory
+    $msg = 'Inte en katalog:';
+  } elsif ($res eq 'notWriteAccess') {
+    # Should have write access
+    $msg = 'Du har inte skrivbehörighet i katalogen:';
+  } elsif ($res eq 'failedOpenDir') {
+    # Failed to open directory
+    $msg = 'Kan inte öppna katalogen:';
+#  } elsif ($res eq 'otherFiles') {
+#    # No tidbox files in directory
+#    $msg = 'Katalogen innehåller andra filer än tidbox filer:';
+#  } elsif ($res eq 'moreFiles') {
+#    # Other files than tidbox files
+#    $msg = 'Katalogen innehåller andra filer utöver tidbox filer:';
+  } # if #
+
+  if ($msg) {
+    $self->{win}{confirm}
+         -> popup(
+                  -title => ': Felaktig inmatning',
+                  -text  => [$msg, $cdir, 'Välj en annan backup katalog!'],
+                 );
+    return 0;
+  } # if #
+
+  if ($res eq 'doesNotExist') {
+    # Does not exist, create it
+    $self->{cfg}{BACKUP_DIR()} = $cdir;
+    $self->_modified('_do_backup');
+    return 0;
+  } # if #
+
+  # Check Tidbox data for relation to our session
+  my $state = $tbFile->checkDirectoryDigest($cdir);
+  $log->trace('Directory state:', $state, ':');
+
+  if ($state eq 'OurLock') {
+    # It was already locked by our session, just use it
+    $self->{cfg}{BACKUP_DIR()} = $cdir;
+    $self->_modified('_do_backup');
+    return 0;
+  } # if #
+
+  if ($state eq 'OurSessionLocked') {
+    # It is our session with another lock
+    # It is an older session of our instance
+    # Use backup directory as our instance, change to our lock
+    # TODO Make sure this instance is used: Dirty all (archive special)
+    $self->{cfg}{BACKUP_DIR()} = $cdir;
+    $self->_modified('_do_backup');
+    return 0;
+  } # if #
+
+  if ($state eq 'OurSessionNoLock') {
+    # It is our session (without lock ??)
+    # It is an older session of our instance (Without lock ???)
+    # Use backup directory as our instance, add lock
+    # TODO Make sure this instance is used: Dirty all (archive special)
+    $self->{cfg}{BACKUP_DIR()} = $cdir;
+    $self->_modified('_do_backup');
+    return 0;
+  } # if #
+
+  if ($state eq 'LockedByOther') {
+    # Locked by another session
+    # TODO How do we do
+    #      - Don't use
+    #      - Take over
+    # TODO We can become a slave or ask other session to become a slave to our
+    $self->{win}{confirm}
+         -> popup(
+                  -title => ': Låst av annan',
+                  -text  => ['Den valda katalogen är låst av en annan Tidbox',
+                             $cdir, 'Välj en annan backup katalog!'],
+                 );
+    return 0;
+  } # if #
+
+  if ($state eq 'NoSession') {
+    # Directory contains no session or lock data
+    # Use as backup as is
+    # TODO Make sure this instance is used: Dirty all (archive special)
+    $self->{cfg}{BACKUP_DIR()} = $cdir;
+    $self->_modified('_do_backup');
+    return 0;
+  } # if #
+
+  if ($state eq 'NewerSession' or
+      $state eq 'OlderSession' or
+      $state eq 'BranchSession') {
+    # Our session is history of the other session (BEWARE)
+    # or it is a branch of our instance
+
+    # Ask if merge or overwrite should be performed
+    $win_r->{confirm}
+      -> popup(-title  => 'Backupkatalog',
+               -text => ["Backupkatalogen innehåller tidbox " .
+                         "data från en annan Tidbox session:\n",
+                         "De senaste registreringarna skiljer sig " .
+                         "antagligen från denna session.\n" .
+                         "Välj åtgärd:\n\n" .
+                         "Infoga:      Infoga data från den andra sessionen i denna.\n\n" .
+                         "Skriv över:  Datat från den andra sessionen tas bort permanent.\n\n" .
+                         "Avbryt:      Avbryt utan ändring.",
+                         "OBS: Detta går inte att ångra!",
+                       ],
+               -data   => [$cdir],
+               -buttons => [
+                            'Avbryt',
+                               undef,
+                            'Skriv över',
+                               [ $self, 'applyNewBackupDirectory',
+                                 $cdir,
+                                 $tbFile, 'replaceBackupData'  ],
+                            'Infoga',
+                               [ $self, 'applyNewBackupDirectory',
+                                 $cdir,
+                                 $tbFile, 'mergeBackupData'    ],
+                           ]
+            );
+
+  } # if #
+
+  if ($state eq 'OtherInstance') {
+    # Other is another instance or
+    # no digest found, no check can be made
+
+    # Ask if replace merge or overwrite should be performed
+    $win_r->{confirm}
+      -> popup(-title  => 'Backupkatalog',
+               -text => ["Backupkatalogen innehåller tidbox " .
+                         "data från en helt annan instans:\n",
+                         "Registreringarna skiljer sig " .
+                         "antagligen helt från denna instans.\n" .
+                         "Välj åtgärd:\n\n" .
+                         "Infoga:      Infoga data från den andra sessionen i denna.\n\n" .
+                         "Skriv över:  Datat från den andra sessionen tas bort permanent.\n\n" .
+                         "Använd:      Kasta data i denna session och använd datat från den andra sessionen.\n\n" .
+                         "Avbryt:      Avbryt utan ändring." ,
+                         "OBS: Detta går inte att ångra!"
+                       ],
+               -data   => [$cdir],
+               -buttons => [
+                            'Avbryt',
+                               undef,
+                            'Använd',
+                               [ $self, 'applyNewBackupDirectory',
+                                 $cdir,
+                                 $tbFile, 'replaceSessionData' ],
+                            'Skriv över',
+                               [ $self, 'applyNewBackupDirectory',
+                                 $cdir,
+                                 $tbFile, 'replaceBackupData'  ],
+                            'Infoga',
+                               [ $self, 'applyNewBackupDirectory',
+                                 $cdir,
+                                 $tbFile, 'mergeBackupData'    ],
+                           ]
+            );
+
+  } # if #
+
 
   return 0;
 } # Method _chooseBakDirectory
@@ -666,7 +909,8 @@ sub _addButtonsStart($$) {
   my ($area) = @_;
 
   my $win_r = $self->{win};
-  $self->{-earlier}->create($area, 'right', [$self => '_previous', 'start']);
+  $self->{erefs}{-earlier}
+      -> create($area, 'right', [$self => '_previous', 'start']);
   $win_r->{set_start_clear} = $area
       -> Button(-text => 'Rensa', -command => [$self => '_setupClear', 'start'])
       -> pack(-side => 'right');
@@ -691,9 +935,10 @@ sub _addButtonsResume($$) {
   my ($area) = @_;
 
   my $win_r = $self->{win};
-  $self->{-earlier}->create($area, 'right', [$self => '_previous', 'resume']);
+  $self->{erefs}{-earlier}
+      -> create($area, 'right', [$self => '_previous', 'resume']);
   $win_r->{set_resume_clear} = $area
-      -> Button(-text => 'Rensa', -command => [$self => '_setupClear', 'resume'])
+      -> Button(-text => 'Rensa', -command => [$self => '_setupClear','resume'])
       -> pack(-side => 'right');
   return 0;
 } # Method _addButtonsResume
@@ -718,10 +963,10 @@ sub _setup($) {
   my $win_r = $self->{win};
 
   # Show clock as window heading
-  $self->{-clock}->setDisplay($win_r->{name}, $win_r->{title});
+  $self->{erefs}{-clock}->setDisplay($win_r->{name}, $win_r->{title});
 
   # Copy configuration data
-  %{$self->{cfg}} = $self->{-cfg}->get(SETTABLE_CFGS);
+  %{$self->{cfg}} = $self->{erefs}{-cfg}->get(SETTABLE_CFGS);
 
   # Create a notebook
   $win_r->{notebook} = $win_r->{area}
@@ -930,9 +1175,10 @@ sub _setup($) {
       -> Frame(-bd => '2', -relief => 'raised')
       -> pack(-side => 'top', -expand => '0', -fill => 'both');
 
-  $win_r->{set_show_message_timeout_lb} = $win_r->{set_show_message_timeout_area}
-      -> Label(-text => 'Visa status information i ')
-      -> pack(-side => 'left');
+  $win_r->{set_show_message_timeout_lb} =
+      $win_r->{set_show_message_timeout_area}
+          -> Label(-text => 'Visa status information i ')
+          -> pack(-side => 'left');
 
   $win_r->{set_show_message_timeout} = $win_r->{set_show_message_timeout_area}
       -> Entry(-width           => 3,
@@ -952,10 +1198,12 @@ sub _setup($) {
 
   $self->{-supervision_cfg_setup} =
       new Gui::SupervisionConfig(-area      => $win_r->{status_tab},
-                -supervision => $self->{-supervision},
-                -event_cfg   => $self->{-event_cfg},
-                -earlier     => $self->{-earlier},
-                -calculate   => $self->{-calculate},
+                erefs => {
+                  -supervision => $self->{erefs}{-supervision},
+                  -event_cfg   => $self->{erefs}{-event_cfg},
+                  -earlier     => $self->{erefs}{-earlier},
+                  -calculate   => $self->{erefs}{-calculate},
+                         },
                 -modified    => [$self => '_modified', 'supervision'],
                 -invalid     => [$self => '_not_allow_add'],
                           );
@@ -967,11 +1215,13 @@ sub _setup($) {
       new Gui::EventConfig(-area      => $win_r->{edit_tab},
                            -win_r     => $win_r,
                            -modified  => [ $self => '_modified', 'event_cfg'],
-                           -event_cfg => $self->{-event_cfg},
+                           erefs => {
+                             -event_cfg => $self->{erefs}{-event_cfg},
+                             -calculate => $self->{erefs}{-calculate},
+                             -clock     => $self->{erefs}{-clock},
+                             -cfg       => $self->{erefs}{-cfg},
+                           },
                            -invalid   => [$self => '_not_allowed'],
-                           -calculate => $self->{-calculate},
-                           -clock     => $self->{-clock},
-                           -cfg       => $self->{-cfg},
                           );
 
   ### TAB: Start Tidbox ###
@@ -1023,11 +1273,13 @@ sub _setup($) {
 
   $starttb_win_r->{event_handling} =
       new Gui::Event(
-                    -event_cfg  => $self->{-event_cfg},
-                    -area       => $starttb_win_r->{-area},
-                    -parentName => $starttb_win_r->{name},
-                    -validate => [$self => '_modified', 'start_operation_event'],
-                    -buttons  => [$self => '_addButtonsStart'],
+                  erefs => {
+                    -event_cfg  => $self->{erefs}{-event_cfg},
+                           },
+                  -area       => $starttb_win_r->{-area},
+                  -parentName => $starttb_win_r->{name},
+                  -validate => [$self => '_modified', 'start_operation_event'],
+                  -buttons  => [$self => '_addButtonsStart'],
                    );
 
   # Select action when Tidbox is resumed after hibernate, sleep, etc
@@ -1097,12 +1349,28 @@ sub _setup($) {
 
   $resumetb_win_r->{event_handling} =
       new Gui::Event(
-                    -event_cfg  => $self->{-event_cfg},
-                    -area       => $resumetb_win_r->{-area},
-                    -parentName => $resumetb_win_r->{name},
-                    -validate  => [$self => '_modified', 'resume_operation_event'],
-                    -buttons   => [$self => '_addButtonsResume'],
-                   );
+                erefs => {
+                  -event_cfg  => $self->{erefs}{-event_cfg},
+                },
+                -area       => $resumetb_win_r->{-area},
+                -parentName => $resumetb_win_r->{name},
+                -validate  => [$self => '_modified', 'resume_operation_event'],
+                -buttons   => [$self => '_addButtonsResume'],
+               );
+
+  ### TAB: Plugin configuration settings ###
+  $win_r->{plugin_tab} = $win_r->{notebook}
+      -> add('plugins', -label => 'Insticksmoduler');
+  $self->{-plugin_cfg_setup} =
+      new Gui::PluginConfig(-area      => $win_r->{plugin_tab},
+                            -win_r     => $win_r,
+                            -modified  => [ $self => '_modified', 'plugin_cfg'],
+                             erefs => {
+                               -plugin   => $self->{erefs}{-plugin},
+                               -log      => $self->{erefs}{-log},
+                             },
+                             -invalid   => [$self => '_not_allowed'],
+                          );
 
   ### TABs: Add tab for all plugins that use it ###
   while (my ($name, $ref) = each(%{$self->{plugin}})) {
@@ -1119,7 +1387,7 @@ sub _setup($) {
   # About button
   $win_r->{button_about} = $win_r->{button_area}
       -> Button(-text => 'Om tidbox',
-                -command => [$self -> {-about_popup}, $win_r])
+                -command => [$self -> {erefs}{-about_popup}, $win_r])
       -> pack(-side => 'left');
 
   # Break button

@@ -2,18 +2,20 @@
 package MigrateVersion;
 #
 #   Document: Migrate data between tidbox versions
-#   Version:  1.0   Created: 2017-09-26 11:05
+#   Version:  1.1   Created: 2017-10-05 19:26
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MigrateVersion.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2017-09-26';
+my $VERSION = '1.1';
+my $DATEVER = '2017-10-05';
 
 # History information:
 #
+# 1.1  2017-10-05  Roland Vallgren
+#      Don't need FileBase
 # 1.0  2017-09-18  Roland Vallgren
 #      First issue.
 #
@@ -23,7 +25,6 @@ my $DATEVER = '2017-09-26';
 # Setup
 #
 use base TidBase;
-use base FileBase;
 
 use strict;
 use warnings;

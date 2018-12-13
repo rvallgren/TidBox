@@ -2,15 +2,15 @@
 package TitleClock;
 #
 #   Document: Running clock for timing and visible clock
-#   Version:  1.9   Created: 2016-01-15 13:08
+#   Version:  1.10   Created: 2017-11-10 19:18
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TitleClock.pmx
 #
 
-my $VERSION = '1.9';
-my $DATEVER = '2016-01-15';
+my $VERSION = '1.10';
+my $DATEVER = '2017-11-10';
 
 # History information:
 #
@@ -34,6 +34,9 @@ my $DATEVER = '2016-01-15';
 #      Added quit method to stop sending repeat messages
 # 1.9  2016-01-15  Roland Vallgren
 #      setDisplay moved to TidBase
+# 1.10  2017-10-16  Roland Vallgren
+#       References to other objects in own hash
+#       Added a timeout one shot timer
 #
 
 #----------------------------------------------------------------------------
@@ -151,6 +154,36 @@ sub repeat($;%) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      timeout
+#
+# Description: Add a timeout one shot timer
+#              If number of minutes is less than one the timeout
+#              will happen att the next minute tick
+#
+# Arguments:
+#  0 - Object reference
+#  -minute    Number of minutes
+#  -callback  Callback to be called at time out
+# Returns:
+#  -
+
+sub timeout($;%) {
+  # parameters
+  my $self = shift;
+  my %arg = @_;
+
+
+  push @{$self->{-timeout}{-minute}},
+             { timeout  => $arg{-minute},
+               callback => $arg{-callback},
+             }
+      if (exists($arg{-minute}));
+
+  return 0;
+} # Method timeout
+
+#----------------------------------------------------------------------------
+#
 # Method:      tick
 #
 # Description: Clock tick, triggered once a second
@@ -197,15 +230,16 @@ sub tick($) {
     if ($hour ne $self->{hour}) {
       $self->{hour} = $hour;
 
-      my $date = $self->{-calculate}->yyyyMmDd($wt[5], $wt[4]+1, $wt[3]);
+      my $date = $self->{erefs}{-calculate}->yyyyMmDd($wt[5], $wt[4]+1, $wt[3]);
 
       if ($date ne $self->{date}) {
         $self->{date} = $date;
         ($self->{year}, $self->{month}, $self->{day}) = split('-', $date);
-        $self->{monthtxt}   = $self->{-calculate}->monthStr($self->{month});
-        $self->{week}       = $self->{-calculate}->weekNumber($date);
+        $self->{monthtxt}   =
+                       $self->{erefs}{-calculate}->monthStr($self->{month});
+        $self->{week}       = $self->{erefs}{-calculate}->weekNumber($date);
         $self->{weekday}    = $wt[6];
-        $self->{weekdaytxt} = $self->{-calculate}->dayStr($wt[6]);
+        $self->{weekdaytxt} = $self->{erefs}{-calculate}->dayStr($wt[6]);
 
         for my $ref (@{$self->{-repeat}{-date}}) {
           $self->callback($ref);
@@ -220,6 +254,19 @@ sub tick($) {
     for my $ref (@{$self->{-repeat}{-minute}}) {
       $self->callback($ref);
     } # for #
+
+    my $index = 0;
+    my $aref = $self->{-timeout}{-minute};
+    while ($index <= $#{$aref} ) {
+      my $ref = $aref->[$index];
+      if ( $ref->{timeout} <= 0 ) {
+        $self->callback($ref->{callback});
+        splice @{$aref}, $index, 1;
+      } else {
+        $ref->{timeout}--;
+        $index++;
+      } # if #
+    } # while #
 
   } # if #
 

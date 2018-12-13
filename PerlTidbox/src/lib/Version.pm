@@ -1,7 +1,7 @@
 #
 package Version;
 #
-#   Version:  1.6   Created: 2017-09-29
+#   Version:  1.6   Created: 2018-12-13
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package Version;
 #
 
 my $VERSION = '1.6';
-my $DATEVER = '2017-09-29';
+my $DATEVER = '2018-12-13';
 
 # Register version information
 {
@@ -36,6 +36,7 @@ my $DATEVER = '2017-09-29';
 #      Handle session lock
 # 1.6  2017-04-19  Roland Vallgren
 #      Changed format in component list
+#      Added about plugin
 #
 
 #----------------------------------------------------------------------------
@@ -73,9 +74,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2017-09-29',
+    date      => '2018-12-13',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.10',
+    VERSION   => '4.11',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -101,7 +102,8 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 "\n  Uppgjord: " . $tool_info{prepared} .
 "\n  Datum: " . $tool_info{date} .
 "\n" .
-"\n  Copyright (c) " . $tool_info{year} . ' ' . $tool_info{prepared} . " All rights reserved" .
+"\n  Copyright (c) " . $tool_info{year} . ' ' . $tool_info{prepared} .
+                                                       " All rights reserved" .
 "\n  This program is free software. It may be used, redistributed" .
 "\n  and/or modified under the same terms as Perl itself. "
 ,
@@ -109,27 +111,28 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Retur i datum ändrar händelse om händelse är vald.
-Om en redigering inte är sparad bekräfta att ändringen skall kastas.
-Retur eller blanksteg i daglistan visar händelsen.
-Starta redigera från veckodag, klicka på dagens namn.
-Rullisten visas inte i lista med dagens aktiviteter om den inte behövs.
-Ny funktion exporterar veckan till en fil.
-Ångra senaste finns nu också i huvudfönstret.
-Stöd för insticksmoduler (plugin) infört.
-Tagit bort import av Tidbox data från Tidbox före utgåva 4.0
-  Tidbox 4.0 är från oktober 2007.
-MyTime insticksmodul ersätter Terp.
-Normal veckosrbetstid är nu en generell inställning
-
+Kodförbättringar
+Tidbox upptäcker om låset bryts upp av en annan tidbox
+Data och backup verifieras att det hör till sessionen och att det
+inte ändras av en annan session
+Vid byte av backup-katalog till en med Tidbox-data frågar Tidbox
+hur datat skall hanteras:
+  Vävas ihop
+  Skriv över, kasta datat
+  Använd, kasta datat i aktuell Tidbox
+Vid installation på ny dator kan backup användas för att ladda på
+tidigare registreringar, se Använd ovan.
+Ny insticksmodul MyTimeXls för att exportera till en MyTime Excel-fil
+  OBS: Format ändrat 2018-11-29
+Inställning för att välja aktiva insticksmoduler (plugin)
+I redigera finns en ny knapp för att visa veckan.
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Ta bort senaste händelsedefinitionen uppdaterade inte till föregående
-Huvudfönster utan daglista gick inte att avsluta
+MyTime export kan hantera att det är fler är fyra fält i händelser
 '
 ,
 

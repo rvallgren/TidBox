@@ -2,15 +2,15 @@
 package Gui::Earlier;
 #
 #   Document: Gui::Earlier
-#   Version:  1.3   Created: 2015-11-04 14:41
+#   Version:  1.4   Created: 2017-10-16 18:08
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Earlier.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2015-11-04';
+my $VERSION = '1.4';
+my $DATEVER = '2017-10-16';
 
 # History information:
 #
@@ -22,6 +22,9 @@ my $DATEVER = '2015-11-04';
 #      Return reference to button widget on create and prevButt
 # 1.3  2015-11-04  Roland Vallgren
 #      getSortedRefs joins expression
+# 1.4  2017-10-16  Roland Vallgren
+#      References to other objects in own hash
+#      
 #
 
 #----------------------------------------------------------------------------
@@ -205,7 +208,7 @@ sub add($;$) {
     return 0 unless $self->{previous}{$event};
     $move = $self->{previous}{$event};
   } else {
-    $move = $self->{-cfg}->get('earlier_menu_size');
+    $move = $self->{erefs}{-cfg}->get('earlier_menu_size');
   } # if #
 
   while (my ($action, $cnt) = each(%{$self->{previous}})) {
@@ -298,7 +301,7 @@ sub build($$) {
       $self->{previous}{$1} = $previous_c;
       $previous_c++;
       last
-          if $previous_c >= $self->{-cfg}->get('earlier_menu_size');
+          if $previous_c >= $self->{erefs}{-cfg}->get('earlier_menu_size');
     } # if #
   } # for #
 

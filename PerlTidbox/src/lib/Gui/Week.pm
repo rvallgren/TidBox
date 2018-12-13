@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.13   Created: 2017-09-26 11:04
+#   Version:  1.14   Created: 2017-10-20 06:01
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.13';
-my $DATEVER = '2017-09-26';
+my $VERSION = '1.14';
+my $DATEVER = '2017-10-20';
 
 # History information:
 #
@@ -52,6 +52,8 @@ my $DATEVER = '2017-09-26';
 #       Removed usage of Terp.pm
 #       Added handling of plugin to add buttons
 #       Setting terp_normal_worktime renamed to ordinary_week_work_time
+# 1.14  2017-10-16  Roland Vallgren
+#       References to other objects in own hash
 #
 
 #----------------------------------------------------------------------------
@@ -147,7 +149,7 @@ sub _formatTime($$) {
         #'    hh,tt'
   return '         ' unless($v);
   if ($v =~ /^-?\d+$/o) {
-    my $t = $self->{-calculate}->hours($v);
+    my $t = $self->{erefs}{-calculate}->hours($v);
           #'    hh,tt'
     return '     ' . $t if (length($t) < 5);
     return '    ' . $t;
@@ -195,7 +197,7 @@ sub _formatWeekRow($$$$$) {
   $insert_box->insert('end', $line . "\n");
 
   if (wantarray()) {
-    my $normal = $self->{-cfg}->get('ordinary_week_work_time') * 60;
+    my $normal = $self->{erefs}{-cfg}->get('ordinary_week_work_time') * 60;
     my ($flex, $sign);
     if ($row_time > $normal) {
       $flex = $row_time - $normal;
@@ -208,11 +210,11 @@ sub _formatWeekRow($$$$$) {
       $sign = '';
     } # if #
 
-    return ($self->{-calculate}->hours($row_time),
-            $sign . $self->{-calculate}->hours($flex)
+    return ($self->{erefs}{-calculate}->hours($row_time),
+            $sign . $self->{erefs}{-calculate}->hours($flex)
            );
   } # if #
-  return $self->{-calculate}->hours($row_time);
+  return $self->{erefs}{-calculate}->hours($row_time);
 } # Method _formatWeekRow
 
 #----------------------------------------------------------------------------
@@ -238,7 +240,7 @@ sub _showHead($) {
                         'Datum:', $self->{first_date} ,
                         '-'     , $self->{last_date}  );
 
-  my ($lock, $locked) = ($self->{-cfg}->isLocked($self->{last_date}));
+  my ($lock, $locked) = ($self->{erefs}{-cfg}->isLocked($self->{last_date}));
 
   if ($lock) {
     if ($lock == 2) {
@@ -430,8 +432,8 @@ sub _setup($) {
 
   ### Register for one minute ticks and event changes ###
 
-  $self->{-clock}->repeat(-minute => [$self => 'tick']);
-  $self->{-times}->setDisplay($win_r->{name}, [$self => 'update']);
+  $self->{erefs}{-clock}->repeat(-minute => [$self => 'tick']);
+  $self->{erefs}{-times}->setDisplay($win_r->{name}, [$self => 'update']);
 
   return 0;
 } # Method _setup
@@ -456,7 +458,7 @@ sub _condenseButtons($) {
     $self->{win}{condense} -> configure(-state => 'normal');
     $self->{win}{spread}   -> configure(-state => 'disabled');
   } else {
-    my $event_cfg_num = $self->{-event_cfg}->getNum($self->{last_date}) - 1;
+    my $event_cfg_num=$self->{erefs}{-event_cfg}->getNum($self->{last_date})-1;
 
     unless ($self->{condensed} <  $event_cfg_num) {
       $self->{win}{condense} -> configure(-state => 'disabled');
@@ -522,20 +524,20 @@ sub _display($;$) {
                 -title => $self->{-title} . ': Bekräfta',
                 -text  => ['Kan inte visa veckan för ' . $date,
                            'Registreringar till och med ' .
-                               $self->{-cfg}->get('archive_date') .
+                               $self->{erefs}{-cfg}->get('archive_date') .
                                ' är arkiverade.'],
                )
-    if ($date le $self->{-cfg}->get('archive_date'));
+    if ($date le $self->{erefs}{-cfg}->get('archive_date'));
 
   # Calculate for all days in week
   my $match_string;
-  ($match_string, $self->{condensed}) = $self->{-event_cfg}
+  ($match_string, $self->{condensed}) = $self->{erefs}{-event_cfg}
       -> matchString($self->{condensed}, $date);
 
   @{$self->{problem}} = ();
   my (%week_events, %week_comments, %week_cmt_len);
   my ($weekdays_r, $event_text_max_length, $comment_text_max_length) =
-       $self->{-calculate}
+       $self->{erefs}{-calculate}
            -> weekWorkTimes($date, $self->{condensed}, [$self => 'problem'],
                             \%week_events, \%week_comments, \%week_cmt_len);
 
@@ -543,7 +545,7 @@ sub _display($;$) {
   $self->{first_date} = $weekdays_r->[0]{date};
   $self->{last_date}  = $weekdays_r->[6]{date};
   ($self->{year}, $self->{week}) =
-      $self->{-calculate}->weekNumber($self->{last_date});
+      $self->{erefs}{-calculate}->weekNumber($self->{last_date});
 
   # Setup size and heading info for week calculate GUI
   my $textboxwidth = 68 + $event_text_max_length;
@@ -556,7 +558,7 @@ sub _display($;$) {
 
     my $line = sprintf('  %-' . $event_text_max_length. 's', 'Kategori');
     for my $wday (1..6,0) {
-      $line .= $self->_formatTime($self->{-calculate}->dayStr($wday));
+      $line .= $self->_formatTime($self->{erefs}{-calculate}->dayStr($wday));
     } # for #
     $line .= '    Summa' if ($self->{rowsum});
 
@@ -578,9 +580,11 @@ sub _display($;$) {
   for my $wday (1..6,0) {
     my $day = 'day' . $wday;
     $win_r->{weekdays} -> tagAdd($day,
-                                 '1.'.($wDayCol+($wday==4?0:1)),  '1.'.($wDayCol + 7));
+                                 '1.'.($wDayCol+($wday==4?0:1)),
+                                 '1.'.($wDayCol + 7));
     $win_r->{weekdays} -> tagConfigure($day, -underline => "1");
-    $win_r->{weekdays} -> tagBind($day, '<Button-1>', [$self => '_edit', $wday] );
+    $win_r->{weekdays} -> tagBind($day,
+                                  '<Button-1>', [$self => '_edit', $wday] );
     $wDayCol += 9;
   } # for #
 
@@ -732,7 +736,7 @@ sub update($;@) {
 
   # Update the week window if a date is in the week
   $self->_display()
-      if ($self->{-calculate}->
+      if ($self->{erefs}{-calculate}->
             impactedDate([$self->{first_date}, $self->{last_date}], @dates));
 
   return 0;
@@ -754,7 +758,7 @@ sub tick($) {
   my $self = shift;
 
 
-  $self->update($self->{-clock}->getDate());
+  $self->update($self->{erefs}{-clock}->getDate());
   return 0;
 } # Method tick
 
@@ -779,9 +783,10 @@ sub _edit($$) {
   if($wday == 0) {
     $date = $self->{last_date};
   } else {
-    $date = $self->{-calculate}->stepDate($self->{last_date}, -(6-$wday)-1);
+    $date = $self->{erefs}{-calculate}->
+                 stepDate($self->{last_date}, -(6-$wday)-1);
   } # if #
-  $self->{-edit_win}->display($date);
+  $self->{erefs}{-edit_win}->display($date);
   return 0;
 } # Method _edit
 
@@ -801,7 +806,7 @@ sub _year($) {
   my $self = shift;
 
 
-  $self->{-year_win}->display(substr($self->{first_date}, 0, 4));
+  $self->{erefs}{-year_win}->display(substr($self->{first_date}, 0, 4));
 
   return 0;
 } # Method _year
@@ -822,7 +827,7 @@ sub _prev($) {
   my $self = shift;
 
   $self->_display(
-      $self->{-calculate}->stepDate($self->{first_date}, -7));
+      $self->{erefs}{-calculate}->stepDate($self->{first_date}, -7));
   return 0;
 } # Method _prev
 
@@ -842,7 +847,7 @@ sub _next($) {
   my $self = shift;
 
   $self->_display(
-      $self->{-calculate}->stepDate($self->{first_date}, 7));
+      $self->{erefs}{-calculate}->stepDate($self->{first_date}, 7));
   return 0;
 } # Method _next
 
@@ -931,20 +936,20 @@ sub _lock($;$) {
   my ($confirm) = @_;
 
 
-  my $old_lock_date = $self->{-cfg}->get('lock_date');
+  my $old_lock_date = $self->{erefs}{-cfg}->get('lock_date');
 
   if ($confirm and
       ($old_lock_date lt $self->{last_date})
      ) {
     # Lock up to and including this week
-    $self->{-cfg}->set(lock_date => $self->{last_date});
+    $self->{erefs}{-cfg}->set(lock_date => $self->{last_date});
 
   } elsif ($confirm) {
     # Unlock this week and later
-    $self->{-cfg}->set(lock_date =>
-        $self->{-calculate}->stepDate($confirm, -7));
+    $self->{erefs}{-cfg}->set(lock_date =>
+        $self->{erefs}{-calculate}->stepDate($confirm, -7));
 
-  } elsif (($self->{last_date} ge $self->{-clock}->getDate()) and
+  } elsif (($self->{last_date} ge $self->{erefs}{-clock}->getDate()) and
          ($old_lock_date lt $self->{last_date})
         ) {
     # Confirm to lock today or later date
@@ -960,7 +965,7 @@ sub _lock($;$) {
 
   } elsif ($old_lock_date lt $self->{last_date}) {
     # Lock up to and including this week
-    $self->{-cfg}->set(lock_date => $self->{last_date});
+    $self->{erefs}{-cfg}->set(lock_date => $self->{last_date});
 
   } else {
     # Confirm the unlock
@@ -976,13 +981,12 @@ sub _lock($;$) {
 
   } # if #
 
-  $self->{-times}->undoAddLock($old_lock_date, 
-                               scalar($self->{-cfg}->get('lock_date')));
+  $self->{erefs}{-times}->undoAddLock($old_lock_date, 
+                               scalar($self->{erefs}{-cfg}->get('lock_date')));
 
-  $self->{-cfg}->save();
+  $self->{erefs}{-cfg}->save();
 
   $self->_showHead();
-
 
   return 0;
 } # Method _lock
@@ -1006,7 +1010,7 @@ sub _undo($;$) {
   my ($undo) = @_;
 
 
-  $self->{-times}->_undoSet()
+  $self->{erefs}{-times}->_undoSet()
       if ($undo);
 
   return 0;
@@ -1029,18 +1033,18 @@ sub _adjust($) {
 
 
   return 0
-      if ($self->{-cfg}->isLocked($self->{first_date}));
+      if ($self->{erefs}{-cfg}->isLocked($self->{first_date}));
 
   my $win_r = $self->{win};
   @{$self->{problem}} = ();
 
-  my ($res, $ch, $rm, $prb) = $self->{-calculate} ->
+  my ($res, $ch, $rm, $prb) = $self->{erefs}{-calculate} ->
       adjustDays($self->{first_date}, 
-                 scalar($self->{-cfg}->get('adjust_level')),
+                 scalar($self->{erefs}{-cfg}->get('adjust_level')),
                  7,
                  [$self => 'problem']);
 
-  $self->{-times}->save();
+  $self->{erefs}{-times}->save();
 
 
   my $broke = '';
@@ -1124,7 +1128,8 @@ sub _export($;$) {
                            ['Text files', '.txt'],
                            ['All Files' , '*'   ],
                                      ],
-                       -initialdir => ($^O eq 'MSWin32') ? $ENV{HOMEDRIVE} : $ENV{HOME},
+                       -initialdir => ($^O eq 'MSWin32') ?
+                                          $ENV{HOMEDRIVE} : $ENV{HOME},
                        -initialfile => 'export.csv',
                        -title => $self->{-title} . ': Export',
                       );
@@ -1145,14 +1150,14 @@ sub _export($;$) {
                 -title => $self->{-title} . ': Bekräfta',
                 -text  => ['Kan inte exportera veckan för ' . $date,
                            'Registreringar till och med ' .
-                               $self->{-cfg}->get('archive_date') .
+                               $self->{erefs}{-cfg}->get('archive_date') .
                                ' är arkiverade.'],
                )
-    if ($date le $self->{-cfg}->get('archive_date'));
+    if ($date le $self->{erefs}{-cfg}->get('archive_date'));
 
   # Calculate for all days in week
   my $match_string;
-  ($match_string, $self->{condensed}) = $self->{-event_cfg}
+  ($match_string, $self->{condensed}) = $self->{erefs}{-event_cfg}
       -> matchString($self->{condensed}, $date);
 
   @{$self->{problem}} = ();
@@ -1160,7 +1165,7 @@ sub _export($;$) {
   my $week_comments = {};
   my $week_cmt_len = {};
   my ($weekdays_r, $event_text_max_length, $comment_text_max_length) =
-       $self->{-calculate}
+       $self->{erefs}{-calculate}
            -> weekWorkTimes($date, $self->{condensed}, [$self => 'problem'],
                             $week_events, $week_comments, $week_cmt_len);
 
@@ -1168,7 +1173,7 @@ sub _export($;$) {
   $self->{first_date} = $weekdays_r->[0]{date};
   $self->{last_date}  = $weekdays_r->[6]{date};
   ($self->{year}, $self->{week}) =
-      $self->{-calculate}->weekNumber($self->{last_date});
+      $self->{erefs}{-calculate}->weekNumber($self->{last_date});
 
   # Print the data for the week
 
@@ -1191,7 +1196,7 @@ sub _export($;$) {
         $line =~ s/,/;/g;
 
         for my $day_r (@$weekdays_r) {
-          $line .= ';' . $self->{-calculate}->hours(
+          $line .= ';' . $self->{erefs}{-calculate}->hours(
                               $day_r->{activities}{$activity} || 0, ','
                                                    );
         } # for #
@@ -1205,7 +1210,7 @@ sub _export($;$) {
         $line = $event;
 
         for my $day_r (@$weekdays_r) {
-          $line .= ';' . $self->{-calculate}->hours(
+          $line .= ';' . $self->{erefs}{-calculate}->hours(
                               $day_r->{events}{$event} || 0, ','
                                                    );
         } # for #
@@ -1218,7 +1223,7 @@ sub _export($;$) {
       $line =~ s/,/;/g;
 
       for my $day_r (@$weekdays_r) {
-          $line .= ';' . $self->{-calculate}->hours(
+          $line .= ';' . $self->{erefs}{-calculate}->hours(
                               $day_r->{events}{$event} || 0, ','
                                                    );
       } # for #
@@ -1229,11 +1234,12 @@ sub _export($;$) {
 
   } # for #
   # Close file
-  $self->{-log}->log('Saved', $file)
-      if ($self->{-log});
+  $self->{erefs}{-log}->log('Saved', $file)
+      if ($self->{erefs}{-log});
 
   unless ($fh->close()) {
-    $self->callback($self->{-error_popup}, 'Kan inte skriva: "' . $file . '"' , $! );
+    $self->callback($self->{-error_popup},
+                      'Kan inte skriva: "' . $file . '"' , $! );
     return 1;
   } # unless #
 
