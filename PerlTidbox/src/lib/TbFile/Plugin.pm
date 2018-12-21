@@ -2,18 +2,20 @@
 package TbFile::Plugin;
 #
 #   Document: Tidbox Plugin manager
-#   Version:  1.2   Created: 2018-11-15 14:58
+#   Version:  1.3   Created: 2018-12-17 17:38
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Plugin.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2018-11-15';
+my $VERSION = '1.3';
+my $DATEVER = '2018-12-17';
 
 # History information:
 #
+# 1.3  2018-12-17  Roland Vallgren
+#      Activate a new plugin immediately
 # 1.2  2018-11-08  Roland Vallgren
 #      Add support for plugin configuration
 # 1.1  2017-10-05  Roland Vallgren
@@ -551,6 +553,8 @@ sub add($$$) {
   $self->{plugins}{$name} = $val;
 
   my $tmp = $self->_loadPlugin($val);
+
+    $self->{plugins}{$name}{ref}->registerPlugin();
 
   
   return 0;

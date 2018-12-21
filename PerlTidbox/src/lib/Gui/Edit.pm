@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.5   Created: 2018-12-12 21:31
+#   Version:  2.6   Created: 2018-12-21 13:16
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.5';
-my $DATEVER = '2018-12-12';
+my $VERSION = '2.6';
+my $DATEVER = '2018-12-21';
 
 # History information:
 #
@@ -32,6 +32,8 @@ my $DATEVER = '2018-12-12';
 # 2.5  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
 #      Improved handling of return in date field
+# 2.6  2018-12-21  Roland Vallgren
+#      Backward, forward failed, bug in _forw corrected
 #
 
 #----------------------------------------------------------------------------
@@ -884,6 +886,7 @@ sub _forw($;$) {
   my $self = shift;
   my ($date) = @_;
 
+  push(@{$self->{back}}, $self->{date});
   if ($date) {
     @{$self->{forw}} = ();
   } else {
@@ -1281,7 +1284,7 @@ sub _setup($) {
   # Goto backward edit day button
   $win_r->{back} = $win_r->{button_area}
       -> Button(-text => 'Bakåt',
-                -command => [_back => $self, 'b'],
+                -command => [_back => $self],
                 -state => 'disabled',
                )
       -> pack(-side => 'left');

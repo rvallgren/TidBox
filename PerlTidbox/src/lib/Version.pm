@@ -1,7 +1,7 @@
 #
 package Version;
 #
-#   Version:  1.6   Created: 2018-12-13
+#   Version:  1.6   Created: 2018-12-21
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package Version;
 #
 
 my $VERSION = '1.6';
-my $DATEVER = '2018-12-13';
+my $DATEVER = '2018-12-21';
 
 # Register version information
 {
@@ -74,9 +74,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2018-12-13',
+    date      => '2018-12-21',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.11',
+    VERSION   => '4.11.a',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -132,6 +132,7 @@ I redigera finns en ny knapp för att visa veckan.
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
+Framåt och Bakåt knappen i redigera fungerade inte. Rättat.
 MyTime export kan hantera att det är fler är fyra fält i händelser
 '
 ,
