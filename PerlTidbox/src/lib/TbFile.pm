@@ -2,15 +2,15 @@
 package TbFile;
 #
 #   Document: Handle all files
-#   Version:  2.4   Created: 2018-12-07 17:38
+#   Version:  2.5   Created: 2019-02-07 15:54
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TbFile.pmx
 #
 
-my $VERSION = '2.4';
-my $DATEVER = '2018-12-07';
+my $VERSION = '2.5';
+my $DATEVER = '2019-02-07';
 
 # History information:
 #
@@ -37,6 +37,9 @@ my $DATEVER = '2018-12-07';
 #      References to other objects in own hash
 #      Added handling of new backup directory that contains tidbox data
 #      Backup directory is monitored for existence and part of this session
+# 2.5  2019-01-25  Roland Vallgren
+#      Use TbFile::Util to read directory
+#      Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -49,7 +52,7 @@ use strict;
 use warnings;
 use integer;
 
-use Version qw(register_starttime);
+use TidVersion qw(register_starttime);
 
 use TbFile::FileHandleDigest;
 use TbFile::Log;
@@ -62,13 +65,12 @@ use TbFile::Supervision;
 use TbFile::Plugin;
 use TbFile::Archive;
 
-use DirHandle;
 use Digest;
 use Carp;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -275,11 +277,9 @@ sub load($) {
   my $loaded;
 
   # Load configuration first, only from local storage
-  $files->{-log}->trace('Load configuration', $files->{-cfg}->getFileName());
   $files->{-cfg}->load('dir', $handle);
 
   # Load local lock and if backup is enabled, backup lock
-  $files->{-log}->trace('Check lock file', $files->{-lock}->getFileName());
   $loaded = $files->{-lock}->load('dir', $handle);
   if ($files->{-cfg}->isBackupEnabled()) {
     if ($loaded) {
@@ -299,46 +299,37 @@ sub load($) {
   } # if #
 
   # Load local session and if backup is enabled, backup session
-  $files->{-log}->trace(
-          'Check session file', $files->{-session}->getFileName());
   $loaded = $files->{-session}->load('dir', $handle);
   if ($files->{-cfg}->isBackupEnabled()) {
     my $sessionState = $self->_checkSessionDigest('bak');
 
-    if ($sessionState eq 'NoSession') {
+#    if ($sessionState eq 'NoSession') {
       # Backup contains no session data
       # Is it a Tidbox directory at all?
-      $files->{-log}->trace(
-         'Backup contains no session. Is it a Tidbox directory at all?');
-
-    } elsif ($sessionState eq 'OurSession') {
+#
+#    } elsif ($sessionState eq 'OurSession') {
       # It is our session
-      $files->{-log}->trace('Backup have same session');
-
-    } elsif ($sessionState eq 'OlderSession') {
-      # It is an older session of our instance
-      $files->{-log}->trace('Backup is an older session of our instance');
-
-    } elsif ($sessionState eq 'NewerSession') {
+#
+#    } elsif ($sessionState eq 'OlderSession') {
+#      # It is an older session of our instance
+#
+#    } elsif ($sessionState eq 'NewerSession') {
+    if ($sessionState eq 'NewerSession') {
       # Our session is history of other session (BEWARE)
-      $files->{-log}->trace('Our session is history of backup session');
       $self->{session_backup_operation} = 'merge';
 
     } elsif ($sessionState eq 'BranchSession') {
       # It is a branch of our instance
-      $files->{-log}->trace('Backup is a branch of our instance');
       $self->{session_backup_operation} = 'merge';
 
     } elsif ($sessionState eq 'OtherInstance') {
       # Other is another instance
-      $files->{-log}->trace('Other is another instance');
       # TODO How do we do this?
       $self->{session_backup_operation} = 'notOurInstance';
 
-    } else {
+#    } else {
       # Not handled session state
-      $files->{-log}->trace('Not handled session state:', $sessionState);
-
+#
     } # if #
 
   } # if #
@@ -352,7 +343,6 @@ sub load($) {
             $k eq '-session' or
             $k eq '-log'     or
             $k eq '-archive'   );
-    $files->{-log}->trace('Load file', $r->getFileName());
 # TODO No check is made if load failed: for example wrong file format
     $r->load('dir', $handle);
   } # while #
@@ -463,13 +453,13 @@ sub start($$$$) {
   $files->{-log}->log('Command', $args->{-call_string}, @{$args->{-argv}});
 
   # Set start time
-  Version->register_starttime($date, $time);
+  TidVersion->register_starttime($date, $time);
 
   $files->{-session}->start($date, $time);
 
   $files->{-times}->startSession($date, $time);
 
-  Version->register_locked_session($files->{-lock}->get());
+  TidVersion->register_locked_session($files->{-lock}->get());
 
 
   # Setup supervision
@@ -637,15 +627,12 @@ sub checkBackupDirectory($$) {
   my $files = $self->{files};
   my $log = $files->{-log};
 
-  $log->trace('Directory to check:', $d);
-
   unless ($d) {
     $log->log('CheckBackupDirectory: No argument provided');
     return undef;
   } # unless #
 
   # Do not allow backup to be same as session directory
-  $log->trace('Check main directory:', $files->{-cfg}->dirname('dir'));
   if ($d eq $files->{-cfg}->dirname('dir')) {
     $log->log('CheckBackupDirectory: Backup directory ',
               'can not be same as working directory');
@@ -672,54 +659,18 @@ sub checkBackupDirectory($$) {
     return 'notWriteAccess';
   } # unless #
 
-  # Check if there is any files in the directory
-  my $dh = DirHandle->new($d);
-  unless (defined($dh)) {
+  # Check if there are any files in the directory
+  my $dirFiles = TbFile::Utils->readDir($d);
+  unless (defined($dirFiles)) {
     # Failed to open directory for reading
     $log->log('CheckBackupDirectory: Failed to open', $d, 'for reading');
     return 'failedOpenDir';
   } # unless #
 
-# TODO These checks are not needed????
-#  my %fileExists;
   my $fileCnt = 0;
-  $log->trace('Check backup directory files');
-  while (defined(my $f = $dh->read())) {
-    $log->trace('File found:', $f);
-    next
-        if ($f eq '.' or $f eq '..');
-#    $fileExists{$f} = 1;
+  for my $f (@{$dirFiles}) {
     $fileCnt++;
-  } # while #
-  undef $dh;
-#
-#  if ($fileCnt == 0) {
-#    # Directory is empty
-#    $log->log('CheckBackupDirectory: Directory', $d, 'is empty');
-#    return 'dirIsEmpty';
-#  } # if #
-#
-#  my $tbFileCnt = 0;
-#  while (my ($key, $ref) = each(%{$files})) {
-#    my $n = $ref->getFileName();
-#    if (exists($fileExists{$n})) {
-#      $log->trace('Tidbox file found:', $n);
-#      $tbFileCnt++;
-#    } # if #
-#  } # while #
-#
-#  if ($tbFileCnt == 0) {
-#    # No tidbox files, however other files were detected
-#    $log->log('CheckBackupDirectory: Directory', $d, 'is not empty');
-#    return 'otherFiles';
-#  } # if #
-#
-#  if ($tbFileCnt < $fileCnt) {
-#    # Other files found What now???
-#    $log->log('CheckBackupDirectory: Directory', $d,
-#              'contains Tidbox and other files');
-#    return 'moreFiles';
-#  } # if #
+  } # for #
 
   return 'OK';
 } # Method checkBackupDirectory
@@ -745,7 +696,6 @@ sub _checkLockDigest($$) {
   my ($dir) = @_;
 
   my $files = $self->{files};
-  $files->{-log}->trace('Dir:', $dir, ':');
 
   my $lockDigestStatus;
 
@@ -761,29 +711,9 @@ sub _checkLockDigest($$) {
 
   } # while #
 
-  $files->{-log}->trace('Lock digest status:', $lockDigestStatus, ':');
 
   return $lockDigestStatus;
 
-#  # No lock found
-#  return 'NoLock'
-#      unless ($lockDigestStatus eq 'NoLock');
-#
-#  # Other lock did not have a digest
-#  return 'NoDigestInOtherLock'
-#    if ($lockDigestStatus eq 'NoDigestInOtherLock');
-#
-#  # Locked by another session
-#  return 'LockedByOther'
-#      if ($lockDigestStatus eq 'LockedByOther');
-#
-#  # This is our lock, continue backup check
-#  return 'OurLock'
-#      if ($lockDigestStatus eq 'OurLock');
-#
-#  # Unknown case
-#  carp ('ERROR: Unknown lock digest status: ', $lockDigestStatus);
-#  return 'Unknown';
 } # Method _checkLockDigest
 
 #----------------------------------------------------------------------------
@@ -881,10 +811,8 @@ sub checkDirectoryDigest($$) {
   my $files = $self->{files};
 
   my $lockState = $self->_checkLockDigest($dir);
-  $files->{-log}->trace('Lock digest state:', $lockState, ':');
 
   my $sessionState = $self->_checkSessionDigest($dir);
-  $files->{-log}->trace('Session digest state:', $sessionState, ':');
 
   if ($lockState eq 'OurLock') {
     # This is our lock
@@ -963,7 +891,6 @@ sub verifySessionLockIntegrity($) {
   #      Handle in verifyBackup?
 
   my $log = $self->{files}{-log};
-  $log->trace('Schedule next check');
 
   # Schedule next check
   $self->{erefs}{-clock}->
@@ -974,13 +901,11 @@ sub verifySessionLockIntegrity($) {
 
   if ($lockState eq 'OurLock') {
     # This is our lock, all OK, wait for next check
-    $log->trace('Our lock, all OK');
     return 0;
   } # if #
 
   if ($lockState eq 'NoLock') {
     # No lock found
-    $log->trace('No lock file found, fishy??, lock session?');
     # TODO Something fishy is going on, someone else has removed the lock
     #      Lock session, data might not be consistent
     # TODO We have no data to set locked with
@@ -991,13 +916,11 @@ sub verifySessionLockIntegrity($) {
 
   if ($lockState eq 'NoDigestInOurLock') {
     # Our lock did not have a digest
-    $log->trace('Digest missing in our lock, wait for next check');
     return 0;
   } # if #
 
   if ($lockState eq 'NoDigestInOtherLock') {
     # One lock did not have a digest
-    $log->trace('Digest missing in the other lock, try to wait');
     # This could be startup, just skip and se what happens next time we check
     # TODO We should know that we have waited long enough
     return 0;
@@ -1005,7 +928,6 @@ sub verifySessionLockIntegrity($) {
 
   if ($lockState eq 'LockedByOther') {
     # Another session has grabbed the lock, Lock our session
-    $log->trace('Lock is taken, lock session');
     $self->{files}{-lock}->load();
     $self->{erefs}{-clock}->setLocked('Tidbox är låst');
     # TODO Tell Tidbox it is locked by another session
@@ -1013,7 +935,6 @@ sub verifySessionLockIntegrity($) {
     return 0;
   } # if #
 
-  $log->trace('No known lock digest status:', $lockState);
 
   return 0;
 } # Method verifySessionLockIntegrity
@@ -1140,7 +1061,6 @@ sub autoCheckBackup($) {
   my $log = $files->{-log};
   my $backup = $self->{backup};
 
-  $log->trace('Skip backup check if locked by another session');
   # Locked by another session, skip
   return 1
       if ($files->{-lock}->isLocked());
@@ -1155,7 +1075,6 @@ sub autoCheckBackup($) {
     # Backup directory exists, handle it
     if ($backup->{state} == 0) {
       # 0 - Started, first backup check pending
-      $log->trace('# 0 - Started, first backup check pending');
       $self->restartCheckBackup();
 
 
@@ -1191,15 +1110,12 @@ sub autoCheckBackup($) {
 
     } elsif ($backup->{state} == 9) {
       # 9 - Timeout after long delay, Restart backup check sequence
-      $log->trace(
-           '# 9 - Timeout after long delay, Restart backup check sequence');
       $self->restartCheckBackup();
 
     } elsif ($backup->{state} < 0) {
       # -1 - Backup was unavailable from start
       # -2 - Backup was lost and came back
       # => Check backup directory
-      $log->trace('# -1 or -2 => Check backup directory');
 
       my $state = $self->checkDirectoryDigest('bak');
 
@@ -1209,10 +1125,8 @@ sub autoCheckBackup($) {
         # Our lock, initiate new backup cycle
         # Our session, without lock, initiate new backup cycle
         $self->restartCheckBackup();
-        $log->trace('# Our session, reschedule backup');
       } else {
         # Not handled state, Wait a while and try again
-        $log->trace('# Not handled state, Wait a while an try again');
         $backup->{state} = -2;
         $backup->{timer} = $files->{-cfg}->get('save_threshold') * 4;
       } # if #
@@ -1233,23 +1147,19 @@ sub autoCheckBackup($) {
   } else {
 
     # Backup directory not found
-    $log->trace('Backup directory not found');
 
     if ($backup->{state} == 0) {
       # 0 - Started or first backup check pending: Reset timer
-      $log->trace('0 - Started or first backup check pending: Reset timer');
       $backup->{timer} = $files->{-cfg}->get('save_threshold');
       $backup->{state} = -1;
 
     } elsif ($backup->{state} == -1 or
              $backup->{state} == -2) {
       # -1 or -2 - Reset timer and keep waiting
-      $log->trace('# -1 or -2 - Reset timer and keep waiting');
       $backup->{timer} = $files->{-cfg}->get('save_threshold');
 
     } elsif ($backup->{state} > 0) {
       # >0 - Backup did exist, but was lost, reset backup check
-      $log->trace('# >0 - Backup did exist, but was lost, reset backup check');
       for my $file_state (values(%{$backup->{file_states}})) {
         $file_state = undef;
       } # for #
@@ -1291,7 +1201,6 @@ sub _calculateDigest($) {
 
 
   my $files = $self->{files};
-  $files->{-log}->trace('Calculate digest');
   my $handle;
   if ($self->{loadHandle}) {
     # Continue calculate digest started by load
@@ -1306,11 +1215,9 @@ sub _calculateDigest($) {
     if ($key eq '-lock') {
       # Lock data is only added directly here and never from file
       my %lock = $ref->getLockData();
-      $files->{-log}->trace('Add lock data to digest');
       $handle->add(values(%lock));
     } else {
       # Only add a file that has not been added before
-      $files->{-log}->trace('Add file to digest', $ref->getFileName());
       $handle->conditionalAddfile($ref);
     } # if #
   } # while #
@@ -1413,8 +1320,6 @@ sub replaceBackupData($;$) {
   # Copy all files except log
   $files->{-log}->log('Replace backup from this instance');
   for my $k (@{$self->{order}}, @{$self->{extra}}) {
-    $files->{-log}->trace(
-                         $files->{$k}->getFileName(), 'force copy dir -> bak');
     $files->{$k}->forcedCopy('dir', 'bak');
     $self->callback(@progress, 12);
   } # for #
@@ -1444,8 +1349,6 @@ sub mergeBackupData($;$) {
   $files->{-log}->log('Merge backup data');
 
   # Lock backup
-  $files->{-log}->trace($files->{-lock}->getFileName(),
-                        'set lock in backup');
   $files->{-lock}->forcedCopy('dir', 'bak');
 
   # Progress bar steps 1% each step
@@ -1460,8 +1363,6 @@ sub mergeBackupData($;$) {
   my $progress_sum = 6;
   my $progress_ref = {};
   for my $k (qw(-event_cfg -times -archive)) {
-    $files->{-log}->trace($k, ' => ', $files->{$k}->getFileName(),
-                          'Size dir & bak');
     my $d = $files->{$k}->getFileSize('dir');
     my $b = $files->{$k}->getFileSize('bak');
     my $s = $d + $b;
@@ -1471,29 +1372,22 @@ sub mergeBackupData($;$) {
     $progress_ref->{$k}->{sum} = $s;
     $progress_ref->{$k}->{-callback} = \@progress;
 #   Plugin.pmx , size      TODO
-    $files->{-log}->trace('Progress Size:', $k, 'Source:' , $b, 'Target:', $d);
   } # for #
   for my $k (qw(-event_cfg -times -archive)) {
     $progress_ref->{$k}->{-percent_part} =
           int(94 * $progress_ref->{$k}->{sum} / $progress_sum) || 1;
 #   Plugin.pmx , size      TODO
-    $files->{-log}->trace('Progress Part:', $k,
-             'Percent:' , $progress_ref->{$k}->{-percent_part});
   } # for #
 
   # Merge session data from backup into current session
   for my $k (qw(-session -cfg -supervision -event_cfg -times)) {
-    $files->{-log}->trace($k, ' => ', $files->{$k}->getFileName(),
-                          'merge dir & bak');
     $files->{$k}->merge(-fromDir => 'bak', -progress_h => $progress_ref->{$k});
     $self->callback(@{$progress_ref->{-callback}});
 #   Plugin.pmx , merge       TODO
   } # for #
 
-  $files->{-log}->trace($files->{-archive}->getFileName(),
-                        'merge dir & bak');
   $files->{-archive}->merge(-fromDir   => 'bak'     ,
-                            , -progress_h => $progress_ref->{-archive} ,
+                            -progress_h => $progress_ref->{-archive} ,
                            );
   $self->callback(@{$progress_ref->{-callback}});
 
@@ -1537,30 +1431,25 @@ sub replaceSessionData($;$) {
   my $files = $self->{files};
 
   # Lock backup
-  $files->{-log}->trace($files->{-lock}->getFileName(), 'lock');
   $files->{-lock}->forcedCopy('dir', 'bak');
 
   # Copy and load live session data
   # TODO Plugin? That need a reload, that is restart of Tidbox
   #      We need to check if plugins are added or removed
   for my $k (qw(-event_cfg -supervision -plugin -times)) {
-    $files->{-log}->trace($files->{$k}->getFileName(), 'copy bak to dir');
     $files->{$k}->forcedCopy('bak', 'dir');
     $files->{$k}->load();
     $self->callback(@progress, 12);
   } # for #
 
   # Copy archive
-  $files->{-log}->trace($files->{-archive}->getFileName(), 'copy bak to dir');
   $files->{-archive}->forcedCopy('bak', 'dir');
   $files->{-archive}->clear();
   $self->callback(@progress, 12);
 
-  $files->{-log}->trace($files->{-cfg}->getFileName(), 'replace');
   $files->{-cfg}->replace();
     $self->callback(@progress, 12);
 
-  $files->{-log}->trace($files->{-session}->getFileName(), 'replace');
   $files->{-session}->replace();
     $self->callback(@progress, 12);
 
@@ -1578,8 +1467,6 @@ sub replaceSessionData($;$) {
   my @dates = ($self->{erefs}{-clock}->getDate());
   # Update all subscribed changes
   for my $k (qw(-cfg -event_cfg -supervision -plugin -times)) {
-    $files->{-log}->trace($files->{$k}->getFileName(),
-                          'Update GUI presentation');
     $files->{$k}->_doDisplay(@dates);
   } # for #
 

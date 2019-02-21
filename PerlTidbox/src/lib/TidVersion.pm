@@ -1,15 +1,15 @@
 #
-package Version;
+package TidVersion;
 #
-#   Version:  1.6   Created: 2018-12-21
+#   Version:  1.7   Created: 2019-02-20
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
-#         Exco file: Version.pmx
+#         Exco file: TidVersion.pmx
 #
 
-my $VERSION = '1.6';
-my $DATEVER = '2018-12-21';
+my $VERSION = '1.7';
+my $DATEVER = '2019-02-20';
 
 # Register version information
 {
@@ -37,6 +37,9 @@ my $DATEVER = '2018-12-21';
 # 1.6  2017-04-19  Roland Vallgren
 #      Changed format in component list
 #      Added about plugin
+# 1.7  2019-01-09  Roland Vallgren
+#      Use Github as home page
+#      Renamed Version to TidVersion, avoid mixup with Perl version
 #
 
 #----------------------------------------------------------------------------
@@ -74,9 +77,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2018-12-21',
+    date      => '2019-02-20',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.11.a',
+    VERSION   => '4.12',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -111,35 +114,25 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Kodförbättringar
-Tidbox upptäcker om låset bryts upp av en annan tidbox
-Data och backup verifieras att det hör till sessionen och att det
-inte ändras av en annan session
-Vid byte av backup-katalog till en med Tidbox-data frågar Tidbox
-hur datat skall hanteras:
-  Vävas ihop
-  Skriv över, kasta datat
-  Använd, kasta datat i aktuell Tidbox
-Vid installation på ny dator kan backup användas för att ladda på
-tidigare registreringar, se Använd ovan.
-Ny insticksmodul MyTimeXls för att exportera till en MyTime Excel-fil
-  OBS: Format ändrat 2018-11-29
-Inställning för att välja aktiva insticksmoduler (plugin)
-I redigera finns en ny knapp för att visa veckan.
+Tidbox kan uppdatera sig själv från GitHub
+Ny version av MyTime släpptes 2019-02-13:
+- Nu stöds .xlsx, ny MyTimeXlsX plugin tillagd
+- Formatet är ändrad på projektkolumnen, projektnumret är text, inte nummer
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Framåt och Bakåt knappen i redigera fungerade inte. Rättat.
-MyTime export kan hantera att det är fler är fyra fält i händelser
+Modulen Version har bytt namn till TidVersion på grund av namnkonflikt
+Om filen till en plugin saknas krashar inte Tidbox
+Rättat fångning av fel och varningar
 '
 ,
 
 
 #------------------ Hemsida ------------------
-\'https://social.intra.tieto.com/tibbr/#!/messages/mention/filters/Roland%20Vallgren'
+\'https://github.com/rvallgren/TidBox'
 ,
 
 #---------------- Komponenter ----------------

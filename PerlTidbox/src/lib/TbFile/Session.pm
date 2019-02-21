@@ -2,18 +2,20 @@
 package TbFile::Session;
 #
 #   Document: Session class
-#   Version:  1.1   Created: 2018-12-07 17:48
+#   Version:  1.2   Created: 2019-02-07 15:09
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Session.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2018-12-07';
+my $VERSION = '1.2';
+my $DATEVER = '2019-02-07';
 
 # History information:
 #
+# 1.2  2019-02-07  Roland Vallgren
+#      Removed log->trace
 # 1.1  2017-10-05  Roland Vallgren
 #      Move files to TbFile::<file>
 #      References to other objects in own hash
@@ -37,7 +39,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -92,17 +94,16 @@ use constant MAX_DIGESTS   => 10;
 #
 # Method:      new
 #
-# Description: Create configuration object
+# Description: Create session object
 #
 # Arguments:
 #  - Object prototype
 # Returns:
 #  Object reference
 
-sub new($$%) {
+sub new($) {
   my $class = shift;
   $class = ref($class) || $class;
-  my $args = shift;
 
 # Should be
 # $self = $class->SUPER::new();
@@ -363,27 +364,15 @@ sub _mergeData($$$$) {
   my $self = shift;
   my ($source, $startDate, $endDate) = @_;
 
-  $self->{erefs}{-log}->trace()
-      if ($self->{erefs}{-log});
 
   if ($self->checkSessionHistory($source) == 0) {
 
     # Other session is another instance
     # Accumulate both instances
-    $self->{erefs}{-log}->
-        trace('Our accumulated sessions:', $self->get('accumulated_sessions'),
-              'Src accumulated sessions:', $source->get('accumulated_sessions'),
-              'Source this session:', $source->get('this_session')
-             )
-        if ($self->{erefs}{-log});
-
     $self->set('accumulated_sessions', $self->get('accumulated_sessions') +
                                        $source->get('accumulated_sessions') +
                                        $source->get('this_session')
               );
-    $self->{erefs}{-log}->trace('Result accumulated sessions:',
-                                $self->get('accumulated_sessions'))
-        if ($self->{erefs}{-log});
 
   } # if #
 

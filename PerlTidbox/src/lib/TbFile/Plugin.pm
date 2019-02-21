@@ -2,18 +2,22 @@
 package TbFile::Plugin;
 #
 #   Document: Tidbox Plugin manager
-#   Version:  1.3   Created: 2018-12-17 17:38
+#   Version:  1.4   Created: 2019-02-21 11:51
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Plugin.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2018-12-17';
+my $VERSION = '1.4';
+my $DATEVER = '2019-02-21';
 
 # History information:
 #
+# 1.4  2019-01-25  Roland Vallgren
+#      Use TbFile::Util to read directory
+#      Removed log->trace
+#      Do not fail if a plugin file is missing
 # 1.3  2018-12-17  Roland Vallgren
 #      Activate a new plugin immediately
 # 1.2  2018-11-08  Roland Vallgren
@@ -28,7 +32,6 @@ my $DATEVER = '2018-12-17';
 #
 # Setup
 #
-use v5.10;
 use base TidBase;
 use base TbFile::Base;
 
@@ -37,14 +40,14 @@ use warnings;
 use Carp;
 use integer;
 
-use DirHandle;
 use FindBin;
+use TbFile::Util;
 
 use Scalar::Util qw(blessed weaken);
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -289,7 +292,8 @@ sub _save($$) {
 
 
   for my $name (@{$self->{plugin_order}}) {
-    $self->_append($fh, $self->{plugins}{$name});
+    $self->_append($fh, $self->{plugins}{$name})
+        if (defined($name));
   } # for #
 
   return 0;
@@ -423,20 +427,16 @@ sub listPlugins($) {
                               PLUGIN_DIRECTORY ,
                              );
 
-  my $dh = DirHandle->new($d);
-  unless (defined($dh)) {
+  # Find out perl modules (.pm) files in plugin directory
+  my $files = TbFile::Util->readDir($d, qr/\.pm$/);
+  unless (defined($files)) {
     # Failed to open directory for reading
     $log->log('PluginConfig: Failed to open', $d, 'for reading');
     return undef;
   } # unless #
 
-  $log->trace('Check for plugins in:', $d);
-
   my $plugins;
-  while (defined(my $f = $dh->read())) {
-    $log->trace('File found:', $f);
-    next
-        if (substr($f, -3) ne '.pm');
+  for my $f (@{$files}) {
     my $name  = substr($f, 0, -3);
     my $pluginName = PLUGIN_DIRECTORY . '::' . $name;
     $plugins->{$pluginName} =
@@ -448,10 +448,7 @@ sub listPlugins($) {
                                $f               ,
                               ),
       };
-    $log->trace('Added plugin:', $pluginName);
-  } # while #
-  # Close directory handle
-  undef $dh;
+  } # for #
 
   return $plugins;
 } # Method listPlugins
@@ -554,7 +551,8 @@ sub add($$$) {
 
   my $tmp = $self->_loadPlugin($val);
 
-    $self->{plugins}{$name}{ref}->registerPlugin();
+  $self->{plugins}{$name}{ref}->registerPlugin()
+      if (defined($tmp));
 
   
   return 0;
@@ -608,8 +606,19 @@ sub _loadPlugin($$) {
   my ($val) = @_;
 
 
-  require "$val->{file}";
-  my $ref = $val->{name}->new();
+  my $ref;
+  eval {
+    require "$val->{file}";
+  };
+  if ($@) {
+    $self->{erefs}{-log}->log('Failed to load "', $val->{file}, ": ", $@);
+    $self->callback($self->{erefs}{-error_popup},
+                    'Kan inte öppna plugin-filen: "' . $val->{file} . '"');
+    return undef;
+  } # if #
+
+
+  $ref = $val->{name}->new();
   $ref->configure(%{$self->{plugin_args}});
 # TODO This does not work with TidBase::configure when {erefs} is used
 #  $ref->configure(name => $val->{name});
@@ -644,6 +653,8 @@ sub loadPlugins($) {
   for my $name (@{$p_o}) {
     my $val = $p_r->{$name};
     my $ref = $self->_loadPlugin($val);
+    $name = undef
+        unless (defined($ref));
   } # for #
 
   return 0;
@@ -665,7 +676,9 @@ sub registerPlugins($) {
   my $self = shift;
 
   for my $name (@{$self->{plugin_order}}) {
-    $self->{plugins}{$name}{ref}->registerPlugin();
+    $self->{plugins}{$name}{ref}->registerPlugin()
+        if (defined($name));
+
   } # for #
   return 0;
 } # Method registerPlugins

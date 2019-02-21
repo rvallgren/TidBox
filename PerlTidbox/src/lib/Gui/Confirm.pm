@@ -2,7 +2,7 @@
 package Gui::Confirm;
 #
 #   Document: Confirm
-#   Version:  1.11   Created: 2018-12-06 21:01
+#   Version:  1.11   Created: 2019-01-17 11:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Confirm;
 #
 
 my $VERSION = '1.11';
-my $DATEVER = '2018-12-06';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -45,7 +45,7 @@ use Tk::NoteBook;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

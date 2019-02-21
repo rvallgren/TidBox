@@ -2,15 +2,15 @@
 package TbFile::Archive;
 #
 #   Document: Archive data
-#   Version:  1.4   Created: 2018-12-07 17:50
+#   Version:  1.5   Created: 2019-02-19 17:37
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Archive.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2018-12-07';
+my $VERSION = '1.5';
+my $DATEVER = '2019-02-19';
 
 # History information:
 #
@@ -27,6 +27,10 @@ my $DATEVER = '2018-12-07';
 #      Move files to TbFile::<file>
 #      References to other objects in own hash
 #      Added _mergeData to merge data from another archive
+# 1.5  2019-01-25  Roland Vallgren
+#      Code improvement
+#      Removed log->trace
+#      Corrected: -error_popup is an eref
 #
 
 # TODO What do we do with duplicated archive sets in archive file
@@ -58,7 +62,7 @@ use TbFile::Times;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -386,8 +390,6 @@ sub addSet($$) {
   my $self = shift;
   my ($set) = @_;
 
-  $self->{erefs}{-log}->trace()
-      if ($self->{erefs}{-log});
 
   my $end_date = $set->{end_date};
   if ($self->isLoaded()) {
@@ -429,9 +431,6 @@ sub createSet($$$$$;$) {
   my $self = shift;
   my ($start_date, $end_date, $event_cfg, $times, $date_time) = @_;
 
-  $self->{erefs}{-log}->trace('Start date and end date:',
-                              $start_date, $end_date)
-      if ($self->{erefs}{-log});
 
   # TODO This is strange, we need a better way to move a set between archives
   unless ($date_time) {
@@ -449,9 +448,6 @@ sub createSet($$$$$;$) {
              start_date => $start_date,
              end_date   => $end_date  ,
             };
-  $self->{erefs}{-log}->trace('Created set:', $date_time,
-                              $start_date, $end_date)
-      if ($self->{erefs}{-log});
 
   # Add event cfg data for archive set
   $set->{event_cfg} = $self->{erefs}{-event_cfg}->clone();
@@ -488,8 +484,6 @@ sub move($$;$) {
   my $self = shift;
   my ($target, $end_date) = @_;
 
-  $self->{erefs}{-log}->trace()
-      if ($self->{erefs}{-log});
 
   my @set_dates;
   if ($end_date) {
@@ -499,8 +493,6 @@ sub move($$;$) {
   } # if #
 
   for $end_date (@set_dates) {
-    $self->{erefs}{-log}->trace('Move set:', $end_date)
-        if ($self->{erefs}{-log});
     $target->addSet($self->{sets}{$end_date});
     delete($self->{sets}{$end_date});
   } # for #
@@ -564,8 +556,6 @@ sub _mergeFromMain($) {
   # parameters
   my $self = shift;
 
-  $self->{erefs}{-log}->trace('Merge from main into set')
-      if ($self->{erefs}{-log});
 
   for my $set (values(%{$self->{sets}})) {
     # Merge archive data from main into this archive
@@ -616,8 +606,6 @@ sub _mergeData($$$$;$) {
   my $self = shift;
   my ($source, $startDate, $endDate, $progress_ref) = @_;
 
-  $self->{erefs}{-log}->trace()
-      if ($self->{erefs}{-log});
 
   my @set_dates = $self->getSets();
 
@@ -630,12 +618,8 @@ sub _mergeData($$$$;$) {
 
   # If archive is empty move whole source archive here
   unless (@set_dates) {
-    $self->{erefs}{-log}->trace('No archive, get whole source archive')
-        if ($self->{erefs}{-log});
 
     if ($progress_ref) {
-      $self->{erefs}{-log}->trace('Progress Archive I:', $ProgressI)
-          if ($self->{erefs}{-log});
       if ($ProgressI > $ProgressCnt) {
         $self->callback(@{$progress_ref->{-callback}});
 #          $ProgressCnt += $ProgressSteps;
@@ -671,16 +655,11 @@ sub _mergeData($$$$;$) {
     my $t = $ProgressSourceSets * $ProgressTargetSets;
     $ProgressSteps = ( $t / $progress_ref->{-percent_part} ) || 1;
     $ProgressCnt = 0;
-    $self->{erefs}{-log}->trace('Progress product:', $t,
-                                'Steps:', $ProgressSteps)
-        if ($self->{erefs}{-log});
   } # if #
 
 
   # All source sets
   for my $srcSetDate (@source_dates) {
-    $self->{erefs}{-log}->trace('Source set:', $srcSetDate)
-        if ($self->{erefs}{-log});
 
     if ($progress_ref) {
       $ProgressI++;
@@ -688,12 +667,7 @@ sub _mergeData($$$$;$) {
       if ($ProgressI >= $ProgressCnt) {
         $self->callback(@{$progress_ref->{-callback}});
         $ProgressCnt += $ProgressSteps;
-        $self->{erefs}{-log}->trace('Progress Archive Source I:',
-                                     $ProgressI, 'Cnt:', $ProgressCnt)
-            if ($self->{erefs}{-log});
       } else {
-        $self->{erefs}{-log}->trace('Progress Archive Source I:', $ProgressI)
-            if ($self->{erefs}{-log});
       } # if #
     } # if #
 
@@ -712,9 +686,6 @@ sub _mergeData($$$$;$) {
 
     # Move complete source set before first target set
     if ($srcSetEnd lt $firstSetStart) {
-      $self->{erefs}{-log}->
-             trace('Source set earlier than first archive set:', $srcSetEnd)
-          if ($self->{erefs}{-log});
 
       $source->move($self, $srcSetEnd);
 
@@ -723,12 +694,7 @@ sub _mergeData($$$$;$) {
         if ($ProgressI >= $ProgressCnt) {
           $self->callback(@{$progress_ref->{-callback}});
           $ProgressCnt += $ProgressSteps;
-          $self->{erefs}{-log}->trace('Progress Archive Target I:', $ProgressI,
-                                      'Cnt:', $ProgressCnt)
-              if ($self->{erefs}{-log});
         } else {
-          $self->{erefs}{-log}->trace('Progress Archive Target I:', $ProgressI)
-              if ($self->{erefs}{-log});
         } # if #
         $ProgressTargetSets++;
         my $t = $ProgressSourceSets * $ProgressTargetSets;
@@ -736,9 +702,6 @@ sub _mergeData($$$$;$) {
         $ProgressI = $ProgressI - $ProgressCnt;
         $ProgressCnt = $ProgressSteps * $ProgressSourceSets;
         $ProgressI = $ProgressI + $ProgressCnt;
-        $self->{erefs}{-log}->trace('Progress product:', $t,
-                                    'Steps:', $ProgressSteps)
-            if ($self->{erefs}{-log});
       } # if #
 
       next;
@@ -747,20 +710,13 @@ sub _mergeData($$$$;$) {
 
     # All archive sets, merge in from source set
     for my $setDate (sort(keys(%{$sets}))) {
-      $self->{erefs}{-log}->trace('Archive set:', $setDate)
-          if ($self->{erefs}{-log});
 
       if ($progress_ref) {
         $ProgressI++;
         if ($ProgressI > $ProgressCnt) {
           $self->callback(@{$progress_ref->{-callback}});
           $ProgressCnt += $ProgressSteps;
-          $self->{erefs}{-log}->trace('Progress Archive Target I:', $ProgressI,
-                                      'Cnt:', $ProgressCnt)
-              if ($self->{erefs}{-log});
         } else {
-          $self->{erefs}{-log}->trace('Progress Archive Target I:', $ProgressI)
-              if ($self->{erefs}{-log});
         } # if #
         $ProgressTargetSets++;
         my $t = $ProgressSourceSets * $ProgressTargetSets;
@@ -768,9 +724,6 @@ sub _mergeData($$$$;$) {
         $ProgressI = $ProgressI - $ProgressCnt;
         $ProgressCnt = $ProgressSteps * $ProgressSourceSets;
         $ProgressI = $ProgressI + $ProgressCnt;
-        $self->{erefs}{-log}->trace('Progress product:', $t,
-                                    'Steps:', $ProgressSteps)
-            if ($self->{erefs}{-log});
       } # if #
 
       next
@@ -796,8 +749,6 @@ sub _mergeData($$$$;$) {
              ($srcSetEnd   gt $prevSetEnd)     )
            ) {
 
-          $self->{erefs}{-log}->trace('Create new set for missing dates:')
-              if ($self->{erefs}{-log});
           my $tmpStart = $prevSetEnd ge $startDate ?
                                $prevSetEnd : $startDate;
           my $tmpEnd   = $expectedPrevSetEnd le $endDate ?
@@ -814,9 +765,6 @@ sub _mergeData($$$$;$) {
         # Merge part of source set within this set dates to this set
         if (($srcSetStart le $setEnd  ) and
             ($srcSetEnd   ge $setStart)    ) {
-          $self->{erefs}{-log}->
-            trace('Merge part of source set within this set dates to this set:')
-              if ($self->{erefs}{-log});
           $self->_mergeSets($source->getSets($srcSetDate, 'set' ),
                             $self->{sets}{$setEnd}
                            );
@@ -831,8 +779,6 @@ sub _mergeData($$$$;$) {
 
     # Source set later than target, merge (move) to target
     if ($srcSetEnd gt $prevSetEnd) {
-      $self->{erefs}{-log}->trace('Source set later than latest archive set:')
-          if ($self->{erefs}{-log});
       # Create a set from last set end to end of source set
       my $set = $self->createSet($prevSetEnd  ,
                                  $srcSetEnd   ,

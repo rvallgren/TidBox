@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.6   Created: 2018-12-21 13:16
+#   Version:  2.7   Created: 2019-01-25 15:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2018-12-21';
+my $VERSION = '2.7';
+my $DATEVER = '2019-01-25';
 
 # History information:
 #
@@ -34,6 +34,8 @@ my $DATEVER = '2018-12-21';
 #      Improved handling of return in date field
 # 2.6  2018-12-21  Roland Vallgren
 #      Backward, forward failed, bug in _forw corrected
+# 2.7  2019-01-25  Roland Vallgren
+#      Code improvements
 #
 
 #----------------------------------------------------------------------------
@@ -55,7 +57,7 @@ use Gui::Event;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -1093,7 +1095,7 @@ sub _setup($) {
 
   ### Listbox ###
   $win_r->{day_list} =
-    new Gui::DayList(-area       => $win_r->{area},
+   Gui::DayList->new(-area       => $win_r->{area},
                      -side       => 'left',
                      -showEvent  => [$self => 'show'],
                      erefs => {
@@ -1111,7 +1113,7 @@ sub _setup($) {
 
   ### Entry edit time ###
   $win_r->{time_area} =
-    new Gui::Time(
+   Gui::Time->new(
                   -area      => $win_r->{entry_area},
                   erefs => {
                     -calculate => $self->{erefs}{-calculate},
@@ -1190,7 +1192,7 @@ sub _setup($) {
       -> Frame(-bd => '1', -relief => 'raised')
       -> pack(-side => 'top', -fill => 'both');
   $win_r->{event_handling} =
-      new Gui::Event(
+     Gui::Event->new(
                     erefs => {
                       -event_cfg => $self->{erefs}{-event_cfg},
                       -date      => $self->{erefs}{-clock}->getDate(),

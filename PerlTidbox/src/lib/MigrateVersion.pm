@@ -2,7 +2,7 @@
 package MigrateVersion;
 #
 #   Document: Migrate data between tidbox versions
-#   Version:  1.1   Created: 2017-10-05 19:26
+#   Version:  1.1   Created: 2019-01-17 11:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package MigrateVersion;
 #
 
 my $VERSION = '1.1';
-my $DATEVER = '2017-10-05';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -32,7 +32,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

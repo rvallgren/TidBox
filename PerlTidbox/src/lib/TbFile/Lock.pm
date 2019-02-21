@@ -2,18 +2,20 @@
 package TbFile::Lock;
 #
 #   Document: Lockfile handler
-#   Version:  1.2   Created: 2018-09-13 17:56
+#   Version:  1.3   Created: 2019-02-07 15:14
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Lock.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2018-09-13';
+my $VERSION = '1.3';
+my $DATEVER = '2019-02-07';
 
 # History information:
 #
+# 1.3  2019-02-07  Roland Vallgren
+#       Removed log->trace
 # 1.2  2017-10-05  Roland Vallgren
 #      Move files to TbFile::<file>
 #      References to other objects in own hash
@@ -38,7 +40,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -403,7 +405,6 @@ sub checkLockDigest($$) {
   # We have no digest in our lock
   my $ourDigest = $self->getDigest();
   unless ($ourDigest) {
-    $self->{erefs}{-log}->trace('No digest in our lock, yet?');
     return 'NoDigestInOur';
   } # unless #
 
@@ -412,15 +413,12 @@ sub checkLockDigest($$) {
 
   # No lock file in other
   unless ($found_lock) {
-    $self->{erefs}{-log}->trace('No lock file in directory');
     return 'NoLock';
   } # unless #
 
   # Get digest from other lock
   my $foundDigest = $found_lock->getDigest();
   unless ($foundDigest) {
-    $self->{erefs}{-log}->trace('No digest in other lock, yet?',
-                                join('::', $found_lock->getLockData()));
     return 'NoDigestInOtherLock';
   } # unless #
 

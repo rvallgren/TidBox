@@ -2,24 +2,18 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.11   Created: 2018-09-13 18:36
+#   Version:  2.12   Created: 2019-02-21 11:52
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.11';
-my $DATEVER = '2018-09-13';
+my $VERSION = '2.12';
+my $DATEVER = '2019-02-21';
 
 # History information:
 #
-# 1.0  2006-06-29  Roland Vallgren
-#      First issue.
-# 1.1  2008-06-16  Roland Vallgren
-#      Use status field to report calculate problems
-# 1.2  2008-09-06  Roland Vallgren
-#      Add earlier menu to show data
 # 2.0  2008-12-06  Roland Vallgren
 #      Use Exco %+ to use same source to register version
 #      Show day list to the left
@@ -54,6 +48,12 @@ my $DATEVER = '2018-09-13';
 #       Move files to TbFile::
 #       References to other objects in own hash
 #       Handle lost lock or lock taken by another session
+# 2.12  2019-01-25  Roland Vallgren
+#       Adapted to rename of Version to TbVersion
+#       Code improvements
+#       Button to install new Tidbox and restart
+#       Corrected: -error_popup is an eref
+#
 #
 
 #----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ use Gui::Event;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -292,7 +292,7 @@ sub _status($;$) {
     if ($show_data == 1) {
       # Show worktime for today
       my $day_r = $self->{erefs}{-calculate}
-          -> dayWorkTimes($now_date, 0, $self->{-error_popup});
+          -> dayWorkTimes($now_date, 0, $self->{erefs}{-error_popup});
       $win_r->{show_data}
           -> configure(-text =>
                        'Arbetstid idag: ' .
@@ -305,8 +305,9 @@ sub _status($;$) {
           -> configure(-text =>
                  'Arbetstid denna vecka: ' .
                  $self->{erefs}{-calculate}->hours(scalar(
-                     $self->{erefs}{-calculate}->weekWorkTimes($now_date, 0,
-                                                        $self->{-error_popup})
+                     $self->{erefs}{-calculate}->
+                                weekWorkTimes($now_date, 0,
+                                              $self->{erefs}{-error_popup})
                  )) .
                  ' timmar');
 
@@ -891,10 +892,10 @@ sub _grabLock($) {
       if ($win_r->{day_list});
   $self->{erefs}{-edit_win}->update();
   $self->{erefs}{-week_win}->update();
-  Version->register_locked_session("Du låste upp Tidbox:" .
-                                   "\n  Datum: " . $date .
-                                   "\n  Tid: " . $time
-                                  );
+  TidVersion->register_locked_session("Du låste upp Tidbox:" .
+                                      "\n  Datum: " . $date .
+                                      "\n  Tid: " . $time
+                                     );
   my $ev = $self->{erefs}{-event_cfg}->getEmpty('Du låste upp Tidbox');
   $self->{erefs}{-times}->joinAdd($date, $time, $BEGINEVENT, $ev);
   return 0;
@@ -1042,10 +1043,10 @@ sub showLocked($$) {
         if ($win_r->{day_list});
     $self->{erefs}{-edit_win}->update();
     $self->{erefs}{-week_win}->update();
-    Version->register_locked_session("Tidbox lås togs av en annan session:" .
-                                     "\n  Datum: " . $date .
-                                     "\n  Tid: " . $time
-                                    );
+    TidVersion->register_locked_session("Tidbox lås togs av en annan session:" .
+                                        "\n  Datum: " . $date .
+                                        "\n  Tid: " . $time
+                                       );
     $win_r->{confirm}
       -> popup(-title  => 'Tidbox är låst',
                -text   => ["En annan instans av Tidbox har tagit låset!\n" .
@@ -1069,10 +1070,10 @@ sub showLocked($$) {
         if ($win_r->{day_list});
     $self->{erefs}{-edit_win}->update();
     $self->{erefs}{-week_win}->update();
-    Version->register_locked_session("Tidbox lås har förlorats:" .
-                                     "\n  Datum: " . $date .
-                                     "\n  Tid: " . $time
-                                    );
+    TidVersion->register_locked_session("Tidbox lås har förlorats:" .
+                                        "\n  Datum: " . $date .
+                                        "\n  Tid: " . $time
+                                       );
     $win_r->{confirm}
       -> popup(-title  => 'Tidbox är låst',
                -text   => ["Tidbox lås till har förlorats, låsfilen finns\n" .
@@ -1305,18 +1306,19 @@ sub _checkModified($$) {
 # Method:      _quitModified
 #
 # Description: Check if an event is edited and confirm to discard the change
+#              before exit
 #
 # Arguments:
 #  - Object reference
-#  - Callback to call if change is to be discarded
-#  - Argument to callback
+# Optional Arguments:
+#  - Action to take
 # Returns:
-#  - 1  No editing ongoing
+#  -
 
-sub _quitModified($$$) {
+sub _quitModified($;$) {
   # parameters
   my $self = shift;
-  my ($ext, $arg) = @_;
+  my ($action) = @_;
 
 
   my ($date, $time, $evText, $line) = $self->_evGet();
@@ -1326,18 +1328,18 @@ sub _quitModified($$$) {
                                  "Redigerad händelse är ogiltig\n" .
                                  "Kasta och avsluta Tidbox?",
                                 ],
-                     -action => [$self, 'destroy'],
+                     -action => [$self, 'destroy', $action],
                     )
       unless (defined($date));
 
   if ($self->{edit_event_ref}) {
 
-    return $self->destroy()
+    return $self->destroy($action)
         if (${$self->{edit_event_ref}} eq $line);
 
   } else {
 
-    return $self->destroy()
+    return $self->destroy($action)
         if ($evText eq $self->{erefs}{-event_cfg}->getEmpty());
 
   } # if #
@@ -1350,7 +1352,7 @@ sub _quitModified($$$) {
                                "Kasta ändringen och avsluta Tidbox?",
                               ],
                    -data   => [$self->{erefs}{-calculate}->format($line)],
-                   -action => [$self, 'destroy'],
+                   -action => [$self, 'destroy', $action],
                   );
 
   return 0;
@@ -1396,6 +1398,75 @@ sub _dateReturn($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      addInstallNewVersionButton
+#
+# Description: Add a button to instll a new version and restart Tidbox
+#
+# Arguments:
+#  - Object reference
+#  - Version to install, false disables update button
+# Returns:
+#  -
+
+sub addInstallNewVersionButton($$) {
+  # parameters
+  my $self = shift;
+  my ($version) = @_;
+
+  my $win_r = $self->{win};
+
+  if ($version) {
+    unless ($win_r->{restart_menu_button}) {
+      # Restart menu button
+      $win_r->{restart_menu_button} = $win_r->{butt_area}
+          -> Menubutton(-text        => 'Ny Tidbox: ' . $version,
+                        -borderwidth => '1',
+                        -relief      => 'raised',
+                       )
+          -> pack(-side => 'right');
+
+    $win_r->{restart_menu} = $win_r->{restart_menu_button}
+          -> Menu(-tearoff => "false");
+
+    $win_r->{restart_menu_exit} = $win_r->{restart_menu}
+      -> add( 'radiobutton',
+              -command     => [$self => '_quitModified', 'install'],
+              -label       => 'Installera och avsluta',
+              -variable    => \$self->{restart_setting},
+              -value       => '_install',
+              -indicatoron => 0,
+            );
+      $self->{install} = [$self => '_install'];
+
+    $win_r->{restart_menu_restart} = $win_r->{restart_menu}
+      -> add( 'radiobutton',
+              -command     => [$self => '_quitModified', 'restart'],
+              -label       => 'Installera och starta om',
+              -variable    => \$self->{restart_setting},
+              -value       => '_restart',
+              -indicatoron => 0,
+            );
+      $self->{restart} = [$self => '_restart'];
+
+      $win_r->{restart_menu_button} ->
+                 configure(-menu => $win_r->{restart_menu});
+    } # unless #
+
+    $win_r->{restart_menu_button}->configure(-state => 'normal');
+    $win_r->{restart_menu_button}->configure(-text => 'Ny Tidbox: ' . $version);
+
+  } elsif ($win_r->{restart_menu_button}) {
+    $win_r->{restart_menu_button}->configure(-state => 'disabled');
+    $win_r->{restart_menu_button}->configure(-text => '(Söker...)');
+
+  } # if #
+
+
+  return 0;
+} # Method addInstallNewVersionButton
+
+#----------------------------------------------------------------------------
+#
 # Method:      _setup
 #
 # Description: Setup the contents of the main window
@@ -1422,7 +1493,7 @@ sub _setup($) {
   # Day list listbox to the left
   if ($self->{erefs}{-cfg}->get('main_show_daylist')) {
     $win_r->{day_list} =
-      new Gui::DayList(-area => $win_r->{area},
+     Gui::DayList->new(-area => $win_r->{area},
                        -side => 'left',
                        erefs => {
                          -times     => $self->{erefs}{-times},
@@ -1455,7 +1526,7 @@ sub _setup($) {
 
   ## Time handling ##
   $win_r->{time_area} =
-      new Gui::Time(
+     Gui::Time->new(
                     -area      => $win_r->{right_area},
                     erefs => {
                       -calculate => $self->{erefs}{-calculate},
@@ -1501,7 +1572,7 @@ sub _setup($) {
       -> pack(-side => 'top', -fill => 'both');
 
   $win_r->{event_handling} =
-      new Gui::Event(erefs => {
+     Gui::Event->new(erefs => {
                                 -event_cfg => $self->{erefs}{-event_cfg},
                               },
                     -area      => $win_r->{event_area},
@@ -1605,6 +1676,10 @@ sub _setup($) {
   # . Register _status for one minute ticks
   $self->{erefs}{-clock}->repeat(-minute => [$self, '_status']);
 
+  # . Add calback for Update
+  $self->{erefs}{-update}->
+       setNewVersionCallback([$self, 'addInstallNewVersionButton']);
+
   # Warnings during startup, show popup
   $self->callback($self->{-start_warning});
 
@@ -1693,6 +1768,63 @@ sub _quit($) {
 
   return 0;
 } # Method _quit
+
+#----------------------------------------------------------------------------
+#
+# Method:      _ignore
+#
+# Description: Tell Tidbox to ignore a new version after quit
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub _ignore($) {
+  # parameters
+  my $self = shift;
+
+  $self->{erefs}{-update}->setRestart(-1);
+  return $self->callback($self->{done});
+} # Method _ignore
+
+#----------------------------------------------------------------------------
+#
+# Method:      _install
+#
+# Description: Tell Tidbox to install new version after quit
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub _install($) {
+  # parameters
+  my $self = shift;
+
+  $self->{erefs}{-update}->setRestart(0);
+  return $self->callback($self->{done});
+} # Method _install
+
+#----------------------------------------------------------------------------
+#
+# Method:      _restart
+#
+# Description: Tell Tidbox to install new version and restart after quit
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub _restart($) {
+  # parameters
+  my $self = shift;
+
+  $self->{erefs}{-update}->setRestart(1);
+  return $self->callback($self->{done});
+} # Method _restart
 
 1;
 __END__

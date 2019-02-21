@@ -2,15 +2,15 @@
 package Gui::Base;
 #
 #   Document: Base class for Guis
-#   Version:  1.10   Created: 2018-02-20 12:28
+#   Version:  1.11   Created: 2019-01-25 15:47
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: GuiBase.pmx
 #
 
-my $VERSION = '1.10';
-my $DATEVER = '2018-02-20';
+my $VERSION = '1.11';
+my $DATEVER = '2019-01-25';
 
 # History information:
 #
@@ -40,6 +40,8 @@ my $DATEVER = '2018-02-20';
 # 1.10  2017-10-16  Roland Vallgren
 #       References to other objects in own hash
 #       Done action can not be used to destroy window
+# 1.11  2019-01-25  Roland Vallgren
+#       Code improvements
 #
 
 #----------------------------------------------------------------------------
@@ -57,7 +59,7 @@ use Tk;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -143,7 +145,7 @@ sub _displayFrame($@) {
     unless (exists($self->{erefs}{-parent_win})) {
 
       $win_r->{win} =
-          new MainWindow(-title => $self->{-title});
+          MainWindow->new(-title => $self->{-title});
 
       # This is the parent window
       $self->{erefs}{-parent_win}{win} = $win_r;
@@ -190,7 +192,7 @@ sub _displayFrame($@) {
     $self->{win} = $win_r;
 
     # Add a confirm instance for a named window. Confirm windows are not named
-    $win_r->{confirm} = new Gui::Confirm(
+    $win_r->{confirm} = Gui::Confirm->new(
                               erefs => {
                                 -parent_win => $win_r,
                               },

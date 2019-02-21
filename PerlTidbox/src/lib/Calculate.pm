@@ -2,7 +2,7 @@
 package Calculate;
 #
 #   Document: Calculator for TidBox
-#   Version:  1.10   Created: 2017-11-10 19:15
+#   Version:  1.10   Created: 2019-01-17 13:32
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Calculate;
 #
 
 my $VERSION = '1.10';
-my $DATEVER = '2017-11-10';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -57,7 +57,7 @@ use Time::Local;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

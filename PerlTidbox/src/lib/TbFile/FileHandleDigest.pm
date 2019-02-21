@@ -2,19 +2,21 @@
 package TbFile::FileHandleDigest;
 #
 #   Document: File handle with Digest
-#   Version:  1.0   Created: 2018-02-01 21:40
+#   Version:  1.1   Created: 2019-01-25 15:46
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileHandleDigest.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2018-02-01';
+my $VERSION = '1.1';
+my $DATEVER = '2019-01-25';
 
 # History information:
 #
-# 1.0  2015-01-15  Roland Vallgren
+# 1.1  2019-01-25  Roland Vallgren
+#      Code improvements
+# 1.0  2018-01-15  Roland Vallgren
 #      First issue.
 #
 
@@ -29,14 +31,13 @@ use strict;
 use warnings;
 use integer;
 
-use Version qw(register_starttime);
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
-                   -date    => '2018-02-01',
+                   -date    => $DATEVER,
                   );
 }
 
@@ -88,7 +89,7 @@ sub open($$) {
   my ($file) = @_;
 
 
-  my $fh = new FileHandle($file, '<');
+  my $fh = FileHandle->new($file, '<');
   return 0
       unless ($fh);
   $self->{fh} = $fh;

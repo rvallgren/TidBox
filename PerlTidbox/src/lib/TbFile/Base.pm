@@ -2,15 +2,15 @@
 package TbFile::Base;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.8   Created: 2018-12-07 17:45
+#   Version:  2.9   Created: 2019-02-19 17:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.8';
-my $DATEVER = '2018-12-07';
+my $VERSION = '2.9';
+my $DATEVER = '2019-02-19';
 
 # History information:
 #
@@ -43,6 +43,10 @@ my $DATEVER = '2018-12-07';
 #      References to other objects in own hash
 #      Added methods clone and merge
 #      Added merge with new backup data
+# 2.9  2019-01-25  Roland Vallgren
+#      Code improvements
+#      Removed log->trace
+#      Corrected: -error_popup is an eref
 #
 
 #----------------------------------------------------------------------------
@@ -63,7 +67,7 @@ use Text::ParseWords;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -532,8 +536,6 @@ sub readFileName($;$) {
   my $self = shift;
   my ($file) = @_;
 
-  $self->{erefs}{-log}->trace('File:', $file, ':')
-      if ($self->{erefs}{-log});
 
   if (not defined($file)) {
     # No argument specified, use default
@@ -558,32 +560,22 @@ sub readFileName($;$) {
   if ($file eq 'bak' or $file eq 'dir') {
     # dir or bak, use specified
     $file = $self->{erefs}{-cfg}->filename($file, $self->{-name});
-    $self->{erefs}{-log}->trace('dir or bak, use specified, got:', $file, ':')
-        if ($self->{erefs}{-log});
     return $file;
   } # if #
 
   if (-f $file) {
     # Full path to file as argument
-    $self->{erefs}{-log}->
-           trace('Full path to file as argument, got:', $file, ':')
-        if ($self->{erefs}{-log});
     return $file;
   } # if #
 
   if (-d $file) {
     # Full path to directory as argument
     $file = File::Spec->catfile($file, $self->{-name});
-    $self->{erefs}{-log}->
-              trace('Full path to directory as argument, got:', $file, ':')
-        if ($self->{erefs}{-log});
     return $file;
   } # if #
 
   # Default? Assume directory
   $file = File::Spec->catfile($file, $self->{-name});
-  $self->{erefs}{-log}->trace('Default? Assume directory, got:', $file, ':')
-      if ($self->{erefs}{-log});
   return $file;
 
 } # Method readFileName
@@ -608,17 +600,13 @@ sub openRead($;$$) {
   my $self = shift;
   my ($file, $handle) = @_;
 
-  $self->{erefs}{-log}->trace('File:', $file, ':')
-      if ($self->{erefs}{-log});
 
   my $filename = $self->readFileName($file);
-  $self->{erefs}{-log}->trace('Got filename:', $filename, ':')
-      if ($self->{erefs}{-log});
 
   # TODO Allow this to be undef
   $self->{-readOpened} = $filename || '<noname>';
 
-  return new FileHandle($filename, '<')
+  return FileHandle->new($filename, '<')
       unless ($handle);
 
   return undef
@@ -668,8 +656,6 @@ sub load($;$$) {
   my $self = shift;
   my ($dir, $handle) = @_;
 
-  $self->{erefs}{-log}->trace('Dir:', $dir, ':')
-      if ($self->{erefs}{-log});
 
   $self->clear();
   $self->{loaded} = 1;
@@ -678,9 +664,6 @@ sub load($;$$) {
 
   return 0
       unless ($fh);
-
-  $self->{erefs}{-log}->trace('Loading')
-      if ($self->{erefs}{-log});
 
   my $found = 0;
 
@@ -752,8 +735,6 @@ sub loadOther($$) {
   my $self = shift;
   my ($dir) = @_;
 
-  $self->{erefs}{-log}->trace('Dir:', $dir, ':')
-      if ($self->{erefs}{-log});
 
   my $other = $self->clone();
 
@@ -849,8 +830,6 @@ sub forcedCopy($$$) {
   my ($src, $trg) = @_;
 
 
-  $self->{erefs}{-log}->trace('Do copy:', $src, '->', $trg)
-      if ($self->{erefs}{-log});
   my $cfg = $self->{erefs}{-cfg};
   return 1
       if ($cfg->isSessionLocked());
@@ -858,14 +837,10 @@ sub forcedCopy($$$) {
   # TODO Check if src or trg is not 'dir' or 'bak'
 
   my $source = $cfg->filename($src, $self->{-name});
-  $self->{erefs}{-log}->trace(' Real source:', $source)
-      if ($self->{erefs}{-log});
   return 2
       unless ($source);
 
   my $target = $cfg->filename($trg, $self->{-name});
-  $self->{erefs}{-log}->trace(' Real target:', $target)
-      if ($self->{erefs}{-log});
   return 3
       unless ($target);
 
@@ -894,10 +869,11 @@ sub _saveFile($$) {
   my ($file) = @_;
 
 
-  my $fh = new FileHandle($file, '>');
+  my $fh = FileHandle->new($file, '>');
 
   unless ($fh) {
-    $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
+    $self->callback($self->{erefs}{-error_popup},
+                    'Kan inte öppna: "' . $file . '"' , $! );
     return 1;
   } # unless #
 
@@ -914,7 +890,7 @@ sub _saveFile($$) {
       if ($self->{erefs}{-log});
 
   unless ($fh->close()) {
-    $self->callback($self->{-error_popup},
+    $self->callback($self->{erefs}{-error_popup},
                     'Kan inte skriva: "' . $file . '"' , $! );
     return 1;
   } # unless #
@@ -1011,10 +987,11 @@ sub append($@) {
       next;
     } # unless #
 
-    my $fh = new FileHandle($file, '>>');
+    my $fh = FileHandle->new($file, '>>');
 
     unless ($fh) {
-      $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
+      $self->callback($self->{erefs}{-error_popup},
+                      'Kan inte öppna: "' . $file . '"' , $! );
       next;
     } # unless #
 
@@ -1024,7 +1001,7 @@ sub append($@) {
         if ($self->{erefs}{-log} and $self ne $self->{erefs}{-log});
 
     unless ($fh->close()) {
-      $self->callback($self->{-error_popup}, 
+      $self->callback($self->{erefs}{-error_popup}, 
                       'Kan inte skriva: "' . $file . '"' , $! );
       next;
     } # unless #
@@ -1084,25 +1061,17 @@ sub merge($%) {
   my $self = shift;
   my (%args) = @_;
 
-  $self->{erefs}{-log}->trace()
-      if ($self->{erefs}{-log});
 
   my $source;
   if (ref($args{-fromInst})) {
-    $self->{erefs}{-log}->trace('-fromInst')
-        if ($self->{erefs}{-log});
     $source = $args{-fromInst};
   } elsif ($args{-fromDir}) {
     # Get source times
-    $self->{erefs}{-log}->trace('-fromDir', $args{-fromDir})
-        if ($self->{erefs}{-log});
     $source = $self->loadOther($args{-fromDir});
     return undef
         unless ($source);
   } else {
     # Nothing to merge from provided
-    $self->{erefs}{-log}->trace('Nothing to merge from provided')
-        if ($self->{erefs}{-log});
     return undef;
   } # if #
 
@@ -1114,9 +1083,6 @@ sub merge($%) {
     $self->load('dir')
         unless ($self->isLoaded());
   } # unless #
-  $self->{erefs}{-log}->
-       trace('_mergeData($source, $startDate, $endDate)', $startDate, $endDate)
-      if ($self->{erefs}{-log});
   $self->_mergeData($source, $startDate, $endDate, $progress_ref);
 
   return 0;

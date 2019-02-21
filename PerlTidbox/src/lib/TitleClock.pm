@@ -2,15 +2,15 @@
 package TitleClock;
 #
 #   Document: Running clock for timing and visible clock
-#   Version:  1.10   Created: 2017-11-10 19:18
+#   Version:  1.11   Created: 2019-02-21 14:14
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TitleClock.pmx
 #
 
-my $VERSION = '1.10';
-my $DATEVER = '2017-11-10';
+my $VERSION = '1.11';
+my $DATEVER = '2019-02-21';
 
 # History information:
 #
@@ -37,6 +37,9 @@ my $DATEVER = '2017-11-10';
 # 1.10  2017-10-16  Roland Vallgren
 #       References to other objects in own hash
 #       Added a timeout one shot timer
+# 1.11  2019-01-24  Roland Vallgren
+#       Clear all timeout on quit
+#       Added -seconds in timeout
 #
 
 #----------------------------------------------------------------------------
@@ -52,7 +55,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -91,6 +94,9 @@ use integer;
 #              -hour    List of timers to run every new hour
 #              -minute  List of timers to run every new minute
 #              -sleep   List of timers to run whenever a sleep is detected
+#  -timeout     Hash with running timeouts
+#               -minute  List of timeouts in minutes
+#               -second  List of timeouts in seconds
 
 #############################################################################
 #
@@ -157,12 +163,13 @@ sub repeat($;%) {
 # Method:      timeout
 #
 # Description: Add a timeout one shot timer
-#              If number of minutes is less than one the timeout
-#              will happen att the next minute tick
+#              If number of minutes or seconds is less than one the timeout
+#              will happen att the next minute or second tick
 #
 # Arguments:
 #  0 - Object reference
 #  -minute    Number of minutes
+#  -second    Number of seconds
 #  -callback  Callback to be called at time out
 # Returns:
 #  -
@@ -173,11 +180,24 @@ sub timeout($;%) {
   my %arg = @_;
 
 
-  push @{$self->{-timeout}{-minute}},
-             { timeout  => $arg{-minute},
-               callback => $arg{-callback},
-             }
-      if (exists($arg{-minute}));
+  if (exists($arg{-minute})) {
+    croak 'No -minute timeout value set', %arg
+        unless (defined($arg{-minute}));
+    push @{$self->{-timeout}{-minute}},
+              { timeout  => $arg{-minute},
+                callback => $arg{-callback},
+              };
+  } elsif (exists($arg{-second})) {
+    croak 'No -second timeout value set', %arg
+        unless (defined($arg{-second}));
+    push @{$self->{-timeout}{-second}},
+              { timeout  => $arg{-second},
+                callback => $arg{-callback},
+              };
+  } else {
+    croak 'No known timeout set', %arg;
+  } # if #
+
 
   return 0;
 } # Method timeout
@@ -262,6 +282,9 @@ sub tick($) {
       if ( $ref->{timeout} <= 0 ) {
         $self->callback($ref->{callback});
         splice @{$aref}, $index, 1;
+        # TODO Only allow one timeout to trigger at the same time?
+        #      Coordinate with -second and -repeat??
+        # last;
       } else {
         $ref->{timeout}--;
         $index++;
@@ -269,6 +292,21 @@ sub tick($) {
     } # while #
 
   } # if #
+
+  my $index = 0;
+  my $aref = $self->{-timeout}{-second};
+  while ($index <= $#{$aref} ) {
+    my $ref = $aref->[$index];
+    if ( $ref->{timeout} <= 0 ) {
+      $self->callback($ref->{callback});
+      splice @{$aref}, $index, 1;
+      # TODO Only allow one timeout to trigger at the same time?
+      # last;
+    } else {
+      $ref->{timeout}--;
+      $index++;
+    } # if #
+  } # while #
 
   if ($sleep > 60) {
     # Handle action due to sleep or hibernation longer than 60 seconds
@@ -548,6 +586,9 @@ sub quit($) {
 
   for my $key (keys(%{$self->{-repeat}})) {
     $self->{-repeat}{$key} = undef;
+  } # for #
+  for my $key (keys(%{$self->{-timeout}})) {
+    @{$self->{-timeout}{$key}} = ();
   } # for #
   return 0;
 } # Method quit

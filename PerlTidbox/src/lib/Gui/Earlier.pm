@@ -2,7 +2,7 @@
 package Gui::Earlier;
 #
 #   Document: Gui::Earlier
-#   Version:  1.4   Created: 2017-10-16 18:08
+#   Version:  1.4   Created: 2019-01-17 11:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Earlier;
 #
 
 my $VERSION = '1.4';
-my $DATEVER = '2017-10-16';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -42,7 +42,7 @@ use Tk;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

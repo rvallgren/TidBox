@@ -2,7 +2,7 @@
 package Gui::PluginConfig;
 #
 #   Document: Plugin Configuration class
-#   Version:  1.0   Created: 2018-12-13 15:26
+#   Version:  1.0   Created: 2019-01-17 11:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::PluginConfig;
 #
 
 my $VERSION = '1.0';
-my $DATEVER = '2018-12-13';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -31,7 +31,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

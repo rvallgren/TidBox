@@ -2,40 +2,18 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.3   Created: 2018-11-09 17:32
+#   Version:  2.4   Created: 2019-02-07 16:34
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.3';
-my $DATEVER = '2018-11-09';
+my $VERSION = '2.4';
+my $DATEVER = '2019-02-07';
 
 # History information:
 #
-# 1.0  2007-03-07  Roland Vallgren
-#      First issue.
-# 1.1  2007-03-26  Roland Vallgren
-#      Return fault
-#      Corrected modified handling for event_cfg
-#      Use date set in event_cfg
-# 1.2  2007-07-15  Roland Vallgren
-#      Moved supervision settings to Supervision.pmx
-# 1.3  2008-09-06  Roland Vallgren
-#      Main window edit earlier data
-# 1.4  2008-12-06  Roland Vallgren
-#      Use Exco %+ to use same source to register version
-#      Added Terp settings tab
-# 1.5  2009-07-14  Roland Vallgren
-#      Evalutaion notice removed from daylist setting
-#      Added timeout for status messages
-# 1.6  2012-05-09  Roland Vallgren
-#      not_set_start => start_operation :  none, workday, event, end pause
-# 1.7  2012-09-10  Roland Vallgren
-#      EventCfg need win_r for message popup
-# 1.8  2013-05-18  Roland Vallgren
-#      Handle session lock
 # 2.0  2015-08-10  Roland Vallgren
 #      Added tab for start of Tidbox
 #      Added settings for handling of resume
@@ -50,6 +28,9 @@ my $DATEVER = '2018-11-09';
 #      References to other objects in own hash
 #      Check backup directory: Same as main directory, empty, tidbox files
 #      Added handling of new backup directory that contains tidbox data
+# 2.4  2019-02-07  Roland Vallgren
+#      Added handling of updates
+#      Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -75,7 +56,7 @@ use Gui::PluginConfig;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -113,6 +94,9 @@ use Gui::PluginConfig;
 #   $^O.'_do_backup'        Spara säkerhetskopia {OS}
 #   $^O.'_backup_directory' Katalog för säkerhetskopia {OS}
 #   ordinary_week_work_time  Ordinarie veckoarbetstid
+#   check_new_version       Control how Update should behave
+#                             0: Look for and download updates
+#                             6: No search for updates
 #
 # Settings defined in specific windows
 #
@@ -147,6 +131,7 @@ use constant SETTABLE_CFGS =>
         show_reg_date
         show_message_timeout
         ordinary_week_work_time
+        check_new_version
       );
 
 use constant BACKUP_ENA => $^O . '_do_backup';
@@ -601,9 +586,6 @@ sub applyNewBackupDirectory($@) {
   $self->{cfg}{BACKUP_ENA()} = 1;
   $self->{cfg}{BACKUP_DIR()} = $cdir;
   my $log = $self->{erefs}{-log};
-  $log->trace('Arguments:', $cdir, '>', $opCallback[1], '<');
-  $log->trace('New backup settings:', $self->{cfg}{BACKUP_ENA()}, ':',
-                                      $self->{cfg}{BACKUP_DIR()});
   $self->{erefs}{-cfg}->set(
                             BACKUP_ENA() => $self->{cfg}{BACKUP_ENA()},
                             BACKUP_DIR() => $self->{cfg}{BACKUP_DIR()},
@@ -709,7 +691,6 @@ sub _chooseBakDirectory($) {
 
   # Check Tidbox data for relation to our session
   my $state = $tbFile->checkDirectoryDigest($cdir);
-  $log->trace('Directory state:', $state, ':');
 
   if ($state eq 'OurLock') {
     # It was already locked by our session, just use it
@@ -1105,6 +1086,40 @@ sub _setup($) {
                )
       -> pack(-side => 'left');
 
+  # Update version
+
+# TODO cfg new setting
+#  check_new_version  How to check for new versions of Tidbox
+#     0:  Download latest and have it ready if a restart occurs
+#     6:  Do not check
+
+  ## Area ##
+  $win_r->{update_area} = $win_r->{general_tab}
+      -> Frame(-bd => '2', -relief => 'raised')
+      -> pack(-side => 'top', -expand => '0', -fill => 'both');
+
+  ### Label ###
+  $win_r->{update_lb} = $win_r->{update_area}
+      -> Label(-text => 'Uppdatera Tidbox:')
+      -> pack(-side => 'left');
+
+  ### Update version ###
+  $win_r->{update_automatic} = $win_r->{update_area}
+      -> Radiobutton(-text => 'Ladda ner automatiskt',
+                     -command => [$self => '_modified'],
+                     -variable => \$self->{cfg}{check_new_version},
+                     -value => 0,
+                    )
+      -> pack(-side => 'left');
+
+  $win_r->{update_noupdate} = $win_r->{update_area}
+      -> Radiobutton(-text => 'Sök inte efter nya versioner',
+                     -command => [$self => '_modified'],
+                     -variable => \$self->{cfg}{check_new_version},
+                     -value => 6,
+                    )
+      -> pack(-side => 'left');
+
 
   ### TAB: Status settings ###
   $win_r->{status_tab} = $win_r->{notebook}
@@ -1197,7 +1212,7 @@ sub _setup($) {
   # Supervision setting
 
   $self->{-supervision_cfg_setup} =
-      new Gui::SupervisionConfig(-area      => $win_r->{status_tab},
+     Gui::SupervisionConfig->new(-area      => $win_r->{status_tab},
                 erefs => {
                   -supervision => $self->{erefs}{-supervision},
                   -event_cfg   => $self->{erefs}{-event_cfg},
@@ -1212,7 +1227,7 @@ sub _setup($) {
   $win_r->{edit_tab} = $win_r->{notebook}
       -> add('events', -label => 'Händelser');
   $self->{-event_cfg_setup} =
-      new Gui::EventConfig(-area      => $win_r->{edit_tab},
+     Gui::EventConfig->new(-area      => $win_r->{edit_tab},
                            -win_r     => $win_r,
                            -modified  => [ $self => '_modified', 'event_cfg'],
                            erefs => {
@@ -1272,7 +1287,7 @@ sub _setup($) {
   $self->{start_tidbox_win_r} = $starttb_win_r;
 
   $starttb_win_r->{event_handling} =
-      new Gui::Event(
+     Gui::Event->new(
                   erefs => {
                     -event_cfg  => $self->{erefs}{-event_cfg},
                            },
@@ -1348,7 +1363,7 @@ sub _setup($) {
   $self->{resume_tidbox_win_r} = $resumetb_win_r;
 
   $resumetb_win_r->{event_handling} =
-      new Gui::Event(
+     Gui::Event->new(
                 erefs => {
                   -event_cfg  => $self->{erefs}{-event_cfg},
                 },
@@ -1362,7 +1377,7 @@ sub _setup($) {
   $win_r->{plugin_tab} = $win_r->{notebook}
       -> add('plugins', -label => 'Insticksmoduler');
   $self->{-plugin_cfg_setup} =
-      new Gui::PluginConfig(-area      => $win_r->{plugin_tab},
+     Gui::PluginConfig->new(-area      => $win_r->{plugin_tab},
                             -win_r     => $win_r,
                             -modified  => [ $self => '_modified', 'plugin_cfg'],
                              erefs => {

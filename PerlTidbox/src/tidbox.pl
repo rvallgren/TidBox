@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.9   Created: 2018-12-12
+#   Version:  4.10   Created: 2019-02-21
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.9';
-my $DATEVER = '2018-12-12';
+my $VERSION = '4.10';
+my $DATEVER = '2019-02-21';
 
 #----------------------------------------------------------------------------
 #
@@ -41,6 +41,9 @@ my $DATEVER = '2018-12-12';
 #      References to other objects in own hash
 # 4.9  2018-12-05  Roland Vallgren
 #      Updated pod
+# 4.10  2019-01-25  Roland Vallgren
+#       Code improvements
+#       Added handling of Update
 #
 
 #----------------------------------------------------------------------------
@@ -63,10 +66,11 @@ use Tk;
 # Tidbox modules
 use lib "$FindBin::RealBin/lib";
 
-use Version qw(%tool_info);
+use TidVersion qw(%tool_info);
 use TitleClock;
 use Calculate;
 use TbFile;
+use Update;
 use Gui::Time;
 use Gui::Edit;
 use Gui::Week;
@@ -80,7 +84,7 @@ use Gui::Settings;
 
 # Register version information
 {
-  use Version qw(register_version register_external);
+  use TidVersion qw(register_version register_external);
   register_version(
                    -name    => 'TidBox',
                    -version => $VERSION,
@@ -289,7 +293,7 @@ sub error_popup(@) {
     $error->{text} = $error->{win}
         -> Label(-text => 'FEL:');
   } else {
-    $error->{win} = new MainWindow(-title => $tool_info{version});
+    $error->{win} = MainWindow->new(-title => $tool_info{version});
     $error->{text} = $error->{win}
         -> Label(-text => $tool_info{icontitle} . ' : Kan inte starta');
   } # if #
@@ -415,44 +419,47 @@ sub parse_commandline($) {
 my $args = parse_commandline($0);
 
 # Create Calculator
-my $calculate = new Calculate();
+my $calculate = Calculate->new();
 
 # Create TbFile
-my $tbFile = new TbFile($args);
+my $tbFile = TbFile->new($args);
+
+# Create Update
+my $update = Update->new($args);
 
 # Create TitleClock
-my $clock = new TitleClock();
+my $clock = TitleClock->new();
 
 # Create Earlier
-my $earlier = new Gui::Earlier();
+my $earlier = Gui::Earlier->new();
 
 # Create Main
 $main_win =
-      new Gui::Main(
+     Gui::Main->new(
                     -title => $tool_info{version},
                    );
 
 # Create Edit
 my $edit_win =
-    new Gui::Edit(
+   Gui::Edit->new(
                   -title => $tool_info{icontitle},
                  );
 
 # Create Week
 my $week_win =
-     new Gui::Week(
+    Gui::Week->new(
                    -title => $tool_info{icontitle},
                   );
 
 # Create 
 my $year_win =
-    new Gui::Year(
+   Gui::Year->new(
                   -title => $tool_info{icontitle},
                  );
 
 # Create Settings
 my $settings =
-    new Gui::Settings(
+   Gui::Settings->new(
                       -title => $tool_info{icontitle},
                      );
 
@@ -478,6 +485,14 @@ $tbFile ->
               -error_popup => \&error_popup,
              );
 
+$update ->
+    configure(
+              -clock       => $clock,
+              -cfg         => $tbFile->getRef('-cfg'),
+              -session     => $tbFile->getRef('-session'),
+              -log         => $tbFile->getRef('-log'),
+             );
+
 
 $earlier ->
     configure(
@@ -489,9 +504,11 @@ $main_win ->
     configure(
               -clock         => $clock,
               -calculate     => $calculate,
+              -update        => $update,
               -tbfile        => $tbFile,
               -cfg           => $tbFile->getRef('-cfg'),
               -lock          => $tbFile->getRef('-lock'),
+              -log           => $tbFile->getRef('-log'),
               -session       => $tbFile->getRef('-session'),
               -times         => $tbFile->getRef('-times'),
               -event_cfg     => $tbFile->getRef('-event_cfg'),
@@ -587,6 +604,7 @@ my $date = $clock->getDate();
 # Load files and initiate session
 $tbFile->load();
 $tbFile->init($date, $time, $tool_info{VERSION});
+$update->init();
 
 # Set starttime
 $tbFile->start($date, $time, $args, $tool_info{version});
@@ -623,107 +641,10 @@ $tbFile->checkSessionLock([$main_win, 'showLocked']);
 
   MainLoop;
 }
+# Check if an update is ready to be installed
+# TODO We need a setting to define if restart should be done
+exit 0
+    unless (my $replace = $update->getReplaceScript());
 
-__END__
-#############################################################################
-#
-# Manual page section
-#
-#############################################################################
-
-=pod
-
-=head1 NAME
-
-tidbox.pl - Tidbox, time registering tool
-
-=head1 SYNOPSIS
-
-C<tidbox.pl [ -help | -man ] [ -directory NAME ]>
-
-    Options:
-      -directory NAME  Name of tidbox directory
-      -help            Brief help message
-      -man             Full manual page
-
-=head1 DESCRIPTION
-
-B<Tidbox> is a tool for work time registration.
-Files are stored differently depending of platform.
-
-For computers where a backed up storage not is available at all times,
-such as a laptop computer, a backup directory is used.
-
-=over 4
-
-=item B<Unix>
-
-On B<Unix> and Unix like platforms the default directory is named B<.tidbox>
-and located in your home directory. That is B<$HOME/.tidbox>.
-
-=item B<Windows>
-
-On B<Windows> the default directory is named B<Tidbox>
-and located in your B<Application data> directory as defined by Windows.
-There is no default backup directory.
-Select a backup directory in settings.
-Suggestion is to use a cloud storage directory managed by Google Drive,
-OneDrive, Dropbox, etcetera.
-
-=back
-
-Backup directory is defined and enabled in settings.
-
-=head1 OPTIONS
-
-=over 4
-
-=item B<-directory> NAME
-
-Full path to B<NAME> of the directory were to store all Tidbox files in.
-Use this if you need to override the default directory.
-
-=item B<-help>
-
-Brief help message.
-
-=item B<-man>
-
-Manual page.
-
-=back
-
-=head1 EXAMPLES
-
-Start Tidbox:
-
-  tidbox.pl
-
-=head1 KNOWN ERRORS
-
-The tool is in Swedish.
-
-On Windows the environment variable B<APPDATA> is used to find out
-the B<Application data> directory.
-This might not work in future Windows versions.
-
-=head1 SEE ALSO
-
-About dialog for homepage.
-
-=head1 AUTHOR
-
-Roland Vallgren
-
-=head1 COPYRIGHT
-
-This program is copyrighted by Roland Vallgren
-All Rights Reserved.
-
-    Copyright (c) 2018-12-12 Roland Vallgren All rights reserved
-    This program is free software. It may be used, redistributed
-    and/or modified under the same terms as Perl itself
-
-
-=cut
-
+# TODO We need a setting to define if this should be done
+exec $^X, $replace;

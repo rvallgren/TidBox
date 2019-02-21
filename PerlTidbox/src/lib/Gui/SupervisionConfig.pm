@@ -2,7 +2,7 @@
 package Gui::SupervisionConfig;
 #
 #   Document: Supervision Configuration class
-#   Version:  1.2   Created: 2018-11-09 15:39
+#   Version:  1.2   Created: 2019-01-17 11:07
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::SupervisionConfig;
 #
 
 my $VERSION = '1.2';
-my $DATEVER = '2018-11-09';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -38,7 +38,7 @@ use Gui::Time;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

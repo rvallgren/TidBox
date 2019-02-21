@@ -2,7 +2,7 @@
 package Gui::Year;
 #
 #   Document: Display all weeks in the years
-#   Version:  1.4   Created: 2018-07-23 21:09
+#   Version:  1.4   Created: 2019-02-21 12:00
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Year;
 #
 
 my $VERSION = '1.4';
-my $DATEVER = '2018-07-23';
+my $DATEVER = '2019-02-21';
 
 # History information:
 #
@@ -44,7 +44,7 @@ use Gui::Confirm;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

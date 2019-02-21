@@ -2,7 +2,7 @@
 package TbFile::Log;
 #
 #   Document: Log to file
-#   Version:  1.4   Created: 2018-07-31 18:12
+#   Version:  1.4   Created: 2019-02-11 09:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package TbFile::Log;
 #
 
 my $VERSION = '1.4';
-my $DATEVER = '2018-07-31';
+my $DATEVER = '2019-02-11';
 
 # History information:
 #
@@ -45,7 +45,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -279,6 +279,7 @@ sub start($) {
   $self->{unbusy}  = 1;
   if ($self->{erefs}{-cfg}->get('log_trace_enabled')) {
     $self->{trace_enabled} = 1;
+    $self->trace('Trace enabled and started');
   } else {
     $self->{trace} = undef;
   } # if #

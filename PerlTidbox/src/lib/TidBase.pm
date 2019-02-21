@@ -2,7 +2,7 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.7   Created: 2018-02-22 17:33
+#   Version:  1.7   Created: 2019-01-17 11:49
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package TidBase;
 #
 
 my $VERSION = '1.7';
-my $DATEVER = '2018-02-22';
+my $DATEVER = '2019-01-17';
 
 # History information:
 #
@@ -45,7 +45,7 @@ use Scalar::Util qw(blessed weaken);
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,

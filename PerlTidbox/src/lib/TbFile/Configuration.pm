@@ -2,15 +2,15 @@
 package TbFile::Configuration;
 #
 #   Document: Configuration class
-#   Version:  2.8   Created: 2018-09-13 18:36
+#   Version:  2.9   Created: 2019-02-19 17:41
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Configuration.pmx
 #
 
-my $VERSION = '2.8';
-my $DATEVER = '2018-09-13';
+my $VERSION = '2.9';
+my $DATEVER = '2019-02-19';
 
 # History information:
 #
@@ -43,6 +43,10 @@ my $DATEVER = '2018-09-13';
 #      References to other objects in own hash
 #      Improved handling of backup directory
 #      New settings to control trace enabled
+# 2.9  2019-01-25  Roland Vallgren
+#      Corrected comment
+#      Added update setting: check_new_version
+#      Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -57,12 +61,12 @@ use warnings;
 use Carp;
 use integer;
 
-use File::Path;
+use File::Path qw();
 use File::Spec;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -119,6 +123,9 @@ use constant BACKUP_DIR => $^O . '_backup_directory';
 #                          Default is 5 minutes
 #  main_show_daylist  Daylist is default on
 #  log_trace_enabled  Enable trace in log, for test, Default is off
+#  check_new_version  Control how Update should behave
+#                            0: Look for and download updates
+#                            6: No search for updates
 #
 
 my %DEFAULTS = (
@@ -137,6 +144,7 @@ my %DEFAULTS = (
     show_message_timeout  => 5,
     main_show_daylist     => 1,
     log_trace_enabled     => 0,          # TODO Add trace for debugging
+    check_new_version     => 0,
    );
 
 
@@ -162,10 +170,6 @@ use constant TIDBOX_RCDIR_WINDOWS => 'Tidbox';
 # Arguments:
 #  - Object prototype
 #  - Reference to arguments hash
-# Additional arguments as hash
-#  -cfg          Configuration file
-#  -clock        Reference to clock
-#  -error_popup  Reference to error popup sub
 # Returns:
 #  Object reference
 
@@ -251,8 +255,6 @@ sub dirname($$) {
   my $self = shift;
   my ($typ) = @_;
 
-  $self->{erefs}{-log}->trace('Type:', $typ, ':' )
-      if ($self->{erefs}{-log});
 
   return undef
       unless ($self->{$typ});
@@ -268,7 +270,7 @@ sub dirname($$) {
   } # if #
 
   unless (-d $self->{$typ}) {
-    eval { mkpath($self->{$typ}, 0, 0700) };
+    eval { File::Path->make_path($self->{$typ}, { mode => 0700 }) };
     if ($@) {
       $self->{erefs}{-log}->log('Create failed', $@);
       return undef
@@ -301,10 +303,6 @@ sub filename($$;$) {
   my $self = shift;
   my ($typ, $name) = @_;
 
-  $self->{erefs}{-log}->trace(
-          'Type:', $typ , ':' ,
-          'Name:', $name, ':' )
-      if ($self->{erefs}{-log});
 
   my $dirname = $self->dirname($typ);
   return undef
@@ -376,7 +374,7 @@ sub _load($$) {
 #
 # Method:      _save
 #
-# Description: _save supervision data to file
+# Description: _save configuration data to file
 #
 # Arguments:
 #  0 - Object reference

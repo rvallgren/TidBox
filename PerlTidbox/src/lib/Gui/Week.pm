@@ -2,34 +2,18 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.14   Created: 2017-10-20 06:01
+#   Version:  1.15   Created: 2019-02-19 17:40
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.14';
-my $DATEVER = '2017-10-20';
+my $VERSION = '1.15';
+my $DATEVER = '2019-02-19';
 
 # History information:
 #
-# PA1  2006-10-27  Roland Vallgren
-#      First issue.
-# PA2  2006-11-17  Roland Vallgren
-#      Use GUI base class
-# PA3  2006-12-11  Roland Vallgren
-#      Use clock to get one minute tick for update
-# PA4  2007-01-31  Roland Vallgren
-#      Do not recalculate if withdrawn
-#      Added adjust of week
-#      Request confirmation to unlock a week
-#      Corrected use of Confirm
-# PA5  2007-03-10  Roland Vallgren
-#      Adapted to new behaviour in Gui::Base
-#        Let the GuiBase class add the confirm instance
-#      Handle problems detected during calculation of worktime
-#      Save file after adjust
 # 1.6  2007-03-25  Roland Vallgren
 #      Numerical versions, Local module information added
 # 1.7  2007-06-17  Roland Vallgren
@@ -54,6 +38,9 @@ my $DATEVER = '2017-10-20';
 #       Setting terp_normal_worktime renamed to ordinary_week_work_time
 # 1.14  2017-10-16  Roland Vallgren
 #       References to other objects in own hash
+# 1.15  2019-01-25  Roland Vallgren
+#       Code improvement
+#       Corrected: -error_popup is an eref
 #
 
 #----------------------------------------------------------------------------
@@ -75,7 +62,7 @@ use Gui::Confirm;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -1135,10 +1122,11 @@ sub _export($;$) {
                       );
   return undef
       unless ($file);
-  my $fh = new FileHandle($file, '>');
+  my $fh = FileHandle->new($file, '>');
 
   unless ($fh) {
-    $self->callback($self->{-error_popup}, 'Kan inte öppna: "' . $file . '"' , $! );
+    $self->callback($self->{erefs}{-error_popup},
+                    'Kan inte öppna: "' . $file . '"' , $! );
     return 1;
   } # unless #
 
@@ -1238,7 +1226,7 @@ sub _export($;$) {
       if ($self->{erefs}{-log});
 
   unless ($fh->close()) {
-    $self->callback($self->{-error_popup},
+    $self->callback($self->{erefs}{-error_popup},
                       'Kan inte skriva: "' . $file . '"' , $! );
     return 1;
   } # unless #

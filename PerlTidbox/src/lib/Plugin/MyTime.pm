@@ -2,18 +2,20 @@
 package Plugin::MyTime;
 #
 #   Document: Plugin MyTime
-#   Version:  1.1   Created: 2018-11-15 19:21
+#   Version:  1.2   Created: 2019-01-25 15:52
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MyTime.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2018-11-15';
+my $VERSION = '1.2';
+my $DATEVER = '2019-01-25';
 
 # History information:
 #
+# 1.2  2019-01-25  Roland Vallgren
+#      Code improvements
 # 1.1  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
 #      Allow events to have more or less than four fields
@@ -40,7 +42,7 @@ use File::Basename;
 
 # Register version information
 {
-  use Version qw(register_plugin_version);
+  use TidVersion qw(register_plugin_version);
   register_plugin_version(-name    => __PACKAGE__,
                   -version => $VERSION,
                   -date    => $DATEVER,
@@ -693,7 +695,7 @@ sub _doExport($) {
 
   # Open files and copy to area were to insert times
 
-  my $tp = new FileHandle($template, '<');
+  my $tp = FileHandle->new($template, '<');
   unless (defined($tp)) {
     $confirm
        -> popup(
@@ -705,7 +707,7 @@ sub _doExport($) {
     return undef;
   } # unless #
 
-  my $fh = new FileHandle($self->{outfile}, '>');
+  my $fh = FileHandle->new($self->{outfile}, '>');
   unless (defined($fh)) {
     $confirm
        -> popup(

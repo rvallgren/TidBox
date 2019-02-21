@@ -1,29 +1,21 @@
 #
-package Plugin::MyTimeXls;
+package Plugin::MyTimeXlsX;
 #
-#   Document: Plugin MyTimeXls
-#   Version:  0.4   Created: 2019-02-16 10:26
+#   Document: Plugin MyTimeXlsX
+#   Version:  0.3   Created: 2019-02-16 10:17
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
-#         Exco file: MyTimeXls.pmx
+#         Exco file: MyTimeXlsX.pmx
 #
 
-my $VERSION = '0.4';
+my $VERSION = '0.3';
 my $DATEVER = '2019-02-16';
 
 # History information:
 #
-# 0.4  2019-02-16  Roland Vallgren
-#      New release of MyTime 2019-02-16
-#      First column, project number, is text, not a number
-# 0.3  2018-11-30  Roland Vallgren
-#      Removed calculation of daily flex-time
-#      Handle changes in MyTime Excel sheet format introduced 2018-11-29
-# 0.2  2018-11-19  Roland Vallgren
-#      Added calculation of daily flex-time
-# 0.1  2018-09-11  Roland Vallgren
-#      First issue based on MyTime.pm.
+# 1.0  2019-02-16  Roland Vallgren
+#      First issue based on MyTimeXls.pm.
 #
 
 #----------------------------------------------------------------------------
@@ -42,8 +34,7 @@ use Tk;
 use File::Path qw();
 use File::Spec;
 
-use Spreadsheet::WriteExcel;
-#use Excel::Writer::XLSX;
+use Excel::Writer::XLSX;
 
 # Register version information
 {
@@ -63,16 +54,15 @@ use constant
 {
 
   PLUGIN_INFORMATION =>
-     'Plugin för att exportera tid registrerad i Tidbox till Tieto MyTime Excel.' ,
+ 'Plugin för att exportera tid registrerad i Tidbox till Tieto MyTime Excel X.',
 
-
-#  XLS_HEADER_TEMPLATE =>
+#  XLSX_HEADER_TEMPLATE =>
 # Format used 2018 week 46 and 47
 #       'Project;Project name;Task;Type;Monday;Comment1;Tuesday;Comment2;' .
 #       'Wednesday;Comment3;Thursday;Comment4;Friday;Comment5;Saturday;Comment6;' .
 #       'Sunday;Comment7' ,
-# Format introduced 2018-11-29, that is Thursday week 48
-  XLS_HEADER_TEMPLATE =>
+#  Format introduced 2019-02-12, that is Wednesday week 7
+  XLSX_HEADER_TEMPLATE =>
          'Project;Project name;Task number;Task name;Type;' .
           'Monday;Comment1;Time from1;Time to1;' .
          'Tuesday;Comment2;Time from2;Time to2;' .
@@ -89,17 +79,17 @@ use constant
 # 133756, ,01 - Flex time in/out, Normal /flex -SE
 
 
-# MyTimeXls configuration settings
+# MyTimeXlsX configuration settings
 my $PLUGIN_CFG = {
-                  mytimexls_directory => '',
-#            mytimexls_calculate_flextime => 0,
-#            mytimexls_flex_time_template =>
+                  mytimexlsx_directory => '',
+#            mytimexlsx_calculate_flextime => 0,
+#            mytimexlsx_flex_time_template =>
 #              ['133756' ,'' ,'01 - Flex time in/out', 'Normal /flex -SE'],
                  };
 
-# MyTime event cfg example of event configurations
+# MyTimeXlsX event cfg example of event configurations
 my $EVENT_CFG = {
-    MyTimeXls => [ 'Project:d:6',
+    MyTimeXlsX => [ 'Project:d:6',
                 'Task:D:6',
                 'Type:R:' .
                   'N'  . '=>'. 'Normal -SE'                          . ';' .
@@ -111,7 +101,7 @@ my $EVENT_CFG = {
                   'Sem'. '=>'. 'Vacation -SE'                                ,
                 'Details:.:24',
               ],
-    MyTimeRadioXls => [ 'Project:R:' .
+    MyTimeRadioXlsX => [ 'Project:R:' .
                   '?'        . '=>'. '?'                             . ';' .
                   'Projekt'  . '=>'. '12345'                         . ';' .
                   'Frånvaro' . '=>'. '172158'                                ,
@@ -133,7 +123,7 @@ my $EVENT_CFG = {
                   'Sem'. '=>'. 'Vacation -SE'                                ,
                 'Details:.:24',
               ],
-    MyTimeXlsAllaTyper =>
+    MyTimeXlsXAllaTyper =>
               [ 'Project:d:6',
                 'Task:D:6',
                 'Type:r:' .
@@ -218,7 +208,7 @@ sub _formatTime($$) {
 #
 # Method:      new
 #
-# Description: Create Plugin::MyTime object
+# Description: Create Plugin::MyTimeXlsX object
 #
 # Arguments:
 #  - Object prototype
@@ -300,7 +290,7 @@ sub getPluginCfg($) {
 # Arguments:
 #  0 - Object reference
 # Returns:
-#  - Reference to MyTime Plugin Object
+#  - Reference to MyTimeXlsX Plugin Object
 
 sub registerPlugin($) {
   # parameters
@@ -308,15 +298,15 @@ sub registerPlugin($) {
 
 
   $self->{erefs}{-sett_win} ->addPlugin($self->{name},
-                                 -area    => [$self => 'addMyTimeSettings'],
+                                 -area    => [$self => 'addMyTimeXlsXSettings'],
                                  -apply   => [$self => 'apply'],
                                  -restore => [$self => 'restore'],
                                 );
   $self->{erefs}{-event_cfg}->addPlugin($self->{name},
-                                 -template => [$self => 'addMyTimeTemplate']
+                                 -template => [$self => 'addMyTimeXlsXTemplate']
                                 );
   $self->{erefs}{-week_win} ->addPlugin($self->{name},
-                                 -button => [$self => 'addMyTimeExport'  ]
+                                 -button => [$self => 'addMyTimeXlsXExport'  ]
                                 );
 
   # Get event configuration information
@@ -327,18 +317,18 @@ sub registerPlugin($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeSettings
+# Method:      addMyTimeXlsXSettings
 #
-# Description: Add MyTimeXls plugin settings gui in Settings
+# Description: Add MyTimeXlsX plugin settings gui in Settings
 #              Expected to use a tab
 #
 # Arguments:
 #  - Object reference
-#  - Area to add into, exclusively used by MyTimeXls
+#  - Area to add into, exclusively used by MyTimeXlsX
 # Returns:
 #  -
 
-sub addMyTimeSettings($$) {
+sub addMyTimeXlsXSettings($$) {
   # parameters
   my $self = shift;
   my ($area) = @_;
@@ -350,29 +340,29 @@ sub addMyTimeSettings($$) {
   my $win_r = $self->{win};
   $win_r->{area} = $area;
 
-  # MyTime Excel file save directory
-  $win_r->{excel_area} = $area
+  # MyTime Excel X file save directory
+  $win_r->{excelx_area} = $area
       -> Frame(-bd => '2', -relief => 'raised')
       -> pack(-side => 'top', -expand => '0', -fill => 'both');
 
-  $win_r->{excel_dir_label} = $win_r->{excel_area}
-      -> Label(-text => 'Katalog där MyTime Excel-filer sparas:' )
+  $win_r->{excelx_dir_label} = $win_r->{excelx_area}
+      -> Label(-text => 'Katalog där MyTime ExcelX-filer sparas:' )
       -> pack(-side => 'left');
 
-  $win_r->{dir_button} = $win_r->{excel_area}
+  $win_r->{dir_button} = $win_r->{excelx_area}
       -> Button(
-                -command => [$self => '_chooseMyTimeXlsDirectory'],
+                -command => [$self => '_chooseMyTimeXlsXDirectory'],
                 -state => 'normal',
                )
       -> pack(-side => 'left');
 
 
   return 0;
-} # Method addMyTimeSettings
+} # Method addMyTimeXlsXSettings
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeTemplate
+# Method:      addMyTimeXlsXTemplate
 #
 # Description: Add template for MyTime in Event Configuration
 #
@@ -381,18 +371,18 @@ sub addMyTimeSettings($$) {
 # Returns:
 #  -
 
-sub addMyTimeTemplate($) {
+sub addMyTimeXlsXTemplate($) {
   # parameters
   my $self = shift;
 
   return $EVENT_CFG;
-} # Method addMyTimeTemplate
+} # Method addMyTimeXlsXTemplate
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeExport
+# Method:      addMyTimeXlsXExport
 #
-# Description: Return MyTime export label and callback
+# Description: Return MyTimeXlsX export label and callback
 #
 # Arguments:
 #  - Object reference
@@ -400,12 +390,12 @@ sub addMyTimeTemplate($) {
 #  - Button label
 #  - Callback to perform the export
 
-sub addMyTimeExport($) {
+sub addMyTimeXlsXExport($) {
   # parameters
   my $self = shift;
 
-  return ('Skapa MyTime xls', [$self, 'exportSetup']);
-} # Method addMyTimeExportButton
+  return ('Skapa MyTime xlsx', [$self, 'exportSetup']);
+} # Method addMyTimeXlsXExportButton
 
 #----------------------------------------------------------------------------
 #
@@ -432,7 +422,7 @@ sub _fetchEventCfgDefinition($) {
 #
 # Method:      selectDirButton
 #
-# Description: Set label on select Excel directory button
+# Description: Set label on select Excel x directory button
 #              TODO Plugin base class could be created
 #
 # Arguments:
@@ -446,7 +436,7 @@ sub selectDirButton($) {
 
   $self->{win}->{dir_button}->
       configure(
-                -text => $self->{cfg}{mytimexls_directory} || 
+                -text => $self->{cfg}{mytimexlsx_directory} || 
                          'Välj katalog',
 # TODO The button is not correctly initiated
                )
@@ -525,41 +515,41 @@ sub _modified($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      _chooseMyTimeXlsDirectory
+# Method:      _chooseMyTimeXlsXDirectory
 #
-# Description: Choose a directory to store MyTime Excel files in
+# Description: Choose a directory to store MyTime Excel X files in
 #
 # Arguments:
 #  - Object reference
 # Returns:
 #  -
 
-sub _chooseMyTimeXlsDirectory($) {
+sub _chooseMyTimeXlsXDirectory($) {
   # parameters
   my $self = shift;
 
   my $win_r = $self->{win};
 
   my $startdir =
-        $self->{erefs}{-plugin}->get($self->{name}, 'mytimexls_directory');
+        $self->{erefs}{-plugin}->get($self->{name}, 'mytimexlsx_directory');
 
   my $dir = $win_r->{area}
         -> chooseDirectory(-initialdir => $startdir,
                            -parent => $win_r->{area},
                            -title => $self->{name} .
-                                       ': Katalog för MyTime Excel filer',
+                                       ': Katalog för MyTime Excel X filer',
                           );
 
   # Normalize directory path from chooseDirectory()
   # Make sure '/' and '\' are for the actual filesystem, Windows or Unix
   my $cdir = File::Spec->canonpath($dir) ;
 
-  $self->{cfg}{mytimexls_directory} = $cdir;
+  $self->{cfg}{mytimexlsx_directory} = $cdir;
   $self->_modified();
   $self->selectDirButton();
 
   return 0;
-} # Method _chooseMyTimeXlsDirectory
+} # Method _chooseMyTimeXlsXDirectory
 
 #----------------------------------------------------------------------------
 #
@@ -618,7 +608,7 @@ sub problem($@) {
 #
 # Method:      exportSetup
 #
-# Description: Setup export time data to MyTime template
+# Description: Setup export time data to MyTimeXlsX template
 #
 # Arguments:
 #  0 - Object reference
@@ -633,13 +623,13 @@ sub exportSetup($) {
   my $win_r = $self->{win};
   my $confirm = $self->{erefs}{-week_win}->get('confirm'),
   my $directory =
-        $self->{erefs}{-plugin}->get($self->{name}, 'mytimexls_directory');
+        $self->{erefs}{-plugin}->get($self->{name}, 'mytimexlsx_directory');
 
   unless ($directory) {
     $confirm
        ->popup(
                -title => ': Fel',
-               -text  => ['Ingen MyTime Excel katalog angiven!',
+               -text  => ['Ingen MyTime Excel X katalog angiven!',
                           'Välj en katalog i Inställningar'
                          ],
               );
@@ -653,7 +643,7 @@ sub exportSetup($) {
       return undef
     } # if #
     $self->{erefs}{-log}->
-            log('Created MyTime Excel directory:', $directory);
+            log('Created MyTime Excel X directory:', $directory);
   } # unless #
 
   my $res =
@@ -668,10 +658,12 @@ sub exportSetup($) {
 #
 # Method:      _doExport
 #
-# Description: Calculate work time for week and export to MyTime Excel file
-#              MyTime_<week start date>_<week end date>.xls
+# Description: Calculate work time for week and export to MyTime Excel X file
+#              MyTime_<week start date>_<week end date>.xlsx
 #
-# Format for Excel file
+# Format for Excel X file
+#  NOTE: The first four fields are String format,
+#        even when the value is a number
 #
 # ;Info text;Required value;;Optional value;;;;;;;;;;;;;
 # Project;Project name;Task;Type;Monday;Comment1;Tuesday;Comment2;\
@@ -684,9 +676,9 @@ sub exportSetup($) {
 #
 # Arguments:
 #  - Object reference
-#  - MyTime Excel storage directory
+#  - MyTime Excel X storage directory
 # Returns:
-#  0 : No MyTime Excel file created due to problems
+#  0 : No MyTime Excel X file created due to problems
 #  1 : Results exported to file
 
 sub _doExport($$) {
@@ -712,7 +704,7 @@ sub _doExport($$) {
   if (@{$self->{problem}}) {
     $confirm
        -> popup(
-                -title => 'MyTime : Problem',
+                -title => 'MyTimeXlsX : Problem',
                 -text  => ['Problem under beräkningen av av arbetstid',
                            'Ingen fil sparades'],
                 -data  => [join("\n", @{$self->{problem}})],
@@ -724,23 +716,24 @@ sub _doExport($$) {
   return undef unless (-d $directory);
   $self->{first_date} = $weekdays_r->[0]{date};
   $self->{last_date}  = $weekdays_r->[6]{date};
+  ($self->{year}, $self->{week}) = $calc->weekNumber($date);
 
   # Find out filename to create: MyTime_<first-date>_<last-date>.csv
   $self->{outfile} =
       File::Spec->catfile
         ($directory ,
-         'MyTime_' . $self->{first_date} . '_' . $self->{last_date} . '.xls'
+         'MyTime_' . $self->{first_date} . '_' . $self->{last_date} . '.xlsx'
          );
 
-  # Create Excel file in directory
+  # Create Excel X file in directory
   # TODO Catch file is locked "eval {}"
-  my $workbook=Spreadsheet::WriteExcel->new($self->{outfile});
+  my $workbook= Excel::Writer::XLSX->new($self->{outfile});
 
   unless (defined($workbook)) {
     $confirm
        -> popup(
-                -title => 'avbröt MyTimeXls',
-                -text  => ['Det gick inte att skapa MyTime Excel filen:',
+                -title => 'avbröt MyTimeXlsX',
+                -text  => ['Det gick inte att skapa MyTime Excel X filen:',
                            $self->{outfile},
                            $!],
                );
@@ -757,17 +750,17 @@ sub _doExport($$) {
 # TODO: Användare, Tidbox version, etc.
       author   => $username,
       comments => 'Skapad av Tidbox ' . $self->{first_date} .
-                  ' och Spreadsheet::WriteExcel',
+                  ' med hjälp av Excel::Writer::XLSX',
   );
 
   # Add a worksheet
   # TODO Can we have any name we like. For example week number
-  my $worksheet = $workbook->add_worksheet('OneEntry');
+  my $worksheet = $workbook->add_worksheet($self->{year} . 'V' . $self->{week});
 
   # Add header rows
   my $r = 0;
 
-  for my $hline (split("\n", XLS_HEADER_TEMPLATE)) {
+  for my $hline (split("\n", XLSX_HEADER_TEMPLATE)) {
     $self->_workSheetWriteRow($worksheet, [ split(';', $hline) ], \$r);
   } # for #
 
@@ -945,7 +938,7 @@ sub _doExport($$) {
   $workbook->close() or
      $confirm
        -> popup(
-                -title => 'avbröt MyTime',
+                -title => 'avbröt MyTimeXlsX',
                 -text  => ['FEL: Det gick inte att skriva till fil:',
                            $self->{outfile},
                            $!],
@@ -992,7 +985,7 @@ sub _doExport($$) {
 
     $confirm
        -> popup(
-                -title => 'MyTime : VARNING',
+                -title => 'MyTimeXlsX : VARNING',
                 -text  => $t,
                 -data  => $d,
                );
@@ -1014,7 +1007,7 @@ sub _doExport($$) {
   if ($total_time > $week_work_minutes) {
     $confirm ->
         popup(
-              -title => 'MyTime : Tips',
+              -title => 'MyTimeXlsX : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
                          _formatTime($total_time, $calc) . ' timmar.',
@@ -1035,7 +1028,7 @@ sub _doExport($$) {
   } elsif ($total_time < $week_work_minutes) {
     $confirm ->
         popup(
-              -title => 'MyTimeXls : Tips',
+              -title => 'MyTimeXlsX : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
                          _formatTime($total_time, $calc) . ' timmar.',
@@ -1057,7 +1050,7 @@ sub _doExport($$) {
   # Nothing strange, success message
   $confirm
      -> popup(
-              -title => 'MyTimeXls resultat',
+              -title => 'MyTimeXlsX resultat',
               -text  => ['Skrev veckoarbetstid till:',
                          $self->{outfile}],
              );

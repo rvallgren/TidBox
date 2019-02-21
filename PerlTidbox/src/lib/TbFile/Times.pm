@@ -2,15 +2,15 @@
 package TbFile::Times;
 #
 #   Document: Times data
-#   Version:  1.11   Created: 2018-12-07 17:46
+#   Version:  1.12   Created: 2019-02-15 11:55
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.11';
-my $DATEVER = '2018-12-07';
+my $VERSION = '1.12';
+my $DATEVER = '2019-02-15';
 
 # History information:
 #
@@ -47,6 +47,8 @@ my $DATEVER = '2018-12-07';
 #       Move files to TbFile::<file>
 #       Added merge to add unique times data into another Times
 #       References to other objects in own hash
+# 1.12  2019-02-07  Roland Vallgren
+#       Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -63,7 +65,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -378,9 +380,6 @@ sub _mergeData($$$$;$) {
   my $self = shift;
   my ($source, $startDate, $endDate, $progress_ref) = @_;
 
-  $self->{erefs}{-log}->trace('Start date and end date:',
-                              $startDate, $endDate)
-      if ($self->{erefs}{-log});
 
   my @trefs = $self->getSortedRefs();
   my $ti = 0;
@@ -399,12 +398,6 @@ sub _mergeData($$$$;$) {
     $sProgressCnt = 0;
     $tProgressSteps = ( $tend / $progress_ref->{-percent_part} ) || 1;
     $tProgressCnt = 0;
-    $self->{erefs}{-log}->trace('Progress S Stp:', $sProgressSteps,
-                                'Num:', $sNum)
-        if ($self->{erefs}{-log});
-    $self->{erefs}{-log}->trace('Progress T Stp:', $tProgressSteps,
-                                'Num:', $tend)
-        if ($self->{erefs}{-log});
   } # if #
 
 
@@ -413,21 +406,15 @@ sub _mergeData($$$$;$) {
     $si++;
 
     if ($progress_ref) {
-      $self->{erefs}{-log}->trace('Progress Times S:', $si, 'T:', $ti)
-          if ($self->{erefs}{-log});
       if ($sProgressSteps > $tProgressSteps) {
         if ($si > $sProgressCnt) {
           $self->callback(@{$progress_ref->{-callback}});
           $sProgressCnt += $sProgressSteps;
-          $self->{erefs}{-log}->trace('Progress Step source:', $sProgressCnt)
-              if ($self->{erefs}{-log});
         } # if #
       } else {
         if ($ti > $tProgressCnt) {
           $self->callback(@{$progress_ref->{-callback}});
           $tProgressCnt += $tProgressSteps;
-          $self->{erefs}{-log}->trace('Progress Step target:', $tProgressCnt)
-              if ($self->{erefs}{-log});
         } # if #
       } # if #
     } # if #
@@ -436,9 +423,7 @@ sub _mergeData($$$$;$) {
     next
         unless (defined(${$sref}));
 
-    $self->{erefs}{-log}->trace('Source to check', ${$sref});
     my $date = substr(${$sref},0,10);
-    $self->{erefs}{-log}->trace('Source date', $date);
     next
         if ($date lt $startDate);
     last
@@ -446,7 +431,6 @@ sub _mergeData($$$$;$) {
 
     if ($ti > $tend) {
       # End of target, add remaining from source
-      $self->{erefs}{-log}->trace('End of target, add remaining from source');
       $self->add(${$sref}, 1);
       ${$sref} = undef;
       next;
@@ -461,27 +445,20 @@ sub _mergeData($$$$;$) {
         next;
       } # unless #
 
-      $self->{erefs}{-log}->trace('Target to check', ${$tref});
       if (${$tref} eq ${$sref}) {
-        $self->{erefs}{-log}->trace('Equal, skip source');
         $ti++;
         ${$sref} = undef;
         last;
       } elsif (${$tref} lt ${$sref}) {
-        $self->{erefs}{-log}->
-            trace('Target less than source, check next');
         $ti++;
         if ($ti > $tend) {
           # End of target, add source
-          $self->{erefs}{-log}->trace('End of target, add source');
           $self->add(${$sref}, 1);
           ${$sref} = undef;
           last;
         } # if #
         next;
       } elsif (${$tref} gt ${$sref}) {
-        $self->{erefs}{-log}->
-            trace('Target greater than source, add source');
         $self->add(${$sref}, 1);
         ${$sref} = undef;
         last;
@@ -1235,7 +1212,6 @@ sub startSession($$$) {
     $ev = $self->{erefs}{-event_cfg}->getEmpty('Startade tidbox')
         unless ($ev);
     $self->joinAdd($date, $time, $BEGINEVENT, $ev);
-
   } # if #
 
   return 0;

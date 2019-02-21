@@ -2,15 +2,15 @@
 package TbFile::EventCfg;
 #
 #   Document: Event Configuration Data
-#   Version:  3.2   Created: 2018-12-07 17:49
+#   Version:  3.3   Created: 2019-02-07 15:16
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventCfg.pmx
 #
 
-my $VERSION = '3.2';
-my $DATEVER = '2018-12-07';
+my $VERSION = '3.3';
+my $DATEVER = '2019-02-07';
 
 # History information:
 
@@ -44,6 +44,8 @@ my $DATEVER = '2018-12-07';
 #      Move files to TbFile::<file>
 #      Added merge to add unique event cfg data into another EventCfg
 #      Handle fixed condense setting in matchString
+# 3.3  2019-02-07  Roland Vallgren
+#      Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -60,7 +62,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -366,9 +368,6 @@ sub _mergeData($$$$;$) {
   my $self = shift;
   my ($source, $startDate, $endDate, $progress_ref) = @_;
 
-  $self->{erefs}{-log}->trace('Start date and end date:',
-                              $startDate, $endDate)
-      if ($self->{erefs}{-log});
 
   # Merge all data or up to date to merge is later than actual
   # event configuration date
@@ -395,13 +394,9 @@ sub _mergeData($$$$;$) {
 
   # Add all earlier data and clear earlier
   for my $date (keys(%{$earlier})) {
-    $self->{erefs}{-log}->trace('Check earlier date:', $date)
-        if ($self->{erefs}{-log});
 
     $si++;
     if ($progress_ref) {
-      $self->{erefs}{-log}->trace('Progress EventCfg S:', $si, 'T:', $ti)
-          if ($self->{erefs}{-log});
 #      if ($sProgressSteps > $tProgressSteps) {
         if ($si > $sProgressCnt) {
           $self->callback(@{$progress_ref->{-callback}});
@@ -423,8 +418,6 @@ sub _mergeData($$$$;$) {
     next
         if ($date eq $tdate);
     unless (exists($self->{earlier}{$date})) {
-      $self->{erefs}{-log}->trace('==> Add earlier')
-          if ($self->{erefs}{-log});
       $self->addSet('cfg', [ @{$earlier->{$date}} ], $date);
       $source->removeCfg($date);
     } # unless #
@@ -432,8 +425,6 @@ sub _mergeData($$$$;$) {
 
   #   Copy actual data to target set and update date
   my ($date, $cfg) = $source->getDateEventCfg();
-  $self->{erefs}{-log}->trace('Check actual date:', $date)
-      if ($self->{erefs}{-log});
   return 0
       if ($date lt $startDate);
   return 0
@@ -441,8 +432,6 @@ sub _mergeData($$$$;$) {
   return 0
       if ($date eq $tdate);
   unless (exists($self->{earlier}{$date})) {
-    $self->{erefs}{-log}->trace('==> Add actual')
-        if ($self->{erefs}{-log});
     $self->addSet('cfg', [ @{$cfg} ], $date);
     $source->removeCfg($date);
   } # unless #

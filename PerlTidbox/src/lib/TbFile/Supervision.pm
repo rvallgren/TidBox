@@ -2,15 +2,15 @@
 package TbFile::Supervision;
 #
 #   Document: Supervision class
-#   Version:  1.7   Created: 2018-12-07 17:47
+#   Version:  1.8   Created: 2019-02-19 17:48
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Supervision.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2018-12-07';
+my $VERSION = '1.8';
+my $DATEVER = '2019-02-19';
 
 # History information:
 #
@@ -33,6 +33,8 @@ my $DATEVER = '2018-12-07';
 #      Move files to TbFile::<file>
 #      References to other objects in own hash
 #      Added merge with new backup data
+# 1.8  2019-02-07  Roland Vallgren
+#      Removed log->trace
 #
 
 #----------------------------------------------------------------------------
@@ -49,7 +51,7 @@ use integer;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -232,29 +234,18 @@ sub _mergeData($$$$) {
 
 
   # Use enabled supervision or existing supervision
-  $self->{erefs}{-log}->trace('Supervision enabled:', $self->{cfg}{sup_enable})
-      if ($self->{erefs}{-log});
   return 0
       if ($self->{cfg}{sup_enable});
 
   my $sourceCfg = $source->getCfg();
-  $self->{erefs}{-log}->
-           trace('Source supervision enabled:', $sourceCfg->{sup_enable},
-                 '#', $sourceCfg->{sup_event})
-      if ($self->{erefs}{-log});
   if ($sourceCfg->{sup_enable}) {
     %{$self->{cfg}} = %{$sourceCfg};
     return 0;
   } # if #
 
-  $self->{erefs}{-log}->trace('Supervision event:', $self->{cfg}{sup_event})
-      if ($self->{erefs}{-log});
   return 0
       if ($self->{cfg}{sup_event});
 
-  $self->{erefs}{-log}->trace('Source supervision event:',
-                              $sourceCfg->{sup_event})
-      if ($self->{erefs}{-log});
   %{$self->{cfg}} = %{$sourceCfg}
       if ($sourceCfg->{sup_event});
 
@@ -304,7 +295,7 @@ sub _day($$) {
 
 
     my $day_r = $self->{erefs}{-calculate}->
-        dayWorkTimes($date, $self->{condensed}, $self->{-error_popup});
+        dayWorkTimes($date, $self->{condensed}, $self->{erefs}{-error_popup});
 
     return 0
         unless exists $day_r->{activities};

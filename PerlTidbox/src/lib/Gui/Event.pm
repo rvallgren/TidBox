@@ -2,18 +2,20 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.2   Created: 2018-02-20 17:31
+#   Version:  1.3   Created: 2019-02-07 15:56
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Event.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2018-02-20';
+my $VERSION = '1.3';
+my $DATEVER = '2019-02-07';
 
 # History information:
 #
+# 1.3  2019-02-07  Roland Vallgren
+#      Removed log->trace
 # 1.2  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
 # 1.1  2017-05-02  Roland Vallgren
@@ -37,7 +39,7 @@ use Tk;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -267,8 +269,6 @@ sub replaceArea($$) {
   my $self = shift;
   my ($date) = @_;
 
-  $self->{erefs}{-log}->trace('Dates:', @_)
-      if ($self->{erefs}{-log});
 
   return 0
        unless (not $self->{date} or ($self->{date} ge $date));

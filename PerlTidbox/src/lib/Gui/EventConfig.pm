@@ -2,7 +2,7 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.2   Created: 2018-11-09 15:39
+#   Version:  1.2   Created: 2019-02-13 21:26
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::EventConfig;
 #
 
 my $VERSION = '1.2';
-my $DATEVER = '2018-11-09';
+my $DATEVER = '2019-02-13';
 
 # History information:
 
@@ -44,7 +44,7 @@ use Gui::Time;
 
 # Register version information
 {
-  use Version qw(register_version);
+  use TidVersion qw(register_version);
   register_version(-name    => __PACKAGE__,
                    -version => $VERSION,
                    -date    => $DATEVER,
@@ -216,10 +216,10 @@ sub new($%) {
                   -relief => 'flat')
       -> pack(-side => 'top', -fill => 'x');
   $edit_r->{type_edit_menu_but} = $edit_r->{type_edit_frame}
-    -> Menubutton(-text   => '-',
-                  -bd     => '1',
-                  -relief => 'raised',
-                  -state  => 'disabled',
+    -> Menubutton(-text        => '-',
+                  -borderwidth => '1',
+                  -relief      => 'raised',
+                  -state       => 'disabled',
                  )
     -> pack(-side => 'right');
 
