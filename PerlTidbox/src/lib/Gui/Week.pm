@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.15   Created: 2019-02-19 17:40
+#   Version:  1.16   Created: 2019-02-28 17:16
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.15';
-my $DATEVER = '2019-02-19';
+my $VERSION = '1.16';
+my $DATEVER = '2019-02-28';
 
 # History information:
 #
@@ -41,6 +41,8 @@ my $DATEVER = '2019-02-19';
 # 1.15  2019-01-25  Roland Vallgren
 #       Code improvement
 #       Corrected: -error_popup is an eref
+# 1.16  2019-02-26  Roland Vallgren
+#       Use Scrolled for scrollbars
 #
 
 #----------------------------------------------------------------------------
@@ -299,19 +301,15 @@ sub _setup($) {
       -> pack(-side => 'top', -expand => '1', -fill => 'both');
 
   $win_r->{times} = $win_r->{times_area}
-      -> ROText(
-                -wrap => 'no',
-                -height => 10,
-                -width => $self->{textboxwidth},
-               )
+      -> Scrolled('ROText',
+                  -scrollbars => 'oe',
+                 )
       -> pack(-side => 'left', -expand => '1', -fill => 'both');
-
-  $win_r->{scrollbar} = $win_r->{times_area}
-      -> Scrollbar(-command => [yview => $win_r->{times}])
-      -> pack(-side => 'left', -fill => 'y');
-
-  $win_r->{times}
-      -> configure(-yscrollcommand => [set => $win_r->{scrollbar}]);
+  $win_r->{times}->configure(
+                             -wrap => 'no',
+                             -height => 10,
+                             -width => $self->{textboxwidth},
+                            );
 
   ### Worktime box ###
   $win_r->{worktime_area} = $win_r->{area}
@@ -582,7 +580,8 @@ sub _display($;$) {
 
   # Insert the data for the week
 
-  my ($scroll_pos) = $win_r->{scrollbar}->get();
+  my ($scroll_pos) = $win_r->{times}->Subwidget("yscrollbar")->get();
+
   $win_r->{times}    -> delete('1.0', 'end');
   $win_r->{worktime} -> delete('1.0', 'end');
 
@@ -676,7 +675,7 @@ sub _display($;$) {
   $win_r->{flex}->configure(-text => $week_flex_time);
 
   # Set scroll position same as before update
-  $win_r->{times} -> yviewMoveto($scroll_pos)
+  $win_r->{times}->Subwidget("yscrollbar")->yviewMoveto($scroll_pos)
       if ($scroll_pos);
 
   # Problems detected during calculation
@@ -968,7 +967,7 @@ sub _lock($;$) {
 
   } # if #
 
-  $self->{erefs}{-times}->undoAddLock($old_lock_date, 
+  $self->{erefs}{-times}->undoAddLock($old_lock_date,
                                scalar($self->{erefs}{-cfg}->get('lock_date')));
 
   $self->{erefs}{-cfg}->save();
@@ -1026,7 +1025,7 @@ sub _adjust($) {
   @{$self->{problem}} = ();
 
   my ($res, $ch, $rm, $prb) = $self->{erefs}{-calculate} ->
-      adjustDays($self->{first_date}, 
+      adjustDays($self->{first_date},
                  scalar($self->{erefs}{-cfg}->get('adjust_level')),
                  7,
                  [$self => 'problem']);
@@ -1066,7 +1065,15 @@ sub _adjust($) {
 #
 # Method:      get
 #
-# Description: Get a setting
+# Description: Get a value, used by plugins to get information
+#              about the week to export. Possible are:
+#                confirm    Confirm window
+#                first_date First date of the week
+#                last_date  Last date of the week
+#                year       Year of the week
+#                week       Week number
+#                condensed  Number for condensed level
+#                rowsum     Show rowsum
 #
 # Arguments:
 #  - Object reference

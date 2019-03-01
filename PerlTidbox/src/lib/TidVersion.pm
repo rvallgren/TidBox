@@ -1,7 +1,7 @@
 #
 package TidVersion;
 #
-#   Version:  1.7   Created: 2019-02-20
+#   Version:  1.7   Created: 2019-02-27
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package TidVersion;
 #
 
 my $VERSION = '1.7';
-my $DATEVER = '2019-02-20';
+my $DATEVER = '2019-02-27';
 
 # Register version information
 {
@@ -77,9 +77,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2019-02-20',
+    date      => '2019-02-27',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.12',
+    VERSION   => '4.13',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -114,19 +114,16 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Tidbox kan uppdatera sig själv från GitHub
-Ny version av MyTime släpptes 2019-02-13:
-- Nu stöds .xlsx, ny MyTimeXlsX plugin tillagd
-- Formatet är ändrad på projektkolumnen, projektnumret är text, inte nummer
+Förbättrad hantering av rullisten i Veckan, Redigera och Tidbox
+Förbättrad hantering av listan med händelser för dagen
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Modulen Version har bytt namn till TidVersion på grund av namnkonflikt
-Om filen till en plugin saknas krashar inte Tidbox
-Rättat fångning av fel och varningar
+Upprepade händelser på samma tid och flera gånger under dagen gav
+förvirring vilken händelse som ändrades vid ändring av en upprepad händelse
 '
 ,
 

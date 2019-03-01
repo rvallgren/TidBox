@@ -2,18 +2,20 @@
 package Update::Install;
 #
 #   Document: Install Tidbox from archive Zip-file
-#   Version:  1.0   Created: 2019-02-21 11:50
+#   Version:  1.1   Created: 2019-02-27 12:47
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Install.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2019-02-21';
+my $VERSION = '1.1';
+my $DATEVER = '2019-02-27';
 
 # History information:
 #
+# 1.1  2019-02-26  Roland Vallgren
+#      Added logging
 # 1.0  2019-01-25  Roland Vallgren
 #      First issue, Install part moved from Update.pm.
 #
@@ -379,6 +381,7 @@ sub getReleases($) {
 
   $self->{releases}{sorted} = $sorted;
 
+  $self->{erefs}{-log}->log('Update got releases:', @$sorted);
 
   return scalar(@$sorted);
 } # Method getReleases

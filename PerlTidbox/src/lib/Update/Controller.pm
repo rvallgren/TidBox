@@ -2,18 +2,20 @@
 package Update::Controller;
 #
 #   Document: Perform periodic check for new versions
-#   Version:  1.0   Created: 2019-02-21 11:49
+#   Version:  1.1   Created: 2019-02-28 17:15
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Controller.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2019-02-21';
+my $VERSION = '1.1';
+my $DATEVER = '2019-02-28';
 
 # History information:
 #
+# 1.1  2019-02-21  Roland Vallgren
+#      Added logging
 # 1.0  2019-01-25  Roland Vallgren
 #      First issue, Controll part moved from Update.pm.
 #
@@ -180,7 +182,7 @@ sub popSessionState($) {
   my $self = shift;
 
   $self->setSessionState(shift(@{$self->{queue}}));
-  
+
   return 0;
 } # Method popSessionState
 
@@ -421,12 +423,16 @@ sub timeoutSignaled($) {
     } elsif ($systime_timeout > 0) {
       # Rate limit was in effect, wait until new period is ready for us
       # TODO Manual update: don't wait random minutes, try as fast as possible
-      $self->{timer} = 
+      $self->{timer} =
            int(($systime_timeout - $self->{erefs}{-clock}->getSystime()) / 60)
          + $self->{random_minute};
+      $self->{erefs}{-log}->
+          log('Update Github rate limit: wait', $self->{timer}, 'seconds');
 
     } else {
       # Set state from head of queue
+      $self->{erefs}{-log}->
+          log('Update Github has no rate limit now');
       $self->popSessionState();
 
     } # if #
@@ -457,10 +463,12 @@ sub timeoutSignaled($) {
     my $newVersion = $self->{installer}->checkForNewVersion();
     if (not defined($newVersion)) {
       # We already have latest version, schedule next check tomorrow
+      $self->{erefs}{-log}->log('Update found no new versions');
       $self->queueCleanupAndStartAllOver(timer => TMR_UNTIL_TOMORROW);
 
     } else {
       # We got a new version, schedule download
+      $self->{erefs}{-log}->log('Update found new version', $newVersion);
       $self->{new_version} = $newVersion;
       $self->queueDownloadNewVersionCycle();
 
@@ -495,6 +503,7 @@ sub timeoutSignaled($) {
 
     } else {
       # Downloaded OK, schedule extraction
+      $self->{erefs}{-log}->log('Update downloaded new version', $filename);
       $self->popSessionState();
 
     } # if #
@@ -523,6 +532,7 @@ sub timeoutSignaled($) {
 
     } else {
       # TODO Ask user for a replace of Tidbox
+      $self->{erefs}{-log}->log('Update: New version ready to be installed');
       $self->callback($self->{newVersionCallback}, $self->{new_version});
       $self->popSessionState();
 
@@ -594,7 +604,7 @@ sub timeoutSignaled($) {
     # Start over to reset this
     $self->queueCheckVersionCycle(timer => TMR_ONE_HOUR);
 
-    
+
   } # if #
 
   # Set timeout for next run
@@ -659,7 +669,7 @@ sub setNewVersionCallback($$) {
 # Arguments:
 #  - Object reference
 # Optional Arguments:
-#  - State: 
+#  - State:
 # Returns:
 #  -
 

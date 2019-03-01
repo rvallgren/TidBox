@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.12   Created: 2019-02-21 11:52
+#   Version:  2.13   Created: 2019-02-27 21:34
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.12';
-my $DATEVER = '2019-02-21';
+my $VERSION = '2.13';
+my $DATEVER = '2019-02-27';
 
 # History information:
 #
@@ -53,7 +53,8 @@ my $DATEVER = '2019-02-21';
 #       Code improvements
 #       Button to install new Tidbox and restart
 #       Corrected: -error_popup is an eref
-#
+# 2.13  2019-02-26  Roland Vallgren
+#       Improved handling of daylist to allow see and go up and down in daylist
 #
 
 #----------------------------------------------------------------------------
@@ -478,7 +479,8 @@ sub _clear($) {
   $self->_enableButtons();
 
   # Also clear messages
-  $self->_status(1);
+  # NOTE: _enableButtons clears messages, next line is not needed
+  # $self->_status(1);
 
   return 0;
 } # Method _clear
@@ -640,6 +642,7 @@ sub _add($$;$) {
 
   $self->{erefs}{-times}->add($line);
   $self->_message('Ny registrering tillagd');
+  $self->{win}{day_list}->see(undef, substr($line, 11, 5));
   return 0;
 } # Method _add
 
@@ -948,13 +951,13 @@ sub show($$) {
   if (ref($ref) and
       (${$ref} =~ /^($DATE),($TIME),($TYPE),(.*)$/o)) {
     my ($date, $time, $type, $event_data) = ($1, $2, $3, $4);
-    $self->{edit_event_ref} = undef;
-    $self->{edit_event_type} = undef;
-    $self->_clear();
     my $win_r = $self->{win};
     $win_r->{time_area}->set($time, $date);
-    $win_r->{event_handling}->set($event_data)
-        if (defined($event_data) and ($type eq $BEGINEVENT));
+    if (defined($event_data) and ($type eq $BEGINEVENT)) {
+      $win_r->{event_handling}->set($event_data);
+    } else {
+      $win_r->{event_handling}->clear();
+    } # if #
     if ($win_r->{event_modify}) {
       $win_r->{event_modify} -> configure(-state => 'normal');
       $win_r->{event_delete} -> configure(-state => 'normal');
@@ -1660,7 +1663,8 @@ sub _setup($) {
 
   # Now we have enough to show status:
   $self->_clear();
-  $self->_status();
+  # NOTE: _clear also resets status, _status not needed
+  #$self->_status();
 
   # . Subscribe to updated event data
   $self->{erefs}{-times}->setDisplay($win_r->{name}, [$self, '_updated']);
@@ -1676,7 +1680,16 @@ sub _setup($) {
   # . Register _status for one minute ticks
   $self->{erefs}{-clock}->repeat(-minute => [$self, '_status']);
 
-  # . Add calback for Update
+  # . Issue a first _status in 2 seconds,
+  #     if more than 3 seconds to next minute
+  if ($self->{erefs}{-clock}->getSecond() < 57) {
+    $self->{erefs}{-clock}->
+                 timeout(-second => 2,
+                         -callback => [$self => '_status']);
+  } # if #
+
+
+  # . Add callback for Update
   $self->{erefs}{-update}->
        setNewVersionCallback([$self, 'addInstallNewVersionButton']);
 

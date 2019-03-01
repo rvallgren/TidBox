@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.4   Created: 2019-01-17 11:07
+#   Version:  1.5   Created: 2019-02-27 17:16
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.5';
+my $DATEVER = '2019-02-27';
 
 # History information:
 #
@@ -27,6 +27,10 @@ my $DATEVER = '2019-01-17';
 #      Scrollbar only shows if part of list not shows
 # 1.4  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
+# 1.5  2019-02-26  Roland Vallgren
+#      Use Scrolled to handle scrollbars on Listbox
+#      Listbox handles "itemconfigure" in Tk version 804.034
+#      => Removed highlighting by "<<" at end of line.
 #
 
 #----------------------------------------------------------------------------
@@ -100,11 +104,6 @@ sub _show($$) {
   if (defined($cur_selection)) {
     my $refs = $self->{refs};
     my $event = $win_r->{list_box}->get($cur_selection);
-    unless ($self->{itemconfig}) {
-      $event = $1
-          if ($event =~ /^(.*?)\s<<$/);
-    } # unless #
-
 
     $self->callback($self->{-showEvent}, $refs->{$event}, $event);
 
@@ -160,7 +159,7 @@ sub update($;@) {
   my $win_r = $self->{win};
   my $list_box = $win_r->{list_box};
 
-  my ($scroll_pos) = $win_r->{scrollbar}->get();
+  my ($scroll_pos) = $list_box->Subwidget("yscrollbar")->get();
   my $cur_selection = $list_box->curselection();
 
   $self->clear();
@@ -181,12 +180,18 @@ sub update($;@) {
 
     my $entry = $self->{erefs}{-calculate}->format(undef, $1, $2, $3);
 
-    unless (exists($refs->{$entry})) {
-      $repeated = 1;
-    } else {
+#    unless (exists($refs->{$entry})) {
+#       TODO Same entry text kan be repeated on other times will confuse
+#            the list. However removing the reset of $repeat will cause number
+#            to step on different entries.
+#            Either do this or include time in entry
+#      $repeated = 1;
+#      ;
+#    } else {
+    if (exists($refs->{$entry})) {
       $entry = " -\"-    \"$3\"   Upprepning: $repeated";
       $repeated++;
-    } # unless #
+    } # if #
 
     $refs->{$entry} = $ref;
     $list_box -> insert("end", $entry);
@@ -199,25 +204,8 @@ sub update($;@) {
   if ($list_box->size()) {
     $list_box -> configure(-width => -1);
   } else {
-    $list_box -> configure(-width => 20);
-  } # if #
-
-  # Show scrollbar if needed
-  $list_box->idletasks();
-  my ($x1, $y1, $w1, $h1) = $list_box->bbox(0);
-  my ($x2, $y2, $w2, $h2) = $list_box->bbox('end');
-  if ((defined($y1) and defined($y2))
-      or
-      not (defined($y1) or defined($y2))) {
-    if ($win_r->{scrollbar_shown}) {
-      $win_r->{scrollbar}->configure(-width => 0);
-      $win_r->{scrollbar_shown} = 0;
-    } # if #
-  } else {
-    unless ($win_r->{scrollbar_shown}) {
-      $win_r->{scrollbar}->configure(-width => $win_r->{scrollbar_width});
-      $win_r->{scrollbar_shown} = 1;
-    } # unless #
+    # TODO Default width 20 is too small, can we calculate from last events?
+    $list_box -> configure(-width => 50);
   } # if #
 
   # Update lock display
@@ -311,6 +299,7 @@ sub see($$;$$) {
           unless ($fnd eq $refs->{$key});
 
       for my $i (0 .. $win_r->{list_box}->index('end')) {
+        print " Here it is ", $i, ' ', $fnd, ' ', $key, "\n";
         next
             unless ($win_r->{list_box}->get($i) eq $key);
         $win_r->{list_box}->selectionSet($i);
@@ -330,28 +319,13 @@ sub see($$;$$) {
     next
         if (not $e or ($time lt substr($e, 0, 5)));
     unless ($i == $self->{highlited}) {
-      if ($self->{itemconfig}) {
-        $win_r->{list_box}->itemconfigure($self->{highlited},
-                                          -background => 'white')
-             if ($self->{highlited} > -1);
-        $win_r->{list_box}->itemconfigure($i, -background => 'lightgrey');
-      } else {
-        my $cur_selection = $win_r->{list_box}->curselection();
-        if (($self->{highlited} > -1) and
-            ($win_r->{list_box}->get($self->{highlited}) =~ /^(.*?)\s<<$/)
-           )
-        {
-          $win_r->{list_box}->delete($self->{highlited});
-          $win_r->{list_box}->insert($self->{highlited}, $1);
-        } # if #
-        my $line = $win_r->{list_box}->get($i);
-        $win_r->{list_box}->delete($i);
-        $win_r->{list_box}->insert($i, $line . ' <<');
-        $win_r->{list_box}->selectionSet($cur_selection)
-            if ($cur_selection);
-      } # if #
+      $win_r->{list_box}->itemconfigure($self->{highlited},
+                                        -background => 'white')
+           if ($self->{highlited} > -1);
+      $win_r->{list_box}->itemconfigure($i, -background => 'lightgrey');
       $self->{highlited} = $i;
     } # unless #
+    $win_r->{list_box}->activate($i);
     $win_r->{list_box}->see($i);
     last;
   } # for #
@@ -402,27 +376,16 @@ sub new($%) {
       -> Adjuster()
       -> packAfter($win_r->{list_area}, -side => $args{-side});
 
-  $win_r->{scrollbar} = $win_r->{list_area}
-      -> Scrollbar()
-      -> pack(-side => 'right', -fill => 'y');
-
   $win_r->{list_box} = $win_r->{list_area}
-      -> Listbox(-height => 10, -exportselection => 0)
-      -> pack(-side => 'right', -expand => '1', -fill => 'both');
-
-  $win_r->{scrollbar}->configure(-command => ['yview', $win_r->{list_box}]);
-
-  $win_r->{scrollbar_width} = $win_r->{scrollbar}->cget(-width);
-  $win_r->{scrollbar}->configure(-width => 0);
-  $win_r->{scrollbar_shown} = 0;
+       -> Scrolled('Listbox', -scrollbars => 'oe')
+       -> pack(-side => 'right', -expand => '1', -fill => 'both');
+  $win_r->{list_box} -> configure(
+                                  -exportselection => 0,
+                                  -height => 10
+                                 );
 
   $win_r->{list_box}
       -> bind('<<ListboxSelect>>' => [$self => '_show']);
-
-  $win_r->{list_box}
-      -> configure(-yscrollcommand => ['set', $win_r->{scrollbar}]);
-
-  $self->{itemconfig} = $win_r->{list_box}->can('itemconfigure');
 
   # . Subscribe to updated event data
   $self->{erefs}{-times}->
@@ -431,7 +394,6 @@ sub new($%) {
   if ($self->{erefs}{-clock}) {
     # . Register change date for midnight ticks
     $self->{erefs}{-clock}->repeat(-date => [$self, 'setDate']);
-    # And show today
   } # if #
 
   return $self;
