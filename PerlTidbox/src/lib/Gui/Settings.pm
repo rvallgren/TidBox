@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.4   Created: 2019-02-07 16:34
+#   Version:  2.5   Created: 2019-04-04 13:13
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.4';
-my $DATEVER = '2019-02-07';
+my $VERSION = '2.5';
+my $DATEVER = '2019-04-04';
 
 # History information:
 #
@@ -31,6 +31,9 @@ my $DATEVER = '2019-02-07';
 # 2.4  2019-02-07  Roland Vallgren
 #      Added handling of updates
 #      Removed log->trace
+# 2.5  2019-03-05  Roland Vallgren
+#      "Insticksmoduler" changed to "Tillägg"
+#      Added Do not adjust
 #
 
 #----------------------------------------------------------------------------
@@ -88,6 +91,9 @@ use Gui::PluginConfig;
 #   save_threshold          Autospara redigeringar efter
 #   earlier_menu_size       Antal i Tidigare menyn:
 #   adjust_level            Justera händelser till:
+#                              1  Justera inte
+#                              6  6 minutes, that is one tenth of an hour
+#                             30  30 minutes, that is half an hour
 #   show_data               Visa status:
 #   show_reg_date           Visa datum i pågående aktivitet:
 #   show_message_timeout    Tid för visa status information:
@@ -1049,10 +1055,14 @@ sub _setup($) {
       -> Label(-text => 'Justera händelser till:')
       -> pack(-side => 'left');
 
-  my @i =   ( 6,     # "Tiondels timma"
+  my @i =   (
+             1,     # "Justera inte"
+             6,     # "Tiondels timma"
              30,     # "Halvtimma"
             );
-  for my $s ("Tiondels timma"  ,
+  for my $s (
+             "Justera inte"  ,
+             "Tiondels timma"  ,
              "Halvtimma"       ,
             )
   {
@@ -1375,7 +1385,7 @@ sub _setup($) {
 
   ### TAB: Plugin configuration settings ###
   $win_r->{plugin_tab} = $win_r->{notebook}
-      -> add('plugins', -label => 'Insticksmoduler');
+      -> add('plugins', -label => 'Tillägg');
   $self->{-plugin_cfg_setup} =
      Gui::PluginConfig->new(-area      => $win_r->{plugin_tab},
                             -win_r     => $win_r,

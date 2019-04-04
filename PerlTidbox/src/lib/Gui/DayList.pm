@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.5   Created: 2019-02-27 17:16
+#   Version:  1.6   Created: 2019-04-04 13:20
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2019-02-27';
+my $VERSION = '1.6';
+my $DATEVER = '2019-04-04';
 
 # History information:
 #
@@ -31,6 +31,8 @@ my $DATEVER = '2019-02-27';
 #      Use Scrolled to handle scrollbars on Listbox
 #      Listbox handles "itemconfigure" in Tk version 804.034
 #      => Removed highlighting by "<<" at end of line.
+# 1.6  2019-04-01  Roland Vallgren
+#      Removed print
 #
 
 #----------------------------------------------------------------------------
@@ -243,6 +245,7 @@ sub setDate($;$) {
   } # if #
 
   $self->update();
+  return 0;
 } # Method setDate
 
 #----------------------------------------------------------------------------
@@ -283,7 +286,7 @@ sub curselection($) {
 # Returns:
 #  True if event was selected
 
-sub see($$;$$) {
+sub see($$;$) {
   # parameters
   my $self = shift;
   my ($fnd, $time) = @_;
@@ -299,7 +302,6 @@ sub see($$;$$) {
           unless ($fnd eq $refs->{$key});
 
       for my $i (0 .. $win_r->{list_box}->index('end')) {
-        print " Here it is ", $i, ' ', $fnd, ' ', $key, "\n";
         next
             unless ($win_r->{list_box}->get($i) eq $key);
         $win_r->{list_box}->selectionSet($i);

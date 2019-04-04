@@ -2,18 +2,20 @@
 package Gui::PluginConfig;
 #
 #   Document: Plugin Configuration class
-#   Version:  1.0   Created: 2019-01-17 11:07
+#   Version:  1.1   Created: 2019-04-04 13:16
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: PluginConfig.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.1';
+my $DATEVER = '2019-04-04';
 
 # History information:
 #
+# 1.1  2019-03-05  Roland Vallgren
+#      "Insticksmoduler" changed to "Tillägg"
 # 1.0  2017-09-19  Roland Vallgren
 #      First issue.
 #
@@ -101,7 +103,7 @@ sub new($) {
 
   ### Label ###
   $edit_r->{data_lb} = $edit_r->{list_area}
-      -> Label(-text => 'Välj insticksmoduler:'
+      -> Label(-text => 'Välj tillägg:'
                . ' (OBS: Starta om Tidbox för att de skall aktiveras)')
       -> pack(-side => 'top');
 
@@ -178,7 +180,7 @@ sub apply($) {
 # Returns:
 #  -
 
-sub showEdit($$) {
+sub showEdit($) {
   # parameters
   my $self = shift;
 

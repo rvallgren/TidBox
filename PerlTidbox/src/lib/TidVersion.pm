@@ -1,15 +1,15 @@
 #
 package TidVersion;
 #
-#   Version:  1.7   Created: 2019-02-27
+#   Version:  1.8   Created: 2019-04-04
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidVersion.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2019-02-27';
+my $VERSION = '1.8';
+my $DATEVER = '2019-04-04';
 
 # Register version information
 {
@@ -40,6 +40,8 @@ my $DATEVER = '2019-02-27';
 # 1.7  2019-01-09  Roland Vallgren
 #      Use Github as home page
 #      Renamed Version to TidVersion, avoid mixup with Perl version
+# 1.8  2019-03-02  Roland Vallgren
+#      "Insticksmoduler" changed to "Tillägg"
 #
 
 #----------------------------------------------------------------------------
@@ -77,9 +79,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2019-02-27',
+    date      => '2019-04-04',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.13',
+    VERSION   => '4.14',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -95,7 +97,7 @@ $tool_info{about_head} = [
    'Felrättningar',
    'Hemsida',
    'Komponenter',
-   'Insticksmoduler',
+   'Tillägg',
    'Externt',
                          ];
 $tool_info{about} = [
@@ -114,16 +116,16 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Förbättrad hantering av rullisten i Veckan, Redigera och Tidbox
-Förbättrad hantering av listan med händelser för dagen
+Veckan behåller markering när tiden uppdateras
+Färgmarkering av tider som borde justeras, till exempel hundradelar
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Upprepade händelser på samma tid och flera gånger under dagen gav
-förvirring vilken händelse som ändrades vid ändring av en upprepad händelse
+Krash i veckan vid ny minut om inte första raden visades
+Debug-utskrift borttagen från sökningar
 '
 ,
 

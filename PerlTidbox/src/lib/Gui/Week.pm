@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.16   Created: 2019-02-28 17:16
+#   Version:  1.17   Created: 2019-04-04 12:48
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.16';
-my $DATEVER = '2019-02-28';
+my $VERSION = '1.17';
+my $DATEVER = '2019-04-04';
 
 # History information:
 #
@@ -43,6 +43,10 @@ my $DATEVER = '2019-02-28';
 #       Corrected: -error_popup is an eref
 # 1.16  2019-02-26  Roland Vallgren
 #       Use Scrolled for scrollbars
+# 1.17  2019-03-25  Roland Vallgren
+#       Correction due to "Failed to AUTOLOAD 'Tk::Scrollbar::yviewMoveto'"
+#       Leave selection active when times text is updated
+#       Color fractions that need to be adjusted
 #
 
 #----------------------------------------------------------------------------
@@ -87,14 +91,6 @@ use Gui::Confirm;
 # Arguments:
 #  0 - Object prototype
 # Additional arguments as hash
-#  -cfg        Reference to configuration hash
-#  -event_cfg  Event configuration object
-#  -parent_win Parent window
-#  -title      Tool title
-#  -times      Reference to times object
-#  -calculate  Reference to calculator
-#  -clock      Reference to clock
-#  -year_win   Reference to Year window
 # Returns:
 #  Object reference
 
@@ -154,57 +150,159 @@ sub _formatTime($$) {
 # Description: Show times for the whole week
 #
 # Arguments:
-#  0 - Object reference
-#  1 - Widget to insert text
-#  2 - Width of text beginning the row
-#  3 - Text beginning the row
-#  4 - Reference to weekdays array
-#  5 - Key to get for each weekday
+#  - Object reference
+#  - Widget to insert text
+#  - Width of text beginning the row
+#  - Text beginning the row
+#  - Reference to weekdays array
+#  - Key to get for each weekday
 # Returns:
 #  Accumulated time for the whole week
 
 sub _formatWeekRow($$$$$) {
   # parameters
   my $self = shift;
-  my ($insert_box, $ev_txt_max_len, $text, $weekdays_r, $key) = @_;
+  my ($insertBox, $ev_txt_max_len, $text, $weekdays_r, $key) = @_;
 
 
   my $row_time = 0;
 
-  my $line = sprintf('  %-'. $ev_txt_max_len. 's', $text);
+  $insertBox->Insert(sprintf('  %-'. $ev_txt_max_len. 's', $text));
 
   for my $day_r (@$weekdays_r) {
 
-    $line .= $self->_formatTime($day_r->{$key});
+    $insertBox->Insert($self->_formatTime($day_r->{$key}));
 
-    $row_time += $day_r->{$key} if $day_r->{$key};
+    $row_time += $day_r->{$key}
+        if $day_r->{$key};
 
   } # for #
 
-  $line .= $self->_formatTime($row_time) if ($self->{rowsum});
+  $insertBox->Insert($self->_formatTime($row_time))
+      if ($self->{rowsum});
 
-  $insert_box->insert('end', $line . "\n");
+  $insertBox->Insert("\n");
 
-  if (wantarray()) {
-    my $normal = $self->{erefs}{-cfg}->get('ordinary_week_work_time') * 60;
-    my ($flex, $sign);
-    if ($row_time > $normal) {
-      $flex = $row_time - $normal;
-      $sign = '+';
-    } elsif ($row_time < $normal) {
-      $flex = $normal - $row_time;
-      $sign = '-';
-    } else {
-      $flex = '0';
-      $sign = '';
-    } # if #
+  return $self->{erefs}{-calculate}->hours($row_time)
+      unless (wantarray());
 
-    return ($self->{erefs}{-calculate}->hours($row_time),
-            $sign . $self->{erefs}{-calculate}->hours($flex)
-           );
+  # Caller need work time and flex time
+  my $normal = $self->{erefs}{-cfg}->get('ordinary_week_work_time') * 60;
+  my ($flex, $sign);
+  if ($row_time > $normal) {
+    $flex = $row_time - $normal;
+    $sign = '+';
+  } elsif ($row_time < $normal) {
+    $flex = $normal - $row_time;
+    $sign = '-';
+  } else {
+    $flex = '0';
+    $sign = '';
   } # if #
-  return $self->{erefs}{-calculate}->hours($row_time);
+
+  return ($self->{erefs}{-calculate}->hours($row_time),
+          $sign . $self->{erefs}{-calculate}->hours($flex)
+         );
 } # Method _formatWeekRow
+
+#----------------------------------------------------------------------------
+#
+# Method:      _insertEventTime
+#
+# Description: Insert event time in text
+#              If adjust is needed due to deciamls, add decimals tag
+#     TODO: Rewrite to insert directly to times text area
+#
+# Arguments:
+#  - Object reference
+#  - Widget to insert text in
+#  - Value to add
+# Returns:
+#  Time in minutes
+
+sub _insertEventTime($$$) {
+  # parameters
+  my $self = shift;
+  my ($insertBox, $minutes) = @_;
+
+
+  my $hours = $self->_formatTime($minutes);
+  $insertBox->Insert($hours);
+
+  return 0
+      unless ($minutes);
+  return $minutes
+      if ($minutes < 0);
+
+  # Add colouring tag if value need to be adjusted
+  $insertBox->tagAdd('adjust', 'insert -2 char', 'insert')
+      if (($minutes % $self->{adjust_level}) != 0);
+
+  return $minutes;
+} # Method _insertEventTime
+
+#----------------------------------------------------------------------------
+#
+# Method:      _insertEventLine
+#
+# Description: Insert activity or event line in times area
+#
+# Arguments:
+#  - Object reference
+#  - Reference to week hash with values
+#  - Event text max length
+#  - Hash with either activity or event
+#      activity      => Activity to insert (condensed event)
+#      week_comments => Comments for activity to insert
+#      event         => Event to insert
+# Returns:
+#  -
+
+sub _insertEventLine($$$%) {
+  # parameters
+  my $self = shift;
+  my ($weekdays_r, $ev_len, %arg) = @_;
+
+
+  my $insertBox = $self->{win}{times};
+
+  my $row_time = 0;
+
+  if (exists($arg{activity})) {
+
+    $insertBox->
+        Insert(sprintf('  %-'. $ev_len. 's', $arg{activity}));
+
+    for my $day_r (@$weekdays_r) {
+      $row_time += $self->
+          _insertEventTime($insertBox, $day_r->{activities}{$arg{activity}});
+    } # for #
+
+  } elsif (exists($arg{event})) {
+
+    $insertBox->
+        Insert(sprintf('  %-'. $ev_len. 's', $arg{event}));
+
+    for my $day_r (@$weekdays_r) {
+      $row_time += $self->
+          _insertEventTime($insertBox, $day_r->{events}{$arg{event}});
+    } # for #
+
+  } # if #
+
+  $insertBox->Insert($self->_formatTime($row_time))
+      if ($self->{rowsum});
+
+  if (exists($arg{week_comments})) {
+    $insertBox->Insert('  ');
+    $insertBox->
+       Insert(join(', ', sort(keys(%{$arg{week_comments}{$arg{activity}}}))));
+  } # if #
+
+  $insertBox->Insert("\n");
+
+  return 0;
+} # Method _insertEventLine
 
 #----------------------------------------------------------------------------
 #
@@ -248,7 +346,8 @@ sub _showHead($) {
   } else {
     $win_r->{lock_week} -> configure(-state => 'normal');
     $win_r->{lock_week} -> configure(-text => 'Lås vecka');
-    $win_r->{adjust}    -> configure(-state => 'normal');
+    $win_r->{adjust}    -> configure(-state => 'normal')
+        if ($self->{erefs}{-cfg}->get('adjust_level') > 1);
     $win_r->{weekdays}  -> configure(-background => 'white');
     $win_r->{times}     -> configure(-background => 'white');
     $win_r->{worktime}  -> configure(-background => 'white');
@@ -394,6 +493,8 @@ sub _setup($) {
       -> Button(-text => 'Justera vecka',
                 -command => [$self => '_adjust'])
       -> pack(-side => 'left');
+  $win_r->{adjust} -> configure(-state => 'disabled')
+      if ($self->{erefs}{-cfg}->get('adjust_level') <= 1);
 
   # Export
   $win_r->{export} = $win_r->{button_area}
@@ -459,6 +560,34 @@ sub _condenseButtons($) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _selection
+#
+# Description: Adjust background of selection to selection
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub _selection($) {
+  # parameters
+  my $self = shift;
+  my () = @_;
+
+  my $win_r = $self->{win};
+  my @selectPos = $win_r->{times}->tagRanges('sel');
+  if (@selectPos) {
+    $win_r->{times}->tagAdd('grey', @selectPos);
+    $win_r->{times}->tagConfigure('grey', -background => 'grey');
+    $win_r->{times}->tagLower('grey', 'sel');
+  } else {
+    $win_r->{times}->tagDelete('grey');
+  } # if #
+  return 0;
+} # Method _selection
+
+#----------------------------------------------------------------------------
+#
 # Method:      problem
 #
 # Description: Record problem detected during calculation
@@ -501,6 +630,7 @@ sub _display($;$) {
 
   my $win_r = $self->{win};
   $date = $self->{last_date} unless $date;
+  $self->{adjust_level} = $self->{erefs}{-cfg}->get('adjust_level');
 
   # Can not display an archived week
   return
@@ -520,11 +650,13 @@ sub _display($;$) {
       -> matchString($self->{condensed}, $date);
 
   @{$self->{problem}} = ();
-  my (%week_events, %week_comments, %week_cmt_len);
+  my $week_events = {};
+  my $week_comments = {};
+  my $week_cmt_len = {};
   my ($weekdays_r, $event_text_max_length, $comment_text_max_length) =
        $self->{erefs}{-calculate}
            -> weekWorkTimes($date, $self->{condensed}, [$self => 'problem'],
-                            \%week_events, \%week_comments, \%week_cmt_len);
+                            $week_events, $week_comments, $week_cmt_len);
 
   # Record week dates if new date specified
   $self->{first_date} = $weekdays_r->[0]{date};
@@ -542,9 +674,22 @@ sub _display($;$) {
   unless ($self->{textboxwidth} == $textboxwidth) {
 
     my $line = sprintf('  %-' . $event_text_max_length. 's', 'Kategori');
+    my $wDayCol = $event_text_max_length + 4;
+
     for my $wday (1..6,0) {
       $line .= $self->_formatTime($self->{erefs}{-calculate}->dayStr($wday));
+
+      # Add tag to weekday
+      my $day = 'day' . $wday;
+      $win_r->{weekdays} -> tagAdd($day,
+                                   '1.'.($wDayCol+($wday==4?0:1)),
+                                   '1.'.($wDayCol + 7));
+      $win_r->{weekdays} -> tagConfigure($day, -underline => "1");
+      $win_r->{weekdays} -> tagBind($day,
+                                    '<Button-1>', [$self => '_edit', $wday] );
+      $wDayCol += 9;
     } # for #
+
     $line .= '    Summa' if ($self->{rowsum});
 
     $win_r->{weekdays} -> configure(-state => 'normal');
@@ -557,126 +702,97 @@ sub _display($;$) {
     $win_r->{worktime} -> configure(-width => $textboxwidth);
 
     $self->{textboxwidth} = $textboxwidth;
+
   } # unless #
-
-  # Add tags to weekdays
-  my $wDayCol = $event_text_max_length + 4;
-
-  for my $wday (1..6,0) {
-    my $day = 'day' . $wday;
-    $win_r->{weekdays} -> tagAdd($day,
-                                 '1.'.($wDayCol+($wday==4?0:1)),
-                                 '1.'.($wDayCol + 7));
-    $win_r->{weekdays} -> tagConfigure($day, -underline => "1");
-    $win_r->{weekdays} -> tagBind($day,
-                                  '<Button-1>', [$self => '_edit', $wday] );
-    $wDayCol += 9;
-  } # for #
 
   # Update window header and buttons
   $self->_showHead();
   $self->_rowsum(1);
   $self->_condenseButtons();
 
+  # Get scroll, insert and selection position
+  my ($scroll_pos) = $win_r->{times}->yview();
+  my $insertPos = $win_r->{times}->index('insert');
+  my @selectPos = $win_r->{times}->tagRanges('sel');
+  $win_r->{times}->bind('<<Selection>>', [$self => '_selection'] );
+
   # Insert the data for the week
 
-  my ($scroll_pos) = $win_r->{times}->Subwidget("yscrollbar")->get();
-
+  # Clear textareas
   $win_r->{times}    -> delete('1.0', 'end');
   $win_r->{worktime} -> delete('1.0', 'end');
 
+  # Insert whole time
   $self->_formatWeekRow($win_r->{times}, $event_text_max_length,
                         'Hela dagen', $weekdays_r, 'whole_time');
 
+  # Insert paus time
   $self->_formatWeekRow($win_r->{times}, $event_text_max_length,
                         'Paus', $weekdays_r, 'paus_time');
 
+  # Insert event times
   if ($self->{condensed}) {
+
+    # Insert Condensed events
     my $activity = "\n";
-    my $row_time;
-    my $line;
 
-    for my $event (sort(keys(%week_events))) {
-
-      $row_time = 0;
+    for my $event (sort(keys(%{$week_events}))) {
 
       if ($event =~ /$match_string/) {
 
-        next if($1 eq $activity);
+        next
+            if($1 eq $activity);
+
         $activity = $1;
 
-        $line = sprintf('  %-'. $event_text_max_length. 's', $activity);
-
-        for my $day_r (@$weekdays_r) {
-          $line .= $self->_formatTime($day_r->{activities}{$activity});
-          $row_time += $day_r->{activities}{$activity}
-              if (exists($day_r->{activities}{$activity}));
-        } # for #
-
-        $line .= $self->_formatTime($row_time)
-            if ($self->{rowsum});
-
-        $line .= '  ' . join(', ', sort(keys(%{$week_comments{$activity}})));
+        $self->_insertEventLine($weekdays_r, $event_text_max_length,
+                                activity      => $activity,
+                                week_comments => $week_comments);
 
       } else {
 
         $activity = "\n";
 
-        $line = sprintf('  %-'. $event_text_max_length. 's', $event);
-
-        for my $day_r (@$weekdays_r) {
-          $line .= $self->_formatTime($day_r->{events}{$event});
-          $row_time += $day_r->{events}{$event}
-              if (exists($day_r->{events}{$event}));
-        } # for #
-
-        $line .= $self->_formatTime($row_time)
-            if ($self->{rowsum});
+        $self->_insertEventLine($weekdays_r, $event_text_max_length, 
+                                event => $event);
 
       } # if #
-
-      $win_r->{times}
-          -> insert('end', $line . "\n");
 
     } # for #
 
   } else {
-    my $row_time;
-    my $line;
 
-    for my $event (sort(keys(%week_events))) {
-
-      $row_time = 0;
-      $line = sprintf('  %-'. $event_text_max_length. 's', $event);
-
-      for my $day_r (@$weekdays_r) {
-        $line .= $self->_formatTime($day_r->{events}{$event});
-        $row_time += $day_r->{events}{$event}
-            if (exists($day_r->{events}{$event}));
-      } # for #
-
-      $line .= $self->_formatTime($row_time)
-          if ($self->{rowsum});
-
-      $win_r->{times}
-          -> insert('end', $line . "\n");
+    # Insert events normal
+    for my $event (sort(keys(%{$week_events}))) {
+      $self->_insertEventLine($weekdays_r, $event_text_max_length,
+                              event => $event);
     } # for #
 
   } # if #
 
+  # Color mark needed adjust
+  $win_r->{times}->tagConfigure('adjust', -background => 'yellow');
+
+  # Insert non event time
   $self->_formatWeekRow($win_r->{times}, $event_text_max_length,
                         'Övrig tid', $weekdays_r, 'not_event_time');
 
+  # Insert work time
   my ($week_work_time, $week_flex_time) =
       $self->_formatWeekRow($win_r->{worktime}, $event_text_max_length,
                             'Arbetstid', $weekdays_r, 'work_time');
 
+  # Insert work time for whole week
   $win_r->{wholeweek}->configure(-text => $week_work_time);
   $win_r->{flex}->configure(-text => $week_flex_time);
 
-  # Set scroll position same as before update
-  $win_r->{times}->Subwidget("yscrollbar")->yviewMoveto($scroll_pos)
-      if ($scroll_pos);
+  # Set scroll, insert and selection position same as before update
+  $win_r->{times}->yviewMoveto($scroll_pos)
+      if (defined($scroll_pos));
+  $win_r->{times}->SetCursor($insertPos)
+      if (defined($insertPos));
+  $win_r->{times}->tagAdd('sel', @selectPos)
+      if (@selectPos);
 
   # Problems detected during calculation
   $win_r->{confirm}
@@ -716,9 +832,15 @@ sub update($;@) {
   return 0 unless (Exists($win_r->{win}));
   return 0 if $win_r->{win}->state() eq 'withdrawn';
 
+  my ($lock, $locked) = ($self->{erefs}{-cfg}->isLocked($self->{last_date}));
+  if ($lock or $self->{erefs}{-cfg}->get('adjust_level') <= 1) {
+    $win_r->{adjust}->configure(-state => 'disabled');
+  } else {
+    $win_r->{adjust}->configure(-state => 'normal');
+  } # if #
+
   return $self->_display()
       unless (@dates);
-
 
   # Update the week window if a date is in the week
   $self->_display()
@@ -1031,7 +1153,6 @@ sub _adjust($) {
                  [$self => 'problem']);
 
   $self->{erefs}{-times}->save();
-
 
   my $broke = '';
 
