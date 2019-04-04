@@ -2,14 +2,14 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.17   Created: 2019-04-04 12:48
+#   Version:  1.18   Created: 2019-04-04 16:12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.17';
+my $VERSION = '1.18';
 my $DATEVER = '2019-04-04';
 
 # History information:
@@ -47,6 +47,8 @@ my $DATEVER = '2019-04-04';
 #       Correction due to "Failed to AUTOLOAD 'Tk::Scrollbar::yviewMoveto'"
 #       Leave selection active when times text is updated
 #       Color fractions that need to be adjusted
+# 1.18  2019-04-04  Roland Vallgren
+#       Week worktime scrolled away, times should show
 #
 
 #----------------------------------------------------------------------------
@@ -181,10 +183,12 @@ sub _formatWeekRow($$$$$) {
   $insertBox->Insert($self->_formatTime($row_time))
       if ($self->{rowsum});
 
-  $insertBox->Insert("\n");
+  unless (wantarray()) {
+    # TODO Ugly fix: worktime should not have linefeed
+    $insertBox->Insert("\n");
 
-  return $self->{erefs}{-calculate}->hours($row_time)
-      unless (wantarray());
+    return $self->{erefs}{-calculate}->hours($row_time);
+  } # unless #
 
   # Caller need work time and flex time
   my $normal = $self->{erefs}{-cfg}->get('ordinary_week_work_time') * 60;

@@ -81,7 +81,7 @@ my %plugins;
     icontitle => 'TidBox',
     date      => '2019-04-04',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.14',
+    VERSION   => '4.14.1',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -126,6 +126,7 @@ Färgmarkering av tider som borde justeras, till exempel hundradelar
 
 Krash i veckan vid ny minut om inte första raden visades
 Debug-utskrift borttagen från sökningar
+I veckan syntes inte arbetstiden för hela dagen.
 '
 ,
 
