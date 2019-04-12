@@ -2,18 +2,20 @@
 package Plugin::MyTimeXls;
 #
 #   Document: Plugin MyTimeXls
-#   Version:  0.4   Created: 2019-02-16 10:26
+#   Version:  0.5   Created: 2019-04-12 17:53
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MyTimeXls.pmx
 #
 
-my $VERSION = '0.4';
-my $DATEVER = '2019-02-16';
+my $VERSION = '0.5';
+my $DATEVER = '2019-04-12';
 
 # History information:
 #
+# 0.5  2019-04-12  Roland Vallgren
+#      "Doctor visit -SE" is not a valid Type in MyTime
 # 0.4  2019-02-16  Roland Vallgren
 #      New release of MyTime 2019-02-16
 #      First column, project number, is text, not a number
@@ -167,8 +169,7 @@ my $EVENT_CFG = {
                   'Care of close relat. Leave -SE' . ';' .
                   'Short Notice Compensation-SE'   . ';' .
                   'Parental Leave -SE'             . ';' .
-                  'Father Leave -SE'               . ';' .
-                  'Doctor Visit -SE'               . ';;' .
+                  'Father Leave -SE'               . ';;' .
                   'Vacation -SE'                   . ';' .
                   'Leave of Absence /paid -SE'     . ';' .
                   'Leave of Absence /unpaid -SE'   . ';' .

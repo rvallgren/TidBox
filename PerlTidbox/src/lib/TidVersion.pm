@@ -1,7 +1,7 @@
 #
 package TidVersion;
 #
-#   Version:  1.8   Created: 2019-04-04
+#   Version:  1.8   Created: 2019-04-12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package TidVersion;
 #
 
 my $VERSION = '1.8';
-my $DATEVER = '2019-04-04';
+my $DATEVER = '2019-04-12';
 
 # Register version information
 {
@@ -79,9 +79,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2019-04-04',
+    date      => '2019-04-12',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.14.1',
+    VERSION   => '4.14.2',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -116,17 +116,19 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Veckan behåller markering när tiden uppdateras
-Färgmarkering av tider som borde justeras, till exempel hundradelar
+Veckan
+ - visar inte "Övrig tid" om ingen övrig tid registrerats
+ - Om en händelse registrerats med noll timmar markeras det med "0"
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Krash i veckan vid ny minut om inte första raden visades
-Debug-utskrift borttagen från sökningar
-I veckan syntes inte arbetstiden för hela dagen.
+Veckan: Tappat bort länk från veckodag i summa till redigera.
+Redigera: Sökknapparna var utgråade efter sökning om enbart
+  radioknappar valts
+Tillägg för MyTime: "Doctor visit -SE" är inte en tillåten "Type"
 '
 ,
 

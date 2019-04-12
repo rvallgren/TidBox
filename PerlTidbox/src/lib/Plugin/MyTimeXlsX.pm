@@ -2,18 +2,20 @@
 package Plugin::MyTimeXlsX;
 #
 #   Document: Plugin MyTimeXlsX
-#   Version:  0.3   Created: 2019-02-16 10:17
+#   Version:  1.1   Created: 2019-04-12 17:53
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MyTimeXlsX.pmx
 #
 
-my $VERSION = '0.3';
-my $DATEVER = '2019-02-16';
+my $VERSION = '1.1';
+my $DATEVER = '2019-04-12';
 
 # History information:
 #
+# 1.1  2019-04-12  Roland Vallgren
+#      "Doctor visit -SE" is not a valid Type in MyTime
 # 1.0  2019-02-16  Roland Vallgren
 #      First issue based on MyTimeXls.pm.
 #
@@ -157,8 +159,7 @@ my $EVENT_CFG = {
                   'Care of close relat. Leave -SE' . ';' .
                   'Short Notice Compensation-SE'   . ';' .
                   'Parental Leave -SE'             . ';' .
-                  'Father Leave -SE'               . ';' .
-                  'Doctor Visit -SE'               . ';;' .
+                  'Father Leave -SE'               . ';;' .
                   'Vacation -SE'                   . ';' .
                   'Leave of Absence /paid -SE'     . ';' .
                   'Leave of Absence /unpaid -SE'   . ';' .

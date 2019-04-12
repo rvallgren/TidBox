@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.18   Created: 2019-04-04 16:12
+#   Version:  1.19   Created: 2019-04-10 14:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.18';
-my $DATEVER = '2019-04-04';
+my $VERSION = '1.19';
+my $DATEVER = '2019-04-10';
 
 # History information:
 #
@@ -49,6 +49,10 @@ my $DATEVER = '2019-04-04';
 #       Color fractions that need to be adjusted
 # 1.18  2019-04-04  Roland Vallgren
 #       Week worktime scrolled away, times should show
+# 1.19  2019-04-08  Roland Vallgren
+#       Hyperlink from weekday to Edit lost, restored.
+#       Not event time not shown if no time is registered.
+#       Show 0 hours as "0" for event time
 #
 
 #----------------------------------------------------------------------------
@@ -123,19 +127,23 @@ sub new($%) {
 #              Text is space extended to at least 9 chars
 #
 # Optional Arguments:
-#  0 - Object reference
-#  1 - Time or text to show
+#  - Object reference
+#  - Time or text to show
+# Optional Arguments:
+#  - If true '0,00' is shown if the number of minutes is 0
 # Returns:
 #  Fomatted string
 
-sub _formatTime($$) {
+sub _formatTime($$;$) {
   # parameters
   my $self = shift;
-  my ($v) = @_;
+  my ($v, $z) = @_;
 
         #'    hh,tt'
-  return '         ' unless($v);
+  return '         ' unless(defined($v));
   if ($v =~ /^-?\d+$/o) {
+    return '         ' if (not($z) and ($v == 0));
+    return '     0   ' unless($v);
     my $t = $self->{erefs}{-calculate}->hours($v);
           #'    hh,tt'
     return '     ' . $t if (length($t) < 5);
@@ -230,7 +238,7 @@ sub _insertEventTime($$$) {
   my ($insertBox, $minutes) = @_;
 
 
-  my $hours = $self->_formatTime($minutes);
+  my $hours = $self->_formatTime($minutes, 1);
   $insertBox->Insert($hours);
 
   return 0
@@ -674,14 +682,22 @@ sub _display($;$) {
   $textboxwidth += 9
       if ($self->{rowsum});
 
-  # Change widths if required
+  # If widths are changed, insert weekdays
   unless ($self->{textboxwidth} == $textboxwidth) {
 
-    my $line = sprintf('  %-' . $event_text_max_length. 's', 'Kategori');
+    $win_r->{weekdays} -> configure(-state => 'normal');
+    $win_r->{weekdays} -> delete('1.0', 'end');
+    $win_r->{weekdays} -> configure(-width => $textboxwidth);
+#    $win_r->{weekdays} -> insert('end', $line);
+
+    $win_r->{weekdays} ->
+        Insert(sprintf('  %-' . $event_text_max_length. 's', 'Kategori'));
+
     my $wDayCol = $event_text_max_length + 4;
 
     for my $wday (1..6,0) {
-      $line .= $self->_formatTime($self->{erefs}{-calculate}->dayStr($wday));
+       $win_r->{weekdays} ->
+          Insert($self->_formatTime($self->{erefs}{-calculate}->dayStr($wday)));
 
       # Add tag to weekday
       my $day = 'day' . $wday;
@@ -694,12 +710,9 @@ sub _display($;$) {
       $wDayCol += 9;
     } # for #
 
-    $line .= '    Summa' if ($self->{rowsum});
+    $win_r->{weekdays} -> Insert('    Summa')
+        if ($self->{rowsum});
 
-    $win_r->{weekdays} -> configure(-state => 'normal');
-    $win_r->{weekdays} -> delete('1.0', 'end');
-    $win_r->{weekdays} -> configure(-width => $textboxwidth);
-    $win_r->{weekdays} -> insert('end', $line);
     $win_r->{weekdays} -> configure(-state => 'disabled');
 
     $win_r->{times}    -> configure(-width => $textboxwidth);
@@ -778,8 +791,17 @@ sub _display($;$) {
   $win_r->{times}->tagConfigure('adjust', -background => 'yellow');
 
   # Insert non event time
+
+  my $not_event_time = 0;
+
+  for my $day_r (@$weekdays_r) {
+    $not_event_time += $day_r->{not_event_time}
+        if $day_r->{not_event_time};
+  } # for #
+
   $self->_formatWeekRow($win_r->{times}, $event_text_max_length,
-                        'Övrig tid', $weekdays_r, 'not_event_time');
+                        'Övrig tid', $weekdays_r, 'not_event_time')
+      if ($not_event_time);
 
   # Insert work time
   my ($week_work_time, $week_flex_time) =

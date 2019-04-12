@@ -2,18 +2,20 @@
 package Plugin::MyTime;
 #
 #   Document: Plugin MyTime
-#   Version:  1.2   Created: 2019-01-25 15:52
+#   Version:  1.3   Created: 2019-04-12 17:54
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MyTime.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2019-01-25';
+my $VERSION = '1.3';
+my $DATEVER = '2019-04-12';
 
 # History information:
 #
+# 1.3  2019-04-12  Roland Vallgren
+#      "Doctor visit -SE" is not a valid Type in MyTime
 # 1.2  2019-01-25  Roland Vallgren
 #      Code improvements
 # 1.1  2017-10-16  Roland Vallgren
@@ -163,8 +165,7 @@ my $EVENT_CFG = {
                   'Care of close relat. Leave -SE' . ';' .
                   'Short Notice Compensation-SE'   . ';' .
                   'Parental Leave -SE'             . ';' .
-                  'Father Leave -SE'               . ';' .
-                  'Doctor Visit -SE'               . ';;' .
+                  'Father Leave -SE'               . ';;' .
                   'Vacation -SE'                   . ';' .
                   'Leave of Absence /paid -SE'     . ';' .
                   'Leave of Absence /unpaid -SE'   . ';' .

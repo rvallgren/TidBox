@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.7   Created: 2019-01-25 15:41
+#   Version:  2.8   Created: 2019-04-10 14:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.7';
-my $DATEVER = '2019-01-25';
+my $VERSION = '2.8';
+my $DATEVER = '2019-04-10';
 
 # History information:
 #
@@ -36,6 +36,8 @@ my $DATEVER = '2019-01-25';
 #      Backward, forward failed, bug in _forw corrected
 # 2.7  2019-01-25  Roland Vallgren
 #      Code improvements
+# 2.8  2019-04-10  Roland Vallgren
+#      Enable search buttons after a search, when a search pattern is added
 #
 
 #----------------------------------------------------------------------------
@@ -534,7 +536,7 @@ sub _search($;$) {
   my $search_text = $action_text;
 
   # "PERLify" user entered wildcards if no perl regexps detected
-  unless ($search_text =~ /(?:[\\[\]{}+^]|\.\*)/) {
+  unless ($search_text =~ /(?:[\\[\]{}+^]|\.[+*])/) {
     $search_text =~ s/\./\\./g;
     $search_text =~ s/\?/./g;
     $search_text =~ s/\*/.*?/g;
@@ -596,6 +598,7 @@ sub _search($;$) {
   if ($win_r->{day_list}->see($fnd)) {
     $self->{erefs}{-earlier}->add($action_text);
     $win_r->{event_handling}->set($action_text, 1);
+    $self->_validate();
   } # if #
 
   return 0;
@@ -862,7 +865,7 @@ sub _week($;$) {
 
 
   my $date = $self->{win}{time_area}->get(1);
-    
+
   $self->{erefs}{-week_win}->display($date)
       if $date;
 
