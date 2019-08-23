@@ -2,15 +2,15 @@
 package TitleClock;
 #
 #   Document: Running clock for timing and visible clock
-#   Version:  1.11   Created: 2019-02-21 14:14
+#   Version:  1.12   Created: 2019-05-17 13:14
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TitleClock.pmx
 #
 
-my $VERSION = '1.11';
-my $DATEVER = '2019-02-21';
+my $VERSION = '1.12';
+my $DATEVER = '2019-05-17';
 
 # History information:
 #
@@ -40,6 +40,8 @@ my $DATEVER = '2019-02-21';
 # 1.11  2019-01-24  Roland Vallgren
 #       Clear all timeout on quit
 #       Added -seconds in timeout
+# 1.12  2019-05-17  Roland Vallgren
+#       New method getHHMMSS
 #
 
 #----------------------------------------------------------------------------
@@ -458,6 +460,24 @@ sub getTime($) {
 
   return $self->{time};
 } # Method getTime
+
+#----------------------------------------------------------------------------
+#
+# Method:      getHHMMSS
+#
+# Description: Get current time HH:MM:SS
+#
+# Arguments:
+#  0 - Object reference
+# Returns:
+#  -
+
+sub getHHMMSS($) {
+  # parameters
+  my $self = shift;
+
+  return $self->{time} . ':' . $self->{second};
+} # Method getHHMMSS
 
 #----------------------------------------------------------------------------
 #

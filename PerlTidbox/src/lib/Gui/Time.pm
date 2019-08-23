@@ -2,15 +2,15 @@
 package Gui::Time;
 #
 #   Document: Time entry area
-#   Version:  1.7   Created: 2019-01-17 11:07
+#   Version:  1.8   Created: 2019-08-02 16:22
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Time.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.8';
+my $DATEVER = '2019-08-02';
 
 # History information:
 #
@@ -30,6 +30,8 @@ my $DATEVER = '2019-01-17';
 #      Default action of <Return> in a field is to reevaluate the information
 # 1.7  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
+# 1.8  2019-05-14  Roland Vallgren
+#      Keys bound to actions in entries
 #
 
 #----------------------------------------------------------------------------
@@ -59,10 +61,12 @@ use Tk;
 # Constants
 #
 
-use constant ONEMINUTE       => 60;                  # seconds
-use constant ONEHOUR         => 60 * ONEMINUTE;      # 3600 seconds
-use constant TWENTYFOURHOURS => 24 * ONEHOUR;        # 86400 seconds
-use constant ONEWEEK         =>  7 * TWENTYFOURHOURS; # 604800 seconds
+use constant ONEMINUTE       =>  60;                   # seconds
+use constant ONEHOUR         =>  60 * ONEMINUTE;       # 3600 seconds
+use constant TWENTYFOURHOURS =>  24 * ONEHOUR;         # 86400 seconds
+use constant ONEWEEK         =>   7 * TWENTYFOURHOURS; # 604800 seconds
+use constant ONEMONTH        =>  30 * TWENTYFOURHOURS;
+use constant ONEYEAR         => 365 * TWENTYFOURHOURS;
 
 #############################################################################
 #
@@ -120,7 +124,17 @@ sub new($%) {
     $win_r->{date_data} = $win_r->{time_area}
         -> Entry(-width => '11')
         -> pack(-side => 'left');
-    $win_r->{date_data} -> bind('<Return>' => [$self => '_date']);
+    $win_r->{date_data}->bind('<Return>' => [$self => '_date']);
+    if ($opt{-week}) {
+      $win_r->{date_data}->bind('<Control-w>' => [$self => '_week']);
+      $self->{-week} = $opt{-week};
+    } # if #
+    $win_r->{date_data}->bind('<Up>'   =>[$self=>'_posStep', 'D']);
+    $win_r->{date_data}->bind('<Down>' =>[$self=>'_posStep', 'd']);
+    $win_r->{date_data}->bind('<Control-n>'=>[$self=>'_step', TWENTYFOURHOURS]);
+    $win_r->{date_data}->bind('<Control-p>'=>[$self=>'_step',-TWENTYFOURHOURS]);
+    $win_r->{date_data}->bind('<Shift-Up>'   => [$self => '_step', ONEWEEK]);
+    $win_r->{date_data}->bind('<Shift-Down>' => [$self => '_step', -ONEWEEK]);
     $self->{-date} = $opt{-date};
     $win_r->{date_data}
         -> configure(-validate => 'key',
@@ -135,7 +149,11 @@ sub new($%) {
     $win_r->{week_data} = $win_r->{time_area}
         -> Entry(-width => '10')
         -> pack(-side => 'left');
-    $win_r->{week_data} -> bind('<Return>' => [$self => '_week']);
+    $win_r->{week_data}->bind('<Return>' => [$self => '_week']);
+    $win_r->{week_data}->bind('<Up>'   => [$self => '_step', ONEWEEK]);
+    $win_r->{week_data}->bind('<Down>' => [$self => '_step', -ONEWEEK]);
+    $win_r->{week_data}->bind('<Control-n>' => [$self => '_step', ONEWEEK]);
+    $win_r->{week_data}->bind('<Control-p>' => [$self => '_step', -ONEWEEK]);
     $self->{-week} = $opt{-week};
     $win_r->{week_data}
         -> configure(-validate => 'key',
@@ -150,7 +168,21 @@ sub new($%) {
     $win_r->{time_data} = $win_r->{time_area}
         -> Entry(-width => '10')
         -> pack(-side => 'left');
-    $win_r->{time_data} -> bind('<Return>' => [$self => '_time']);
+    $win_r->{time_data}->bind('<Return>'  => [$self => '_time']);
+    $win_r->{time_data}->bind('<Shift-=>' => [$self => '_step', 0]);
+    $win_r->{time_data}->bind('<=>'       => [$self => '_step', 0]);
+    $win_r->{time_data}->bind('<Up>'   =>[$self=>'_posStep', 'T']);
+    $win_r->{time_data}->bind('<Down>' =>[$self=>'_posStep', 't']);
+    $win_r->{time_data}->bind('<Control-n>' => [$self => '_step', ONEMINUTE]);
+    $win_r->{time_data}->bind('<Control-p>' => [$self => '_step', -ONEMINUTE]);
+    $win_r->{time_data}->bind('<Control-Up>'  =>[$self=>'_step', 10*ONEMINUTE]);
+    $win_r->{time_data}->bind('<Control-Down>'=>[$self=>'_step',-10*ONEMINUTE]);
+    $win_r->{time_data}->bind('<Shift-Up>'   => [$self => '_step', ONEHOUR]);
+    $win_r->{time_data}->bind('<Shift-Down>' => [$self => '_step', -ONEHOUR]);
+    $win_r->{time_data}->bind('<Shift-Control-Up>'
+                                             => [$self => '_step', 10*ONEHOUR]);
+    $win_r->{time_data}->bind('<Shift-Control-Down>'
+                                             => [$self => '_step',-10*ONEHOUR]);
     $self->{-time} = $opt{-time};
     $win_r->{time_data}
         -> configure(-validate => 'key',
@@ -199,10 +231,22 @@ sub clear($;$) {
 
   my $win_r = $self->{win};
 
-  $win_r->{date_data} -> delete(0, 'end') if (exists($win_r->{date_data}));
-  $win_r->{week_data} -> delete(0, 'end') if (exists($win_r->{week_data}));
+  if (exists($win_r->{date_data})) {
+    $win_r->{date_data_insert} = $win_r->{date_data}->index('insert');
+    $win_r->{date_data}->delete(0, 'end');
+  } # if #
+
+  if (exists($win_r->{week_data})) {
+    $win_r->{week_data_insert} = $win_r->{week_data}->index('insert');
+    $win_r->{week_data}->delete(0, 'end');
+  } # if #
+
   return 0 if $date_only;
-  $win_r->{time_data} -> delete(0, 'end') if (exists($win_r->{time_data}));
+
+  if (exists($win_r->{time_data})) {
+    $win_r->{time_data_insert} = $win_r->{time_data}->index('insert');
+    $win_r->{time_data}->delete(0, 'end');
+  } # if #
 
   return 0;
 } # Method clear
@@ -231,7 +275,8 @@ sub get($;$) {
   my ($time, $date);
   my $date_info = '';
   if (exists($win_r->{date_data})) {
-    $date_info = $win_r->{date_data} -> get();
+    $win_r->{date_data_insert} = $win_r->{date_data}->index('insert');
+    $date_info = $win_r->{date_data}->get();
     if ($date_only) {
       (undef, $date) = $self->{erefs}{-calculate}
           -> evalTimeDate($self->{-invalid}, undef, $date_info);
@@ -240,7 +285,8 @@ sub get($;$) {
     } # if #
   } # if #
   if (exists($win_r->{week_data})) {
-    $date_info = $win_r->{week_data} -> get();
+    $win_r->{week_data_insert} = $win_r->{week_data}->index('insert');
+    $date_info = $win_r->{week_data}->get();
     if ($date_only) {
       (undef, $date) = $self->{erefs}{-calculate}
           -> evalTimeDate($self->{-invalid}, undef, $date_info);
@@ -258,7 +304,16 @@ sub get($;$) {
 
 
   my $time_info = '';
-  $time_info = $win_r->{time_data} -> get() if (exists($win_r->{time_data}));
+  if (exists($win_r->{time_data})) {
+    my $insert_pos = $win_r->{time_data}->index('insert');
+    $time_info = $win_r->{time_data}->get();
+    if (substr($time_info, $insert_pos-1, 1) eq '=') {
+      $time_info = substr($time_info, 0, $insert_pos-1) .
+                   substr($time_info, $insert_pos);
+    } # if #
+    $win_r->{time_data_insert} = $win_r->{time_data}->index('insert');
+  } # if #
+
 
   ($time, $date) = $self->{erefs}{-calculate}
         -> evalTimeDate($self->{-invalid}, $time_info, $date_info);
@@ -289,17 +344,26 @@ sub set($;$$) {
 
   $self->clear(not defined($time));
 
-  $win_r->{time_data} -> insert(0, $time)
-      if (exists($win_r->{time_data}) and defined($time));
+  if (exists($win_r->{time_data}) and defined($time)) {
+    $win_r->{time_data}->insert(0, $time);
+    $win_r->{time_data}->icursor($win_r->{time_data_insert})
+        if ($win_r->{time_data_insert});
+  } # if #
 
   return 0 unless(defined($date));
 
-  $win_r->{date_data} -> insert(0, $date)
-      if (exists($win_r->{date_data}));
+  if (exists($win_r->{date_data})) {
+    $win_r->{date_data}->insert(0, $date);
+    $win_r->{date_data}->icursor($win_r->{date_data_insert})
+        if ($win_r->{date_data_insert});
+  } # if #
 
-  $win_r->{week_data} -> insert(0,
-                    join('v', $self->{erefs}{-calculate}->weekNumber($date)))
-      if (exists($win_r->{week_data}));
+  if (exists($win_r->{week_data})) {
+    $win_r->{week_data}->insert(0,
+                    join('v', $self->{erefs}{-calculate}->weekNumber($date)));
+    $win_r->{week_data}->icursor($win_r->{week_data_insert})
+        if ($win_r->{week_data_insert});
+  } # if #
 
 } # Method set
 
@@ -468,7 +532,7 @@ sub _show($) {
 # Returns:
 #  -
 
-sub _step($) {
+sub _step($$) {
   # parameters
   my $self = shift;
   my ($seconds) = @_;
@@ -513,10 +577,77 @@ sub _step($) {
   } # if #
 
 
-  $self -> set($time, $date);
+  $self->set($time, $date);
 
   return 0;
 } # Method _step
+
+#----------------------------------------------------------------------------
+#
+# Method:      _posStep
+#
+# Description: Step time depending on position
+#
+# Arguments:
+#  - Object reference
+#  - Type: 'T' ++time, 't' --time, 'D' date, 'W' week
+#
+# Returns:
+#  -
+
+sub _posStep($$) {
+  # parameters
+  my $self = shift;
+  my ($type) = @_;
+
+  my $win_r = $self->{win};
+  my $sign = (lc($type) eq $type) ? -1 : 1;
+
+  if (lc($type) eq 't') {
+    my $pos = $win_r->{time_data}->index('insert');
+    # Step time
+    if ($pos == 1) {
+      return $self->_step($sign*10*ONEHOUR);
+    } elsif ($pos == 2) {
+      return $self->_step($sign*ONEHOUR);
+    } elsif ($pos == 3 or $pos == 4) {
+      return $self->_step($sign*10*ONEMINUTE);
+    } else {
+      return $self->_step($sign*ONEMINUTE);
+    } # if #
+  } # if #
+
+  if (lc($type) eq 'd') {
+    my $pos = $win_r->{date_data}->index('insert');
+    # Step date
+    if ($pos == 2) {
+      return $self->_step($sign*(100*ONEYEAR+25*TWENTYFOURHOURS));
+    } elsif ($pos == 3) {
+      return $self->_step($sign*(10*ONEYEAR+2*TWENTYFOURHOURS));
+    } elsif ($pos == 4) {
+      return $self->_step($sign*ONEYEAR);
+    } elsif ($pos == 5 or $pos == 6) {
+      return $self->_step($sign*10*ONEMONTH);
+    } elsif ($pos == 7) {
+      return $self->_step($sign*ONEMONTH);
+    } elsif ($pos == 8 or $pos == 9) {
+      return $self->_step($sign*10*TWENTYFOURHOURS);
+    } else {
+      return $self->_step($sign*TWENTYFOURHOURS);
+    } # if #
+  } # if #
+
+  if (lc($type) eq 'w') {
+    my $pos = $win_r->{week_data}->index('insert');
+    # Step date
+    if ($pos == 6) {
+      return $self->_step($sign*10*ONEWEEK);
+    } else {
+      return $self->_step($sign*ONEWEEK);
+    } # if #
+  } # if #
+  return 0;
+} # Method _posStep
 
 #----------------------------------------------------------------------------
 #
@@ -588,22 +719,16 @@ sub quit($) {
   my $self = shift;
 
   my $win_r = $self->{win};
-#  $win_r->{date_label}  -> configure(-state => 'disabled')
-#      if ($win_r->{date_label});
-  $win_r->{date_data}  -> configure(-state => 'disabled')
+  $win_r->{date_data} -> configure(-state => 'disabled')
       if ($win_r->{date_data});
-#  $win_r->{week_label}  -> configure(-state => 'disabled')
-#      if ($win_r->{week_label});
-  $win_r->{week_data}  -> configure(-state => 'disabled')
+  $win_r->{week_data} -> configure(-state => 'disabled')
       if ($win_r->{week_data});
-#  $win_r->{time_label}  -> configure(-state => 'disabled')
-#      if ($win_r->{time_label});
-  $win_r->{time_data}  -> configure(-state => 'disabled')
+  $win_r->{time_data} -> configure(-state => 'disabled')
       if ($win_r->{time_data});
-  $win_r->{_clear}  -> configure(-state => 'disabled');
-  $win_r->{_show}   -> configure(-state => 'disabled');
-  $win_r->{_incr}   -> configure(-state => 'disabled');
-  $win_r->{_decr}   -> configure(-state => 'disabled');
+  $win_r->{_clear}    -> configure(-state => 'disabled');
+  $win_r->{_show}     -> configure(-state => 'disabled');
+  $win_r->{_incr}     -> configure(-state => 'disabled');
+  $win_r->{_decr}     -> configure(-state => 'disabled');
 
   return 0;
 } # Method quit

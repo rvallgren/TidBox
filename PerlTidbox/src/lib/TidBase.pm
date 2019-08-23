@@ -2,15 +2,15 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.7   Created: 2019-01-17 11:49
+#   Version:  1.8   Created: 2019-08-09 16:54
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidBase.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.8';
+my $DATEVER = '2019-08-09';
 
 # History information:
 #
@@ -30,6 +30,8 @@ my $DATEVER = '2019-01-17';
 #      Add registration of plugin
 # 1.7  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
+# 1.8  2019-08-09  Roland Vallgren
+#      Added more argument check for callback and improved error message
 #
 
 #----------------------------------------------------------------------------
@@ -84,6 +86,13 @@ sub callback($;$@) {
 
   return 0 unless $callback;
 
+  unless (ref($callback)) {
+    croak "callback issued no reference provided, " .
+          '"' . $callback . '" ' .
+          "unfortunately no good way to handle this\n";
+    return 1;
+  }
+
   return &$callback(@arg) if (ref($callback) eq 'CODE');
 
   unless (ref($callback) eq 'ARRAY') {
@@ -102,7 +111,7 @@ sub callback($;$@) {
 
   } # if #
 
-  croak "callback issued: No known way to handle\n";
+  croak "callback issued: No known way to handle \"", $callback->[0], "\"\n";
   return 1;
 } # Method callback
 

@@ -2,18 +2,21 @@
 package TbFile::Log;
 #
 #   Document: Log to file
-#   Version:  1.4   Created: 2019-02-11 09:36
+#   Version:  1.5   Created: 2019-08-15 14:04
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Log.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2019-02-11';
+my $VERSION = '1.5';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
+# 1.5  2019-05-14  Roland Vallgren
+#      Improved log message when lock is grabbed
+#      Added second to log and trace printout
 # 1.4  2017-10-05  Roland Vallgren
 #      Move files to TbFile::<file>
 #      Avoid recursive loop if append causes a log entry
@@ -366,7 +369,7 @@ sub log($@) {
   my $self = shift;
 
   $self->_logAppend(join(' ', $self->{erefs}{-clock}->getDate(),
-                              $self->{erefs}{-clock}->getTime(),
+                              $self->{erefs}{-clock}->getHHMMSS(),
                               @_
                          )
                    );
@@ -393,7 +396,7 @@ sub trace($@) {
       if (not $self->{trace_enabled} and $self->{started});
 
   my $msg = join(' ', $self->{erefs}{-clock}->getDate(),
-                      $self->{erefs}{-clock}->getTime(),
+                      $self->{erefs}{-clock}->getHHMMSS(),
                       'TRACE',
                       (caller(1))[3]
                 );

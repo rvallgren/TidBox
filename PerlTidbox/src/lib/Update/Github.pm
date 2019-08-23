@@ -2,18 +2,20 @@
 package Update::Github;
 #
 #   Document: Get Tidbox from GitHub
-#   Version:  1.0   Created: 2019-02-21 11:50
+#   Version:  1.1   Created: 2019-08-15 13:39
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Github.pmx
 #
 
-my $VERSION = '1.0';
-my $DATEVER = '2019-02-21';
+my $VERSION = '1.1';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
+# 1.1  2019-05-14  Roland Vallgren
+#      Improved error message
 # 1.0  2019-01-25  Roland Vallgren
 #      First issue, Github part moved from Update.pm.
 #
@@ -168,7 +170,9 @@ sub _getFromGitHub($$) {
   # Check the outcome
   unless ( $res->is_success ) {
     # TODO: Improve error handling
-    warn "Error from Github: ", $res->decoded_content, "\n", $res->{_msg}, "\n";
+    warn "Error from Github:\n",
+          $res->decoded_content, "\n",
+          $res->{_msg}, "\n";
     return undef;
   }
 

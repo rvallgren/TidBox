@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.5   Created: 2019-04-04 13:13
+#   Version:  2.6   Created: 2019-08-15 14:54
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.5';
-my $DATEVER = '2019-04-04';
+my $VERSION = '2.6';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
@@ -34,6 +34,9 @@ my $DATEVER = '2019-04-04';
 # 2.5  2019-03-05  Roland Vallgren
 #      "Insticksmoduler" changed to "Tillägg"
 #      Added Do not adjust
+# 2.6  2019-05-07  Roland Vallgren
+#      Backup moved from TbFile to TbFile::Backup
+#      Select backup directory starts in home directory
 #
 
 #----------------------------------------------------------------------------
@@ -158,19 +161,7 @@ use constant BACKUP_DIR => $^O . '_backup_directory';
 #  0 - Object prototype
 # Additional arguments as hash
 #  -about_popup Reference to about_popup
-#  -cfg        Reference to configuration hash
-#  -event_cfg  Event configuration object
-#  -parent_win Parent window
-#  -week_win   Week window
-#  -earlier    Earlier menu
 #  -title      Tool title
-#  -times      Reference to add times object
-#  -rewrite    Reference to rewrite data routine
-#  -calculate  Reference to calculator
-#  -clock      Reference to clock
-#  -rewrite    Rewrite times data
-#  -supv_update Update supevision data
-#  -edit_update Reference to edit update list routine
 # Returns:
 #  Object reference
 
@@ -462,7 +453,7 @@ sub _apply($) {
     $self->{erefs}{-cfg}->set(%{$self->{cfg}});
     $self->{erefs}{-cfg}->save(1);
     $self->{erefs}{-cfg}->bakInit();
-    $self->{erefs}{-tbfile}->resetCheckBackup(1);
+    $self->{erefs}{-backup}->resetCheckBackup(1);
 
     # Update supervision
     if ($self->{mod}{supervision}) {
@@ -627,7 +618,7 @@ sub _chooseBakDirectory($) {
                      $self->{cfg}{BACKUP_DIR()} :
                      (($^O eq 'MSWin32') ?
                            File::Spec->catfile(
-                                               $ENV{HOMEDRIVE},
+                         $ENV{USERPROFILE} || $ENV{HOMEPATH} || $ENV{HOMEDRIVE},
                                                ''
                                               )
                            :
@@ -645,58 +636,57 @@ sub _chooseBakDirectory($) {
   # Make sure '/' and '\' are for the actual filesystem, Windows or Unix
   my $cdir = File::Spec->canonpath($dir) ;
 
-  my $tbFile = $self->{erefs}{-tbfile};
+  my $backup = $self->{erefs}{-backup};
   my $log = $self->{erefs}{-log};
 
   # Does the directory contain Tidbox data?
-  # TODO log.rotate är en annan fil
-  # TODO Kolla om samma som arbetskatalogen först.
-  my $res = $tbFile->checkBackupDirectory($cdir);
+  my $res = $backup->checkBackupDirectory($cdir);
 
   # No name provided
   return 0
-      unless (defined($res));
+      if ($res eq 'noArgumentProvided');
 
-  my $msg;
+  unless ($res eq 'OK') {
+    my $msg;
 
-  if ($res eq 'sameAsActiveDirectory') {
-    # Do not allow backup to be same as session directory
-    $msg = 'Backupkatalogen kan inte vara samma som de ordinarie katalogen:';
-  } elsif ($res eq 'notADirectory') {
-    # Should be a directory
-    $msg = 'Inte en katalog:';
-  } elsif ($res eq 'notWriteAccess') {
-    # Should have write access
-    $msg = 'Du har inte skrivbehörighet i katalogen:';
-  } elsif ($res eq 'failedOpenDir') {
-    # Failed to open directory
-    $msg = 'Kan inte öppna katalogen:';
-#  } elsif ($res eq 'otherFiles') {
-#    # No tidbox files in directory
-#    $msg = 'Katalogen innehåller andra filer än tidbox filer:';
-#  } elsif ($res eq 'moreFiles') {
-#    # Other files than tidbox files
-#    $msg = 'Katalogen innehåller andra filer utöver tidbox filer:';
-  } # if #
+    if ($res eq 'doesNotExist') {
+      # Does not exist, create it
+      $self->{cfg}{BACKUP_DIR()} = $cdir;
+      $self->_modified('_do_backup');
+      return 0;
+    } elsif ($res eq 'sameAsActiveDirectory') {
+      # Do not allow backup to be same as session directory
+      $msg = 'Backupkatalogen kan inte vara samma som de ordinarie katalogen:';
+    } elsif ($res eq 'notADirectory') {
+      # Should be a directory
+      $msg = 'Inte en katalog:';
+    } elsif ($res eq 'notWriteAccess') {
+      # Should have write access
+      $msg = 'Du har inte skrivbehörighet i katalogen:';
+    } elsif ($res eq 'failedOpenDir') {
+      # Failed to open directory
+      $msg = 'Kan inte öppna katalogen:';
+  #  } elsif ($res eq 'otherFiles') {
+  #    # No tidbox files in directory
+  #    $msg = 'Katalogen innehåller andra filer än tidbox filer:';
+  #  } elsif ($res eq 'moreFiles') {
+  #    # Other files than tidbox files
+  #    $msg = 'Katalogen innehåller andra filer utöver tidbox filer:';
+    } else {
+      # Unexpected error
+      $msg = 'Fel "' . $res . '":';
+    } # if #
 
-  if ($msg) {
     $self->{win}{confirm}
          -> popup(
                   -title => ': Felaktig inmatning',
                   -text  => [$msg, $cdir, 'Välj en annan backup katalog!'],
                  );
     return 0;
-  } # if #
-
-  if ($res eq 'doesNotExist') {
-    # Does not exist, create it
-    $self->{cfg}{BACKUP_DIR()} = $cdir;
-    $self->_modified('_do_backup');
-    return 0;
-  } # if #
+  } # unless #
 
   # Check Tidbox data for relation to our session
-  my $state = $tbFile->checkDirectoryDigest($cdir);
+  my $state = $backup->checkDirectoryDigest($cdir);
 
   if ($state eq 'OurLock') {
     # It was already locked by our session, just use it
@@ -775,11 +765,11 @@ sub _chooseBakDirectory($) {
                             'Skriv över',
                                [ $self, 'applyNewBackupDirectory',
                                  $cdir,
-                                 $tbFile, 'replaceBackupData'  ],
+                                 $backup, 'replaceBackupData'  ],
                             'Infoga',
                                [ $self, 'applyNewBackupDirectory',
                                  $cdir,
-                                 $tbFile, 'mergeBackupData'    ],
+                                 $backup, 'mergeBackupData'    ],
                            ]
             );
 
@@ -810,15 +800,15 @@ sub _chooseBakDirectory($) {
                             'Använd',
                                [ $self, 'applyNewBackupDirectory',
                                  $cdir,
-                                 $tbFile, 'replaceSessionData' ],
+                                 $backup, 'replaceSessionData' ],
                             'Skriv över',
                                [ $self, 'applyNewBackupDirectory',
                                  $cdir,
-                                 $tbFile, 'replaceBackupData'  ],
+                                 $backup, 'replaceBackupData'  ],
                             'Infoga',
                                [ $self, 'applyNewBackupDirectory',
                                  $cdir,
-                                 $tbFile, 'mergeBackupData'    ],
+                                 $backup, 'mergeBackupData'    ],
                            ]
             );
 

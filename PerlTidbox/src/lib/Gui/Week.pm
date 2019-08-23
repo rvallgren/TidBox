@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.19   Created: 2019-04-10 14:28
+#   Version:  1.20   Created: 2019-08-09 17:01
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.19';
-my $DATEVER = '2019-04-10';
+my $VERSION = '1.20';
+my $DATEVER = '2019-08-09';
 
 # History information:
 #
@@ -53,6 +53,9 @@ my $DATEVER = '2019-04-10';
 #       Hyperlink from weekday to Edit lost, restored.
 #       Not event time not shown if no time is registered.
 #       Show 0 hours as "0" for event time
+# 1.20  2019-05-16  Roland Vallgren
+#       Press return in view to go to edit
+#       Added "Redigera" in right click menu in time area
 #
 
 #----------------------------------------------------------------------------
@@ -97,6 +100,7 @@ use Gui::Confirm;
 # Arguments:
 #  0 - Object prototype
 # Additional arguments as hash
+#  -title      Tool title
 # Returns:
 #  Object reference
 
@@ -422,6 +426,15 @@ sub _setup($) {
                              -width => $self->{textboxwidth},
                             );
 
+  $win_r->{times}->bind('<Return>' => [$self => '_edit', $win_r->{times}]);
+
+  my $menu = $win_r->{times}->menu();
+  $menu->add('radiobutton',
+             -command => [$self => '_edit', $win_r->{times}],
+             -label => 'Redigera',
+                  -indicatoron => 0
+             );
+
   ### Worktime box ###
   $win_r->{worktime_area} = $win_r->{area}
       -> Frame()
@@ -434,6 +447,8 @@ sub _setup($) {
                 -width => $self->{textboxwidth},
                )
       -> pack(-side => 'left', -expand => '1', -fill => 'x');
+
+  $win_r->{worktime}->bind('<Return>'=>[$self => '_edit', $win_r->{worktime}]);
 
   ### Total worktime for whole week ###
   $win_r->{wholeweek_area} = $win_r->{area}
@@ -707,6 +722,10 @@ sub _display($;$) {
       $win_r->{weekdays} -> tagConfigure($day, -underline => "1");
       $win_r->{weekdays} -> tagBind($day,
                                     '<Button-1>', [$self => '_edit', $wday] );
+
+      # Keep weekday column to allow start of Edit
+      $win_r->{weekday_col}[$wday] = $wDayCol;
+
       $wDayCol += 9;
     } # for #
 
@@ -914,7 +933,25 @@ sub _edit($$) {
   my ($wday) = @_;
 
   my $date;
-  if($wday == 0) {
+  if (not defined($wday)) {
+    # TODO Find position in text area to calculate weekday
+    $date = $self->{first_date};
+  } elsif(ref($wday)) {
+    my $col = $wday->index('insert');
+    $col =~ s/^.*?\.//;
+    my $r = $self->{win}{weekday_col};
+    return undef
+        if ($col <= $$r[1]);
+    return undef
+        if ($col >= $$r[0] + 9);
+    for my $i (0, 6, 5, 4, 3, 2, 1) {
+      if ($col >= $self->{win}{weekday_col}[$i]) {
+        $date = $self->{erefs}{-calculate}->
+                     stepDate($self->{last_date}, -(6-$i)-1);
+        last;
+      } # if #
+    } # for #
+  } elsif($wday == 0) {
     $date = $self->{last_date};
   } else {
     $date = $self->{erefs}{-calculate}->

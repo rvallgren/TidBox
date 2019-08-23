@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.10   Created: 2019-02-21
+#   Version:  4.11   Created: 2019-08-15
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.10';
-my $DATEVER = '2019-02-21';
+my $VERSION = '4.11';
+my $DATEVER = '2019-08-15';
 
 #----------------------------------------------------------------------------
 #
@@ -44,6 +44,8 @@ my $DATEVER = '2019-02-21';
 # 4.10  2019-01-25  Roland Vallgren
 #       Code improvements
 #       Added handling of Update
+# 4.11  2019-05-27  Roland Vallgren
+#       Handle new backup module
 #
 
 #----------------------------------------------------------------------------
@@ -93,6 +95,7 @@ use Gui::Settings;
   register_external(
                      'Perl VERSION: ' . sprintf('v%vd', $^V),
                      'Tk::VERSION: ' . $Tk::VERSION,
+                     'Tk::version: ' . $Tk::version,
                    );
 }
 
@@ -572,7 +575,7 @@ $settings ->
               -supervision => $tbFile->getRef('-supervision'),
               -log         => $tbFile->getRef('-log'),
               -plugin      => $tbFile->getRef('-plugin'),
-              -tbfile      => $tbFile,
+              -backup      => $tbFile->getRef('backup'),
               -earlier     => $earlier,
               -parent_win  => $main_win->getWin(),
               -week_win    => $week_win,
@@ -642,9 +645,7 @@ $tbFile->checkSessionLock([$main_win, 'showLocked']);
   MainLoop;
 }
 # Check if an update is ready to be installed
-# TODO We need a setting to define if restart should be done
 exit 0
     unless (my $replace = $update->getReplaceScript());
 
-# TODO We need a setting to define if this should be done
 exec $^X, $replace;

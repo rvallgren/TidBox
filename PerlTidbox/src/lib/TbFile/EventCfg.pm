@@ -2,15 +2,15 @@
 package TbFile::EventCfg;
 #
 #   Document: Event Configuration Data
-#   Version:  3.3   Created: 2019-02-07 15:16
+#   Version:  3.4   Created: 2019-08-13 17:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventCfg.pmx
 #
 
-my $VERSION = '3.3';
-my $DATEVER = '2019-02-07';
+my $VERSION = '3.4';
+my $DATEVER = '2019-08-13';
 
 # History information:
 
@@ -46,6 +46,8 @@ my $DATEVER = '2019-02-07';
 #      Handle fixed condense setting in matchString
 # 3.3  2019-02-07  Roland Vallgren
 #      Removed log->trace
+# 3.4  2019-05-16  Roland Vallgren
+#      Corrected calculation of condense regexp in matchString
 #
 
 #----------------------------------------------------------------------------
@@ -708,7 +710,7 @@ sub matchString($$;$) {
       $event_no = $#{$cfg_r};
       $condense = $event_no;
     } # if #
-  } elsif ($#{$cfg_r} > $condense) {
+  } elsif ($#{$cfg_r} >= $condense) {
     $event_no = @{$cfg_r} - $condense;
   } else {
     $event_no = $#{$cfg_r};
@@ -716,15 +718,18 @@ sub matchString($$;$) {
   } # if #
 
   my $match_string = '(';
+  my $stop = $#{$cfg_r};
   for my $ev_r (@{$str_r}) {
     my $type = $ev_r->{-type};
     $match_string .= $types_def{$type}[0] . '*';
-    last if ($type eq '.');
+    last if ($stop <= 0);
+    $stop--;
 
     $event_no--;
     $match_string .= ($event_no ? ',' : '),(' );
   } # for #
   $match_string .= ')';
+
   # And finally compile regexp
   $match_string = qr/^$match_string$/;
 

@@ -2,15 +2,15 @@
 package TbFile::Times;
 #
 #   Document: Times data
-#   Version:  1.12   Created: 2019-02-15 11:55
+#   Version:  1.13   Created: 2019-05-20 11:43
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.12';
-my $DATEVER = '2019-02-15';
+my $VERSION = '1.13';
+my $DATEVER = '2019-05-20';
 
 # History information:
 #
@@ -49,6 +49,8 @@ my $DATEVER = '2019-02-15';
 #       References to other objects in own hash
 # 1.12  2019-02-07  Roland Vallgren
 #       Removed log->trace
+# 1.13  2019-05-17  Roland Vallgren
+#       Handle copy/paste date in undo set
 #
 
 #----------------------------------------------------------------------------
@@ -537,11 +539,22 @@ sub _getUndoDates($) {
       if (substr($l, 0, 1) eq 'L');
 
   # Latest undo entry is the end of an undo set
-  return ('-',
-          substr($l, index($l, ' - ') - 10, 10),
-          substr($l, index($l, ' - ') +3, 10),
-         )
-      if (substr($l, 0, 1) eq 'S');
+  if (substr($l, 0, 1) eq 'S') {
+    my $pos = index($l, ' - ');
+    #   2019-05-13 - 2019-05-19
+    # It is an adjust undo set, get start and end dates
+    return ('-',
+            substr($l, $pos - 10, 10),
+            substr($l, $pos + 3, 10),
+           )
+        if ($pos >= 0);
+
+    $pos = index($l, ' till ');
+    #   2019-05-13 till 2019-05-19
+    # It is an copy/paste undo set, get to date
+    return (substr($l, $pos + 6, 10))
+        if ($pos >= 0);
+  } # if #
 
   # Latest undo entry is a new registration
   return (substr($self->{times}[$l],0,10));
@@ -918,7 +931,7 @@ sub _undoSet($) {
 
   my $l = pop @{$self->{undo}};
   my $start = substr($l, 1, index($l, ':')-1);
-  my $cnt=0;
+  my $cnt=1;
   while ($start < $self->_undoOne()) {
     $cnt++;
   } # while #

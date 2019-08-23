@@ -2,18 +2,20 @@
 package TbFile::Lock;
 #
 #   Document: Lockfile handler
-#   Version:  1.3   Created: 2019-02-07 15:14
+#   Version:  1.4   Created: 2019-08-13 16:48
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Lock.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2019-02-07';
+my $VERSION = '1.4';
+my $DATEVER = '2019-08-13';
 
 # History information:
 #
+# 1.4  2019-08-13  Roland Vallgren
+#      Improved log message when lock is grabbed
 # 1.3  2019-02-07  Roland Vallgren
 #       Removed log->trace
 # 1.2  2017-10-05  Roland Vallgren
@@ -222,7 +224,9 @@ sub lock($$$;$) {
     $self->{erefs}{-log}->start();
     $self->{erefs}{-log}->
       log('------ Grabbed lock from user:', $lock_grabbed->{user},
+          'ProcessId:', $lock_grabbed->{processId},
           'Locked at:', $lock_grabbed->{date}, $lock_grabbed->{time},
+          'Locked digest:', ($lock_grabbed->{digest} || 'No digest'),
           '------'
          );
   } # if #

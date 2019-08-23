@@ -1,15 +1,15 @@
 #
 package TidVersion;
 #
-#   Version:  1.8   Created: 2019-04-12
+#   Version:  1.9   Created: 2019-08-13
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidVersion.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2019-04-12';
+my $VERSION = '1.9';
+my $DATEVER = '2019-08-13';
 
 # Register version information
 {
@@ -42,6 +42,8 @@ my $DATEVER = '2019-04-12';
 #      Renamed Version to TidVersion, avoid mixup with Perl version
 # 1.8  2019-03-02  Roland Vallgren
 #      "Insticksmoduler" changed to "Tillägg"
+# 1.9  2019-05-13  Roland Vallgren
+#      Added Tk::version as external dependency
 #
 
 #----------------------------------------------------------------------------
@@ -79,9 +81,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2019-04-12',
+    date      => '2019-08-13',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.14.2',
+    VERSION   => '4.15',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -116,19 +118,26 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Veckan
- - visar inte "Övrig tid" om ingen övrig tid registrerats
- - Om en händelse registrerats med noll timmar markeras det med "0"
+Tid och Datum: Pil upp eller ner räknar upp eller ner beroende på position.
+Shift pil upp eller ner räknar en timme eller en vecka upp eller ner.
+Ctrl pil upp eller ner räknar tio minuter upp eller ner.
+Lika med "=" räknar ut uttryck. T.ex: 10:33+4 räknas om till 10:37.
+Ctrl+w i datum öppnar Veckan.
+<Return> på en tid i Veckan öpnar Redigera för den dagen
+<Return> i datum registrerar händelse eller visar redigera om händelse är tom.
+Redigera: Kopiera och klistra in en hel dag.
+Förbättrat beteende på sök för att undvika att ändra en händelse av misstag
+Pågående händelse markeras med ljusgrönt i listan i huvudfönstret.
+En nyligen redigerad eller tillagd händelse markeras med ljusblått.
+Kodförbättringar
 '
 ,
 
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Veckan: Tappat bort länk från veckodag i summa till redigera.
-Redigera: Sökknapparna var utgråade efter sökning om enbart
-  radioknappar valts
-Tillägg för MyTime: "Doctor visit -SE" är inte en tillåten "Type"
+Rättat samla i veckan så att mest samlade fungerar
+ och sista fältet kan vara annat än fritext
 '
 ,
 

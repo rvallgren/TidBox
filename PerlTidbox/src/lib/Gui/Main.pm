@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.13   Created: 2019-02-27 21:34
+#   Version:  2.14   Created: 2019-08-15 13:49
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.13';
-my $DATEVER = '2019-02-27';
+my $VERSION = '2.14';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
@@ -55,6 +55,10 @@ my $DATEVER = '2019-02-27';
 #       Corrected: -error_popup is an eref
 # 2.13  2019-02-26  Roland Vallgren
 #       Improved handling of daylist to allow see and go up and down in daylist
+# 2.14  2019-05-14  Roland Vallgren
+#       Control+w in date field starts week
+#       Improved comments
+#       Adapt to changed DayList change see to seeTime
 #
 
 #----------------------------------------------------------------------------
@@ -210,12 +214,11 @@ sub _status($;$) {
   my $now_minu = $self->{erefs}{-clock}->getMinute();
 
   my $win_r = $self->{win};
-  $win_r->{day_list}->see(undef, $now_hour . ':' . $now_minu)
-      if ($win_r->{day_list}
-          and not defined($self->{edit_event_ref}));
 
   return $self->{message}--
       if ($self->{message});
+
+  $win_r->{day_list}->seeOngoing();
 
   my $entry_text;
   my $show_data_text = '';
@@ -642,7 +645,8 @@ sub _add($$;$) {
 
   $self->{erefs}{-times}->add($line);
   $self->_message('Ny registrering tillagd');
-  $self->{win}{day_list}->see(undef, substr($line, 11, 5));
+  $self->{win}{day_list}->seeTime(substr($line, 11, 5))
+      if ($self->{win}{day_list});
   return 0;
 } # Method _add
 
@@ -684,6 +688,8 @@ sub _modify($;$) {
 
   $self->{erefs}{-times}->change($event_ref, $line);
   $self->_message('Registrering ändrad');
+  $self->{win}{day_list}->seeTime(substr($line, 11, 5))
+      if ($self->{win}{day_list});
   return 0;
 } # Method _modify
 
@@ -935,14 +941,16 @@ sub _goOn($;$$) {
 #
 # Description: Callback for daylist selection.
 #              Date, time and event are inserted.
+#              Clear unless data is provided
 #
 # Arguments:
-#  0 - Object reference
-#  1 - Reference to event to show
+#  - Object reference
+# Optional Arguments:
+#  - Reference to event to show
 # Returns:
 #  -
 
-sub show($$) {
+sub show($;$) {
   # parameters
   my $self = shift;
   my ($ref) = @_;
@@ -1493,8 +1501,10 @@ sub _setup($) {
   $win_r->{title_timer} = $win_r->{win}
       -> repeat(1000, [tick => $self->{erefs}{-clock}]);
 
-  # Day list listbox to the left
+  ### Area for day list and main window ####
   if ($self->{erefs}{-cfg}->get('main_show_daylist')) {
+
+    # Day list listbox to the left
     $win_r->{day_list} =
      Gui::DayList->new(-area => $win_r->{area},
                        -side => 'left',
@@ -1508,18 +1518,8 @@ sub _setup($) {
                        -showEvent => [$self => 'show'],
                        -parentName => $win_r->{name},
                       );
-    $win_r->{day_list}->configure(
-                       -times     => $self->{erefs}{-times},
-                       -calculate => $self->{erefs}{-calculate},
-                                # List should show today
-                       -clock     => $self->{erefs}{-clock},
-                       -cfg       => $self->{erefs}{-cfg},
-                                  );
-  } # if #
 
-
-  ### Area for day list and main window ####
-  if ($self->{erefs}{-cfg}->get('main_show_daylist')) {
+    # Area for main window when day list is shown
     $win_r->{right_area} = $win_r->{area}
         -> Frame()
         -> pack(-side => 'left', -expand => '1', -fill => 'both');
@@ -1536,6 +1536,7 @@ sub _setup($) {
                              },
                     -time      => [$self, '_modify', 1],
                     -date      => [$self, '_dateReturn'],
+                    -week      => [$self, '_dated', $self->{erefs}{-week_win}],
                     -invalid   => [$self, '_message'],
                    );
 
@@ -1682,9 +1683,9 @@ sub _setup($) {
 
   # . Issue a first _status in 2 seconds,
   #     if more than 3 seconds to next minute
-  if ($self->{erefs}{-clock}->getSecond() < 57) {
+  if ($self->{erefs}{-clock}->getSecond() < 56) {
     $self->{erefs}{-clock}->
-                 timeout(-second => 2,
+                 timeout(-second => 3,
                          -callback => [$self => '_status']);
   } # if #
 

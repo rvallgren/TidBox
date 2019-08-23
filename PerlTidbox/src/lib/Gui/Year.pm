@@ -2,7 +2,7 @@
 package Gui::Year;
 #
 #   Document: Display all weeks in the years
-#   Version:  1.4   Created: 2019-02-21 12:00
+#   Version:  1.4   Created: 2019-08-15 14:17
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Year;
 #
 
 my $VERSION = '1.4';
-my $DATEVER = '2019-02-21';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
@@ -80,16 +80,7 @@ use constant HEAD_ARCHIVE => 'Arkiv';
 # Arguments:
 #  0 - Object prototype
 # Additional arguments as hash
-#  -data       Reference to common data hash
-#  -cfg        Reference to configuration hash
-#  -event_cfg  Event configuration object
-#  -parent_win Parent window
 #  -title      Tool title
-#  -times      Reference to times object
-#  -week_win   Reference to week window object
-#  -edit_win   Reference to edit window object
-#  -calculate  Reference to calculator
-#  -clock      Reference to clock
 # Returns:
 #  Object reference
 

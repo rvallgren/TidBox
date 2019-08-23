@@ -2,18 +2,20 @@
 package Update::Controller;
 #
 #   Document: Perform periodic check for new versions
-#   Version:  1.1   Created: 2019-02-28 17:15
+#   Version:  1.2   Created: 2019-08-15 13:42
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Controller.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2019-02-28';
+my $VERSION = '1.2';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
+# 1.2  2019-05-14  Roland Vallgren
+#      Improved log message
 # 1.1  2019-02-21  Roland Vallgren
 #      Added logging
 # 1.0  2019-01-25  Roland Vallgren
@@ -463,7 +465,8 @@ sub timeoutSignaled($) {
     my $newVersion = $self->{installer}->checkForNewVersion();
     if (not defined($newVersion)) {
       # We already have latest version, schedule next check tomorrow
-      $self->{erefs}{-log}->log('Update found no new versions');
+      $self->{erefs}{-log}->
+             log('Update: Already on latest version. Schedule check tomorrow.');
       $self->queueCleanupAndStartAllOver(timer => TMR_UNTIL_TOMORROW);
 
     } else {

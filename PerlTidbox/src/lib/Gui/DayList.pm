@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.6   Created: 2019-04-04 13:20
+#   Version:  1.7   Created: 2019-08-13 17:19
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.6';
-my $DATEVER = '2019-04-04';
+my $VERSION = '1.7';
+my $DATEVER = '2019-08-13';
 
 # History information:
 #
@@ -33,6 +33,11 @@ my $DATEVER = '2019-04-04';
 #      => Removed highlighting by "<<" at end of line.
 # 1.6  2019-04-01  Roland Vallgren
 #      Removed print
+# 1.7  2019-05-22  Roland Vallgren
+#      _show provides an information message
+#      Split see into see, select and activate
+#      New methods highlite and highlited to highlite an event without
+#      selecting it
 #
 
 #----------------------------------------------------------------------------
@@ -107,7 +112,7 @@ sub _show($$) {
     my $refs = $self->{refs};
     my $event = $win_r->{list_box}->get($cur_selection);
 
-    $self->callback($self->{-showEvent}, $refs->{$event}, $event);
+    $self->callback($self->{-showEvent}, $refs->{$event}, 'Visar: ' . $event);
 
   } # if #
 
@@ -130,7 +135,15 @@ sub clear($) {
   my $self = shift;
 
 
-  $self->{win}{list_box} -> selectionClear(0, 'end');
+  my $win_r = $self->{win};
+  $win_r->{list_box}->selectionClear(0, 'end');
+
+  if ($self->{highlited} > -1 and
+          $self->{highlited} < $win_r->{list_box}->index('end')) {
+    $win_r->{list_box}->itemconfigure($self->{highlited},
+                                      -background => $self->{background});
+    $self->{highlited} = -1;
+  } # if #
 
   return 0;
 } # Method clear
@@ -172,7 +185,6 @@ sub update($;@) {
   %{$refs} = ();
 
   $list_box->delete(0, 'end');
-  $self->{highlited} = -1;
 
   my $repeated = 1;
   my $date = $self->{date};
@@ -183,7 +195,7 @@ sub update($;@) {
     my $entry = $self->{erefs}{-calculate}->format(undef, $1, $2, $3);
 
 #    unless (exists($refs->{$entry})) {
-#       TODO Same entry text kan be repeated on other times will confuse
+#       TODO Same entry text repeated on other times will confuse
 #            the list. However removing the reset of $repeat will cause number
 #            to step on different entries.
 #            Either do this or include time in entry
@@ -211,12 +223,20 @@ sub update($;@) {
   } # if #
 
   # Update lock display
-  if ($self->{erefs}{-cfg}->isLocked($date)) {
-    $list_box -> configure(-background => 'lightgrey');
-  } else {
-    $list_box -> configure(-background => 'white');
-  } # if #
 
+  if ($self->{erefs}{-cfg}->isLocked($date)) {
+    $self->{background} = 'lightgrey';
+  } else {
+    $self->{background} = 'white';
+  } # if #
+  $list_box->configure(-background => $self->{background});
+
+  if ($self->{erefs}{-clock} and
+      $self->{erefs}{-clock}->getSecond() < 57) {
+    $self->{erefs}{-clock}->
+                 timeout(-second => 2,
+                         -callback => [$self => 'ongoing']);
+  } # if #
   return 0;
 } # Method update
 
@@ -274,66 +294,307 @@ sub curselection($) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      see
+# Method:      _findEvent
 #
-# Description: Make selected line visible
+# Description: Find an event
 #
 # Arguments:
 #  - Object reference
-#  - Event that should be visible
-# Optional Arguments:
-#  - Time that should be visible
+#  - Reference to event to find
 # Returns:
-#  True if event was selected
+#  - Index of found event
+#  - undef if not found
 
-sub see($$;$) {
+sub _findEvent($$) {
   # parameters
   my $self = shift;
-  my ($fnd, $time) = @_;
-
+  my ($fnd) = @_;
 
   my $win_r = $self->{win};
 
   my $refs = $self->{refs};
 
-  if ($fnd) {
-    for my $key (keys(%$refs)) {
-      next
-          unless ($fnd eq $refs->{$key});
+  for my $key (keys(%$refs)) {
+    next
+        unless ($fnd eq $refs->{$key});
 
-      for my $i (0 .. $win_r->{list_box}->index('end')) {
-        next
-            unless ($win_r->{list_box}->get($i) eq $key);
-        $win_r->{list_box}->selectionSet($i);
-        $win_r->{list_box}->see($i);
-        return 1;
-      } # for #
-
-      return 0;
+    for my $i (0 .. $win_r->{list_box}->index('end')) {
+      return $i
+          if ($win_r->{list_box}->get($i) eq $key);
     } # for #
-    return 0;
-  } # if #
 
-  # Show time
+    return undef;
+  } # for #
+  return undef;
+} # Method _findEvent
+
+#----------------------------------------------------------------------------
+#
+# Method:      _findTime
+#
+# Description: Find an event at or before specified time
+#
+# Arguments:
+#  - Object reference
+#  - Time to search
+# Returns:
+#  - Index of found event
+#  - undef if not found
+
+sub _findTime($$) {
+  # parameters
+  my $self = shift;
+  my ($time) = @_;
+
+  my $win_r = $self->{win};
+
+  my $refs = $self->{refs};
+
   for my $i (reverse(0 .. $win_r->{list_box}->index('end'))) {
-# TODO Scrolls away from selected line
     my $e = $win_r->{list_box}->get($i);
     next
         if (not $e or ($time lt substr($e, 0, 5)));
-    unless ($i == $self->{highlited}) {
-      $win_r->{list_box}->itemconfigure($self->{highlited},
-                                        -background => 'white')
-           if ($self->{highlited} > -1);
-      $win_r->{list_box}->itemconfigure($i, -background => 'lightgrey');
-      $self->{highlited} = $i;
-    } # unless #
-    $win_r->{list_box}->activate($i);
-    $win_r->{list_box}->see($i);
-    last;
+    return $i;
   } # for #
+  return undef;
+} # Method _findTime
+
+#----------------------------------------------------------------------------
+#
+# Method:      active
+#
+# Description: Get reference to active event
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  - Referens to active event
+
+sub active($) {
+  # parameters
+  my $self = shift;
+
+  my $win_r = $self->{win};
+  my $cur_active = $win_r->{list_box}->index('active');
+  return ($self->{refs}{$win_r->{list_box}->get($cur_active)})
+      if (defined($cur_active));
+
+  return (undef);
+} # Method active
+
+#----------------------------------------------------------------------------
+#
+# Method:      highlited
+#
+# Description: Get reference to highlited event
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  - Reference to highlited event
+
+sub highlited($) {
+  # parameters
+  my $self = shift;
+
+
+  my $win_r = $self->{win};
+
+  my $h = $self->{highlited};
+
+  return ($self->{refs}{$win_r->{list_box}->get($h)})
+      if ($h > -1 and
+          $h < $win_r->{list_box}->index('end'));
+
+  return undef;
+} # Method highlite
+
+#----------------------------------------------------------------------------
+#
+# Method:      highlite
+#
+# Description: Highlite an event selected by index
+#
+# Arguments:
+#  - Object reference
+#  - Index of event that should be highlited
+#      If no index is provided remove highlite
+# Returns:
+#  -
+
+sub highlite($;$) {
+  # parameters
+  my $self = shift;
+  my ($index) = @_;
+
+
+  my $win_r = $self->{win};
+  $win_r->{list_box}->itemconfigure($self->{highlited},
+                                    -background => $self->{background})
+      if ($self->{highlited} > -1 and
+          $self->{highlited} < $win_r->{list_box}->index('end'));
+
+  if (defined($index)) {
+    $win_r->{list_box}->itemconfigure($index, -background => 'lightblue');
+    $self->{highlited} = $index;
+    $win_r->{list_box}->see($index);
+  } else {
+    $self->{highlited} = -1;
+  } # if #
 
   return 0;
-} # Method see
+} # Method highlite
+
+#----------------------------------------------------------------------------
+#
+# Method:      seeTime
+#
+# Description: Make event for a time visible and highlited
+#
+# Arguments:
+#  - Object reference
+#  - Time that should be visible
+# Returns:
+#  -
+
+sub seeTime($$) {
+  # parameters
+  my $self = shift;
+  my ($time) = @_;
+
+
+  my $index = $self->_findTime($time);
+  return undef
+      unless (defined($index));
+  my $win_r = $self->{win};
+  $self->highlite($index);
+  $win_r->{list_box}->activate($index);
+  return 0;
+} # Method seeTime
+
+#----------------------------------------------------------------------------
+#
+# Method:      ongoing
+#
+# Description: Show the event that is ongoing in light green color
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  - undef if no event is found or no clock is availabel
+
+sub ongoing($$) {
+  # parameters
+  my $self = shift;
+
+
+  return undef
+      unless (exists($self->{erefs}{-clock}));
+  my $index = $self->_findTime($self->{erefs}{-clock}->getTime());
+  return undef
+      unless (defined($index));
+
+  my $win_r = $self->{win};
+  $win_r->{list_box}->itemconfigure($self->{ongoing},
+                                    -background => $self->{background})
+      if ($self->{ongoing} != $index and
+          $self->{ongoing} > -1      and
+          $self->{ongoing} < $win_r->{list_box}->index('end'));
+
+  $win_r->{list_box}->itemconfigure($index, -background => 'lightgreen');
+  $self->{ongoing} = $index;
+
+  return 0;
+} # Method ongoing
+
+#----------------------------------------------------------------------------
+#
+# Method:      seeOngoing
+#
+# Description: Make ongoing visible, turn of highlited
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub seeOngoing($) {
+  # parameters
+  my $self = shift;
+
+
+  $self->highlite();
+  my $win_r = $self->{win};
+  $win_r->{list_box}->see($self->{ongoing})
+      if (exists($self->{erefs}{-clock}) and
+          $self->{ongoing} > -1 and
+          $self->{ongoing} < $win_r->{list_box}->index('end') and
+          not defined($win_r->{list_box}->curselection())
+         );
+  return 0;
+} # Method seeOngoing
+
+#----------------------------------------------------------------------------
+#
+# Method:      selectEvent
+#
+# Description: Select an event
+#
+# Arguments:
+#  - Object reference
+#  - Event that should be selected
+# Returns:
+#  True if event was found and selected
+
+sub selectEvent($$) {
+  # parameters
+  my $self = shift;
+  my ($fnd) = @_;
+
+
+  my $index = $self->_findEvent($fnd);
+  return 0
+      unless (defined($index));
+
+  my $win_r = $self->{win};
+  $self->clear();
+  $win_r->{list_box}->selectionSet($index);
+  $win_r->{list_box}->see($index);
+  return 1;
+
+} # Method selectEvent
+
+#----------------------------------------------------------------------------
+#
+# Method:      activateEvent
+#
+# Description: Activate an event
+#
+# Arguments:
+#  - Object reference
+#  - Event that should be activated
+# Returns:
+#  True if event was found and activated
+
+sub activateEvent($$) {
+  # parameters
+  my $self = shift;
+  my ($fnd) = @_;
+
+
+  my $index = $self->_findEvent($fnd);
+  return 0
+      unless (defined($index));
+
+  my $win_r = $self->{win};
+
+  $self->clear();
+  $self->highlite($index);
+  $win_r->{list_box}->activate($index);
+  $win_r->{list_box}->see($index);
+  return 1;
+
+} # Method activateEvent
 
 #----------------------------------------------------------------------------
 #
@@ -362,9 +623,11 @@ sub new($%) {
   my $win_r = {};
 
   my $self = {%args,
-              win       => $win_r,
-              refs      => {},
-              highlited => -1,
+              win        => $win_r,
+              refs       => {},
+              highlited  => -1,
+              ongoing    => -1,
+              background => 'white',
              };
 
   bless($self, $class);
@@ -383,9 +646,13 @@ sub new($%) {
        -> pack(-side => 'right', -expand => '1', -fill => 'both');
   $win_r->{list_box} -> configure(
                                   -exportselection => 0,
-                                  -height => 10
+                                  -height => 10,
+                                  -selectmode => 'single'
                                  );
 
+  # Tk makes a Tk::Callback object of a given callback, hence copy array
+  $win_r->{list_box}
+      -> bind('<Escape>' => [ @{$args{-showEvent}} ]);
   $win_r->{list_box}
       -> bind('<<ListboxSelect>>' => [$self => '_show']);
 
@@ -396,6 +663,8 @@ sub new($%) {
   if ($self->{erefs}{-clock}) {
     # . Register change date for midnight ticks
     $self->{erefs}{-clock}->repeat(-date => [$self, 'setDate']);
+    # . Register minute ticks for ongoing
+    $self->{erefs}{-clock}->repeat(-minute => [$self, 'ongoing']);
   } # if #
 
   return $self;

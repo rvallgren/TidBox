@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.8   Created: 2019-04-10 14:28
+#   Version:  2.9   Created: 2019-08-15 13:45
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.8';
-my $DATEVER = '2019-04-10';
+my $VERSION = '2.9';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
@@ -38,6 +38,12 @@ my $DATEVER = '2019-04-10';
 #      Code improvements
 # 2.8  2019-04-10  Roland Vallgren
 #      Enable search buttons after a search, when a search pattern is added
+# 2.9  2019-05-14  Roland Vallgren
+#      Control+w in date field starts week
+#      Added Copy and Paste one day
+#      Search and then return changes time of found event
+#      this should only happen if the found event is equal with search string
+#      Adapt to changed DayList change see to seeTime
 #
 
 #----------------------------------------------------------------------------
@@ -129,15 +135,7 @@ my %TEXT = (
 # Arguments:
 #  0 - Object prototype
 # Additional arguments as hash
-#  -data       Reference to common data hash
-#  -cfg        Reference to configuration hash
-#  -event_cfg  Event configuration object
-#  -parent_win Parent window
 #  -title      Tool title
-#  -times      Reference to times object
-#  -calculate  Reference to calculator
-#  -clock      Reference to clock
-#  -earlier    Reference to earlier object
 # Returns:
 #  Object reference
 
@@ -385,7 +383,7 @@ sub show($;$$) {
       $win_r->{event_handling}->clear(1);
     } # if #
     $self->{type_setting} = $type;
-    $self->_message("Info: " . $text);
+    $self->_message($text);
     $win_r->{entry_button_change} -> configure(-state => 'normal');
     $win_r->{entry_button_delete} -> configure(-state => 'normal');
     $self->_enableAdd();
@@ -533,6 +531,8 @@ sub _search($;$) {
   return $self->_message('Kan inte söka på ingenting')
       unless ($action_text);
 
+  $self->{erefs}{-earlier}->add($action_text);
+
   my $search_text = $action_text;
 
   # "PERLify" user entered wildcards if no perl regexps detected
@@ -556,6 +556,8 @@ sub _search($;$) {
 
   # Get time and date if selection is active
   my $ref = $win_r->{day_list}->curselection();
+  $ref = $win_r->{day_list}->highlited()
+      unless ($ref);
   my $date_time;
   if (ref($ref)) {
     $date_time = substr($$ref, 0, 16);
@@ -592,13 +594,24 @@ sub _search($;$) {
   return $self->_message('Hittade ingenting')
       unless ($fnd);
 
-  # Display the found event
-  $self->_display(substr($$fnd, 0, 10));
+  # Display the date for the found event
+  my $date = substr($$fnd, 0, 10);
+  my $time = substr($$fnd, 11, 5);
+  $self->_display($date)
+      unless ($self->{date} eq $date);
 
-  if ($win_r->{day_list}->see($fnd)) {
-    $self->{erefs}{-earlier}->add($action_text);
+  # Display the found event
+  if ($action_text eq substr($$fnd, 23)) {
+    if ($win_r->{day_list}->selectEvent($fnd)) {
+      $self->show($fnd, 'Sökt exakt: ' . $action_text);
+    } # if #
+  } else {
+    $win_r->{day_list}->activateEvent($fnd);
     $win_r->{event_handling}->set($action_text, 1);
     $self->_validate();
+    $win_r->{entry_button_change} -> configure(-state => 'disabled');
+    $win_r->{entry_button_delete} -> configure(-state => 'disabled');
+    $self->_message('Sökt match: ' . $action_text);
   } # if #
 
   return 0;
@@ -630,6 +643,72 @@ sub _previous($$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      copyDate
+#
+# Description: Copy all day, save todays date in copy attribute
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub copyDate($) {
+  # parameters
+  my $self = shift;
+
+  $self->{win}{paste_date} -> configure(-state => 'normal')
+      unless ($self->{copy_date});
+  $self->{copy_date} = $self->{date};
+  $self->_message('Kopiera ' . $self->{date});
+  $self->{win}{paste_date} ->
+                         configure(-text => 'Klistra in från ' . $self->{date});
+  return 0;
+} # Method copyDate
+
+#----------------------------------------------------------------------------
+#
+# Method:      pasteDate
+#
+# Description: Paste date, that is copy all events from copy_date to today
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  -
+
+sub pasteDate($) {
+  # parameters
+  my $self = shift;
+
+
+  return undef
+      unless ($self->{copy_date});
+
+  $self->{erefs}{-times}->undoSetBegin();
+
+  my $cnt = 0;
+  for my $ref ($self->{erefs}{-times}->getSortedRefs($self->{copy_date})) {
+    next
+        unless ($$ref =~ /^$self->{copy_date},($TIME),($TYPE),(.*)$/);
+    $self->_doAdd(join(',', $self->{date}, $1, $2, $3), $3, $self->{date});
+    $cnt++;
+  } # for #
+
+  my $str = 'Kopierade från ' . $self->{copy_date} . ' till ' . $self->{date};
+  $str   .= "\nKlistrade in " . $cnt . ' händelser'
+      if $cnt;
+
+  $self->{erefs}{-times} ->
+        undoSetEnd('klistra in:,' . $str);
+
+  $self->update();
+  $self->_message('Klistrade in ' . $cnt .
+                  ' händelser från ' . $self->{copy_date});
+  return 0;
+} # Method pasteDate
+
+#----------------------------------------------------------------------------
+#
 # Method:      _doAdd
 #
 # Description: Add a new event from th entry box
@@ -652,6 +731,9 @@ sub _doAdd($$$$) {
   $self->{erefs}{-earlier}->add($action_text);
 
   $self->update();
+
+  $self->{win}{day_list}->seeTime(substr($line, 11, 5))
+      if ($date eq $self->{date});
 
 
   if ($date eq $self->{date}) {
@@ -735,6 +817,9 @@ sub _doChange($@) {
   $self->{erefs}{-times}->change($event_ref, $line);
 
   $self->update();
+
+  $self->{win}{day_list}->seeTime(substr($line, 11, 5))
+      if ($date eq $self->{date});
 
   if ($date eq $self->{date}) {
     $self->_message('Registrering ändrad');
@@ -1096,7 +1181,7 @@ sub _setup($) {
 
   my $win_r = $self->{win};
 
-  ### Listbox ###
+  ### Daylist ###
   $win_r->{day_list} =
    Gui::DayList->new(-area       => $win_r->{area},
                      -side       => 'left',
@@ -1123,6 +1208,7 @@ sub _setup($) {
                            },
                   -time      => [$self, '_change'],
                   -date      => [$self, '_dateReturn'],
+                  -week      => [$self, '_week'],
                   -invalid   => [$self => '_message'],
                  );
 
@@ -1326,6 +1412,21 @@ sub _setup($) {
   $win_r->{undo} -> configure(-state => 'disabled')
       unless($self->{erefs}{-times}->undoGetLength());
 
+  # Copy all events from today
+  $win_r->{copy_date} = $win_r->{button_area}
+      -> Button(-text => 'Kopiera dagen',
+                -command => [copyDate => $self],
+               )
+      -> pack(-side => 'right');
+
+  # Paste all events from copied date
+  $win_r->{paste_date} = $win_r->{button_area}
+      -> Button(-text => 'Klistra in dag',
+                -command => [pasteDate => $self],
+                -state => 'disabled',
+               )
+      -> pack(-side => 'right');
+
   # Register for events from times and undo
   $self->{erefs}{-times}->setUndo($win_r->{name}, [$self => 'undo']);
 
@@ -1383,7 +1484,7 @@ sub _display($;$$) {
   $win_r->{event_handling}->modifyArea($date);
 
   # List recorded of a day and update lock
-  $self -> update();
+  $self->update();
 
   # No current edit line
   $self->{win}{time_area}->set(undef, $date);

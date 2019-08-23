@@ -2,7 +2,7 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.3   Created: 2019-02-07 15:56
+#   Version:  1.3   Created: 2019-08-15 13:52
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Event;
 #
 
 my $VERSION = '1.3';
-my $DATEVER = '2019-02-07';
+my $DATEVER = '2019-08-15';
 
 # History information:
 #
