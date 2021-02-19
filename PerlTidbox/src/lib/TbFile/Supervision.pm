@@ -2,15 +2,15 @@
 package TbFile::Supervision;
 #
 #   Document: Supervision class
-#   Version:  1.8   Created: 2019-02-19 17:48
+#   Version:  1.9   Created: 2019-09-03 13:22
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Supervision.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2019-02-19';
+my $VERSION = '1.9';
+my $DATEVER = '2019-09-03';
 
 # History information:
 #
@@ -35,6 +35,8 @@ my $DATEVER = '2019-02-19';
 #      Added merge with new backup data
 # 1.8  2019-02-07  Roland Vallgren
 #      Removed log->trace
+# 1.9  2019-08-29  Roland Vallgren
+#      Code improvements: Times should find dates with event
 #
 
 #----------------------------------------------------------------------------
@@ -62,47 +64,6 @@ use integer;
 #
 # Constants
 #
-# Registration analysis constants
-my $YEAR  = '\d{4}';
-my $MONTH = '\d{2}';
-my $DAY   = '\d{2}';
-my $DATE = $YEAR . '-' . $MONTH . '-' . $DAY;
-
-my $HOUR   = '\d{2}';
-my $MINUTE = '\d{2}';
-my $TIME   = $HOUR . ':' . $MINUTE;
-
-my $TYPE = '[A-Z]+';
-
-# Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
-my $WORKDAYDESC         = 'Arbetsdagen';
-my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
-
-my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
-
-my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
-
-# Hash to store common texts
-my %TEXT = (
-             $BEGINWORKDAY => 'Börja arbetsdagen',
-             $ENDWORKDAY   => 'Sluta arbetsdagen',
-
-             $BEGINPAUS    => 'Börja paus',
-             $ENDPAUS      => 'Sluta paus',
-
-             $BEGINEVENT   => 'Börja händelse',
-             $ENDEVENT     => 'Sluta händelse',
-           );
-
 
 use constant FILENAME  => 'supervision.dat';
 use constant FILEKEY   => 'SUPERVISION SETTINGS';
@@ -361,37 +322,27 @@ sub calc($) {
   my $self = shift;
 
 
-  my $today = $self->{erefs}{-clock}->getDate();
+  if ($self->{date} ne $self->{erefs}{-clock}->getDate()) {
 
-  return ($self->{yesterday} + $self->_day($today), $self->{event})
-      if ($self->{date} eq $today);
+    # Add time from start date up to yesterday
 
-  # Add time from yesterday back until startdate
-  my $start   = $self->{start};
-  my $checked = 0;
-  my $time    = 0;
+    my $dates =
+       $self->{erefs}{-times}->getEventDates($self->{event}, $self->{start});
 
-  for my $ref (reverse(
-       $self->{erefs}{-times}->
-            getSortedRefs($DATE, $TIME, $BEGINEVENT, $self->{event})
-    ))
-  {
-    my $date = substr($$ref, 0, 10);
+    my $time    = 0;
 
-    next if $date eq $checked;
-    next if $date ge $today;
-    last if $date lt $start;
+    for my $date (@$dates) {
 
-    $checked = $date;
+      $time += $self->_day($date);
 
-    $time += $self->_day($date);
+    } # for #
 
-  } # for #
+    $self->{yesterday} = $time;
+    $self->{date} = $self->{erefs}{-clock}->getDate();
 
-  $self->{yesterday} = $time;
-  $self->{date} = $today;
+  } # if #
 
-  return ($self->{yesterday} + $self->_day($today), $self->{event});
+  return ($self->{yesterday} + $self->_day($self->{date}), $self->{event});
 
 } # Method calc
 

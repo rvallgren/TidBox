@@ -2,15 +2,15 @@
 package TbFile::Configuration;
 #
 #   Document: Configuration class
-#   Version:  2.9   Created: 2019-02-19 17:41
+#   Version:  2.10   Created: 2019-11-10 11:56
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Configuration.pmx
 #
 
-my $VERSION = '2.9';
-my $DATEVER = '2019-02-19';
+my $VERSION = '2.10';
+my $DATEVER = '2019-11-10';
 
 # History information:
 #
@@ -47,6 +47,8 @@ my $DATEVER = '2019-02-19';
 #      Corrected comment
 #      Added update setting: check_new_version
 #      Removed log->trace
+# 2.10  2019-11-10  Roland Vallgren
+#       Corrected use of File::Path::make_path
 #
 
 #----------------------------------------------------------------------------
@@ -181,6 +183,7 @@ sub new($$%) {
   my $self = {
              };
 
+  # TODO Not good for testability: Do not have logic in constructor
   if (exists($args->{directory})) {
     $self->{dir} = $args->{directory};
   } elsif ($^O eq 'MSWin32') {
@@ -270,7 +273,7 @@ sub dirname($$) {
   } # if #
 
   unless (-d $self->{$typ}) {
-    eval { File::Path->make_path($self->{$typ}, { mode => 0700 }) };
+    eval { File::Path::make_path($self->{$typ}, { mode => 0700 }) };
     if ($@) {
       $self->{erefs}{-log}->log('Create failed', $@);
       return undef

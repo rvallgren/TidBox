@@ -2,15 +2,15 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.2   Created: 2019-02-13 21:26
+#   Version:  1.3   Created: 2020-01-20 19:31
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventConfig.pmx
 #
 
-my $VERSION = '1.2';
-my $DATEVER = '2019-02-13';
+my $VERSION = '1.3';
+my $DATEVER = '2020-01-20';
 
 # History information:
 
@@ -23,6 +23,8 @@ my $DATEVER = '2019-02-13';
 #      Don't need FileBase
 #      Renamed EventCfg::addCfg to EventCfg::addNewCfg
 #      References to other objects in own hash
+# 1.3  2020-01-20  Roland Vallgren
+#      Corrected remove earlier event cfg: earlierRemove()
 #
 
 #----------------------------------------------------------------------------
@@ -1258,7 +1260,9 @@ sub earlierRemove($) {
     $self->{earlier_index}{$key}--
         if ($val > $ix);
     $dateBeforeRemoved = $key
-        if ($dateBeforeRemoved lt $key);
+        if (($key lt $date) and
+            ($dateBeforeRemoved lt $key)
+           );
   } # while #
 
   if ($dateBeforeRemoved lt $date) {

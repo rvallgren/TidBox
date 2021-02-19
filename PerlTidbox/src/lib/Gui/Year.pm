@@ -2,15 +2,15 @@
 package Gui::Year;
 #
 #   Document: Display all weeks in the years
-#   Version:  1.4   Created: 2019-08-15 14:17
+#   Version:  1.5   Created: 2020-01-29 13:55
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Year.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2019-08-15';
+my $VERSION = '1.5';
+my $DATEVER = '2020-01-29';
 
 # History information:
 #
@@ -24,6 +24,10 @@ my $DATEVER = '2019-08-15';
 #      Handle session lock
 # 1.4  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
+# 1.5  2019-09-02  Roland Vallgren
+#      Code improvement: Reduce knowledge about Times data
+#      Times finds out weeks
+#      Should not fail when no time is registered
 #
 
 #----------------------------------------------------------------------------
@@ -61,6 +65,13 @@ use constant NO_DATE => '0000-00-00';
 use constant UNLOCKED => 0;
 use constant LOCKED   => 1;
 use constant ARCHIVED => 2;
+my $CONST = {
+              UNLOCKED => UNLOCKED,
+              LOCKED   => LOCKED  ,
+              ARCHIVED => ARCHIVED,
+            };
+
+
 
 use constant HEAD_ARCHIVE => 'Arkiv';
 
@@ -92,7 +103,10 @@ sub new($%) {
               @_,
               win    => {name => 'year'},
               date   => undef,
-              weeks  => {},
+              weeks  => {
+                   },
+              archive => {head => HEAD_ARCHIVE,
+                         },
              };
 
   $self->{-title} .= ': Översikt veckor';
@@ -101,134 +115,6 @@ sub new($%) {
 
   return $self;
 } # Method new
-
-#----------------------------------------------------------------------------
-#
-# Method:      _weeks
-#
-# Description: Update out all years and all weeks
-#
-# Arguments:
-#  0 - Object reference
-# Returns:
-#  True if there is changes
-
-sub _weeks($;$) {
-  # parameters
-  my $self = shift;
-  my ($year) = @_;
-
-
-  my $calc = $self->{erefs}{-calculate};
-  my $wref = $self->{weeks};
-  my $c = 0;
-
-  my ($date, $t_y, $t_w, $t_yw, $t_d, $wr);
-  my ($p_date, $p_yw)= ('', '');
-
-  my $arch = $self->{erefs}{-cfg}->get('archive_date');
-  my $lock = $self->{erefs}{-cfg}->get('lock_date');
-
-  for my $ref ($self->{erefs}{-times}->getSortedRefs($year)) {
-
-    $date = substr($$ref, 0, 10);
-
-    next
-        if ($p_date eq $date);
-
-    $p_date = $date;
-
-    $t_d = substr($date, 5, 5);
-
-    ($t_y, $t_w) = $calc->weekNumber($date);
-    $t_yw = $t_y . 'v' . $t_w;
-
-    if ($p_yw eq $t_yw) {
-
-      if ($wr->{last} lt $t_d) {
-        $wr->{last} = $t_d;
-        $c = 1;
-      } # if #
-
-    } else {
-
-      unless (exists($wref->{$t_y}{$t_w})) {
-        $wref->{$t_y}{$t_w} =
-              {
-               first  => $t_d,
-               last   => $t_d,
-               monday => $calc->dayInWeek($t_y, $t_w, 1),
-               sunday => $calc->dayInWeek($t_y, $t_w, 7),
-               lock   => 0,
-              };
-        my $yr = $wref->{$t_y};
-        $wr = $yr->{$t_w};
-
-        unless (exists($yr->{last})) {
-          $yr->{first} = $calc->dayInWeek($t_y, 1, 1);
-          $yr->{last}  = $calc->stepDate(
-                                         $calc->dayInWeek($t_y + 1, 1, 7),
-                                         -7
-                                        );
-        } # unless #
-
-        $c = 1;
-
-      } else {
-
-        $wr = $wref->{$t_y}{$t_w};
-
-        if ($wr->{first} gt $t_d) {
-          $wr->{first} = $t_d;
-          $c = 1;
-        } # if #
-
-        if ($wr->{last} lt $t_d) {
-          $wr->{last} = $t_d;
-          $c = 1;
-        } # if #
-
-      } # unless #
-
-      $p_yw = $t_yw;
-
-    } # if #
-
-    $self->{dirty}{$t_y} = 1
-        if ($c);
-  } # for #
-
-  for $t_y (keys(%{$wref})) {
-    next
-        unless(ref($wref->{$t_y}));
-    for $t_w (keys(%{$wref->{$t_y}})) {
-      $wr = $wref->{$t_y}{$t_w};
-      next
-          unless(ref($wr));
-      my $status;
-      if ($wr->{sunday} le $arch) {
-        $status = ARCHIVED;
-
-      } elsif ($wr->{sunday} le $lock) {
-        $status = LOCKED;
-
-      } else {
-        $status = UNLOCKED;
-
-      } # if #
-
-      if ($status != $wr->{lock}) {
-        $wr->{lock} = $status;
-        $self->{dirty}{$t_y} = 1;
-        $c = 1;
-      } # if #
-    } # for #
-    $self->{dirty}{$t_y} = 1
-        if ($c);
-  } # for #
-
-  return $c;
-} # Method _weeks
 
 #----------------------------------------------------------------------------
 #
@@ -357,7 +243,7 @@ sub _reviseTab($;$) {
 
   } else {
     # Update weeks setting
-    $self->_weeks();
+    $self->{erefs}{-times}->yearsWeeks($self->{weeks}, $CONST);
 
     # Find out geometry
     my $num = (grep(/\d/, keys(%{$self->{weeks}{$name}})) + 1) / 2;
@@ -824,7 +710,7 @@ sub _button($$;@) {
     $self->{dirty}{+HEAD_ARCHIVE} = 1;
 
     # Clear weeks of any removed dates
-    $self->_weeks();
+    $self->{erefs}{-times}->yearsWeeks($self->{weeks}, $CONST);
 
   } # if #
 
@@ -864,7 +750,7 @@ sub _setup($$) {
 
   # Add a tab for archive and for each year (add weeks when needed)
 
-  $self->_weeks();
+  $self->{erefs}{-times}->yearsWeeks($self->{weeks}, $CONST);
 
   for my $n (HEAD_ARCHIVE, sort(keys(%{$self->{weeks}}))) {
     $self->_addTab($n);
@@ -902,14 +788,15 @@ sub _setup($$) {
       -> pack(-side => 'right');
 
   # Activate the tab for the wanted year
-  unless (exists($self->{weeks}{$year})) {
+  if (exists($self->{weeks}{$year})) {
+    $self->{win}{notebook}->raise($year);
+  } else {
     if ($year le substr($self->{erefs}{-cfg}->get('archive_date'), 0, 4)) {
       $year = HEAD_ARCHIVE;
     } else {
       $year = $self->{erefs}{-clock}->getYear();
     } # if #
   } # if #
-  $self->{win}{notebook}->raise($year);
 
   ### Register for event changes ###
   $self->{erefs}{-times}->setDisplay($win_r->{name}, [$self => 'update']);
@@ -940,7 +827,7 @@ sub _display($;$) {
     my $win_r = $self->{win};
 
     # Add tab for any new year
-    if ($self->_weeks()) {
+    if ($self->{erefs}{-times}->yearsWeeks($self->{weeks}, $CONST)) {
       for my $y (sort(keys(%{$self->{weeks}}))) {
         $self->_addTab($y)
             unless (exists($win_r->{$y}));

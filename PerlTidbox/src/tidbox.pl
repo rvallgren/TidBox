@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.11   Created: 2019-08-15
+#   Version:  4.12   Created: 2019-09-06
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.11';
-my $DATEVER = '2019-08-15';
+my $VERSION = '4.12';
+my $DATEVER = '2019-09-06';
 
 #----------------------------------------------------------------------------
 #
@@ -46,6 +46,8 @@ my $DATEVER = '2019-08-15';
 #       Added handling of Update
 # 4.11  2019-05-27  Roland Vallgren
 #       Handle new backup module
+# 4.12  2019-09-06  Roland Vallgren
+#       Earlier menu data is built before any menu is created
 #
 
 #----------------------------------------------------------------------------
@@ -612,6 +614,9 @@ $update->init();
 # Set starttime
 $tbFile->start($date, $time, $args, $tool_info{version});
 
+# Build data for earlier menu
+$earlier->buildData($tbFile->getRef('-times'));
+
 # Setup main GUI
 $main_win->display();
 
@@ -623,8 +628,6 @@ $tbFile->getRef('-plugin')->registerPlugins();
 #
 # main loop
 #
-
-$earlier->build($tbFile->getRef('-times'));
 
 # Show about if new version is used
 my $session = $tbFile->getRef('-session');

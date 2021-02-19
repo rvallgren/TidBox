@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.7   Created: 2019-08-13 17:19
+#   Version:  1.8   Created: 2019-11-11 09:43
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.7';
-my $DATEVER = '2019-08-13';
+my $VERSION = '1.8';
+my $DATEVER = '2019-11-11';
 
 # History information:
 #
@@ -38,6 +38,8 @@ my $DATEVER = '2019-08-13';
 #      Split see into see, select and activate
 #      New methods highlite and highlited to highlite an event without
 #      selecting it
+# 1.8  2019-11-11  Roland Vallgren
+#      Code improvement: Object orientation
 #
 
 #----------------------------------------------------------------------------
@@ -78,7 +80,7 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 
 #############################################################################
@@ -188,11 +190,12 @@ sub update($;@) {
 
   my $repeated = 1;
   my $date = $self->{date};
-  for my $ref ($self->{erefs}{-times}->getSortedRefs($date)) {
+  my $times = $self->{erefs}{-times}->getSortedRegistrationsForDate($date);
 
-    next unless ($$ref =~ /^$date,($TIME),($TYPE),(.*)$/);
+  for my $evRef (@$times) {
 
-    my $entry = $self->{erefs}{-calculate}->format(undef, $1, $2, $3);
+    my $entry = $self->{erefs}{-calculate}->
+       format(undef, $evRef->{time}, $evRef->{type}, $evRef->{text});
 
 #    unless (exists($refs->{$entry})) {
 #       TODO Same entry text repeated on other times will confuse
@@ -203,11 +206,11 @@ sub update($;@) {
 #      ;
 #    } else {
     if (exists($refs->{$entry})) {
-      $entry = " -\"-    \"$3\"   Upprepning: $repeated";
+      $entry = ' -"-    "' . $evRef->{text} . '"   Upprepning: ' . $repeated;
       $repeated++;
     } # if #
 
-    $refs->{$entry} = $ref;
+    $refs->{$entry} = $evRef->{ref};
     $list_box -> insert("end", $entry);
 
   } # for #
@@ -347,8 +350,6 @@ sub _findTime($$) {
   my ($time) = @_;
 
   my $win_r = $self->{win};
-
-  my $refs = $self->{refs};
 
   for my $i (reverse(0 .. $win_r->{list_box}->index('end'))) {
     my $e = $win_r->{list_box}->get($i);

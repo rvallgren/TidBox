@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.9   Created: 2019-08-15 13:45
+#   Version:  2.10   Created: 2019-09-13 08:40
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.9';
-my $DATEVER = '2019-08-15';
+my $VERSION = '2.10';
+my $DATEVER = '2019-09-13';
 
 # History information:
 #
@@ -44,6 +44,10 @@ my $DATEVER = '2019-08-15';
 #      Search and then return changes time of found event
 #      this should only happen if the found event is equal with search string
 #      Adapt to changed DayList change see to seeTime
+# 2.10  2019-08-29  Roland Vallgren
+#       Code improvements: TODO ExcoWord Included from TidBase
+#       Code improvements: Reduce knowledge about Times data
+#       Copy/Paste and search should be performed by TbFile::Times
 #
 
 #----------------------------------------------------------------------------
@@ -87,24 +91,28 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 # Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
+# Actions are choosen to be sorted alphabetically, sort 1, 2, 3, 4, 5, 6
+# This only applies to actions registered on the same time and
+# normally it is only when it is meaningful as time it is OK to do so
+# Like this:
+#   BEGINWORK should be befor any other action
+#   ENDPAUS or ENDEVENT should be before EVENT or PAUS
+#   WORKEND should be after any other
 my $WORKDAYDESC         = 'Arbetsdagen';
 my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
+my $BEGINWORKDAY        = 'BEGINWORK';      # Sort 1
+my $ENDWORKDAY          = 'WORKEND';        # Sort 6
 
 my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
+my $BEGINPAUS           = 'PAUS';           # Sort 5
+my $ENDPAUS             = 'ENDPAUS';        # Sort 3
 
 my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
+my $BEGINEVENT          = 'EVENT';          # Sort 4
+my $ENDEVENT            = 'ENDEVENT';       # Sort 2
 
 # Hash to store common texts
 my %TEXT = (
@@ -555,56 +563,37 @@ sub _search($;$) {
       unless ($search_text);
 
   # Get time and date if selection is active
+  my $start_date;
+  my $start_time;
   my $ref = $win_r->{day_list}->curselection();
   $ref = $win_r->{day_list}->highlited()
       unless ($ref);
-  my $date_time;
   if (ref($ref)) {
-    $date_time = substr($$ref, 0, 16);
+    $start_date = substr($$ref, 0, 10);
+    $start_time = substr($$ref, 11, 5);
   } else {
-    $date_time = substr($line, 0, 16);
+    $start_date = substr($line, 0, 10);
+    $start_time = substr($line, 11, 5);
   } # if #
 
   # Search in event data
-  my $fnd;
-
-  if ($back) {
-    for my $ref (reverse($self->{erefs}{-times}
-        -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
-                ))
-    {
-      next
-          if ($date_time le substr($$ref, 0, 16));
-      $fnd = $ref;
-      last;
-    } # for #
-
-  } else {
-    for my $ref ($self->{erefs}{-times}
-        -> getSortedRefs($DATE,$TIME,$BEGINEVENT,$search_text)
-                )
-    {
-      next
-          if ($date_time ge substr($$ref, 0, 16));
-      $fnd = $ref;
-      last;
-    } # for #
-  } # if #
+  my ($found_date, $found_time, $found_text, $fnd) =
+       $self->{erefs}{-times}->
+                    searchEvent($back, $start_date, $start_time, $search_text);
 
   return $self->_message('Hittade ingenting')
-      unless ($fnd);
+      unless (defined($found_date));
 
   # Display the date for the found event
-  my $date = substr($$fnd, 0, 10);
-  my $time = substr($$fnd, 11, 5);
-  $self->_display($date)
-      unless ($self->{date} eq $date);
+  $self->_display($found_date)
+      unless ($self->{date} eq $found_date);
 
   # Display the found event
-  if ($action_text eq substr($$fnd, 23)) {
+  if ($action_text eq $found_text) {
     if ($win_r->{day_list}->selectEvent($fnd)) {
       $self->show($fnd, 'Sökt exakt: ' . $action_text);
     } # if #
+
   } else {
     $win_r->{day_list}->activateEvent($fnd);
     $win_r->{event_handling}->set($action_text, 1);
@@ -657,8 +646,8 @@ sub copyDate($) {
   my $self = shift;
 
   $self->{win}{paste_date} -> configure(-state => 'normal')
-      unless ($self->{copy_date});
-  $self->{copy_date} = $self->{date};
+      unless ($self->{copy_from});
+  $self->{copy_from} = $self->{date};
   $self->_message('Kopiera ' . $self->{date});
   $self->{win}{paste_date} ->
                          configure(-text => 'Klistra in från ' . $self->{date});
@@ -669,7 +658,7 @@ sub copyDate($) {
 #
 # Method:      pasteDate
 #
-# Description: Paste date, that is copy all events from copy_date to today
+# Description: Paste date, that is copy all events from copy_from to today
 #
 # Arguments:
 #  - Object reference
@@ -682,28 +671,20 @@ sub pasteDate($) {
 
 
   return undef
-      unless ($self->{copy_date});
+      unless ($self->{copy_from});
 
-  $self->{erefs}{-times}->undoSetBegin();
-
-  my $cnt = 0;
-  for my $ref ($self->{erefs}{-times}->getSortedRefs($self->{copy_date})) {
-    next
-        unless ($$ref =~ /^$self->{copy_date},($TIME),($TYPE),(.*)$/);
-    $self->_doAdd(join(',', $self->{date}, $1, $2, $3), $3, $self->{date});
-    $cnt++;
-  } # for #
-
-  my $str = 'Kopierade från ' . $self->{copy_date} . ' till ' . $self->{date};
-  $str   .= "\nKlistrade in " . $cnt . ' händelser'
-      if $cnt;
-
-  $self->{erefs}{-times} ->
-        undoSetEnd('klistra in:,' . $str);
+  my $res = 
+      $self->{erefs}{-times}->copyPaste($self->{copy_from}, $self->{date});
 
   $self->update();
-  $self->_message('Klistrade in ' . $cnt .
-                  ' händelser från ' . $self->{copy_date});
+  if (not defined($res)) {
+    $self->_message('Fel: Kunde inte kopiera')
+  } elsif ($res eq '0') {
+    $self->_message('Inga händelser kopierade')
+  } else {
+    $self->_message($res)
+  } # if #
+      
   return 0;
 } # Method pasteDate
 
@@ -1413,7 +1394,7 @@ sub _setup($) {
       unless($self->{erefs}{-times}->undoGetLength());
 
   # Copy all events from today
-  $win_r->{copy_date} = $win_r->{button_area}
+  $win_r->{copy_button} = $win_r->{button_area}
       -> Button(-text => 'Kopiera dagen',
                 -command => [copyDate => $self],
                )

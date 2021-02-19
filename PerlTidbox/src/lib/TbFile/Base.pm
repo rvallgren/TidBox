@@ -2,15 +2,15 @@
 package TbFile::Base;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.9   Created: 2019-02-19 17:36
+#   Version:  2.10   Created: 2019-11-11 09:37
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.9';
-my $DATEVER = '2019-02-19';
+my $VERSION = '2.10';
+my $DATEVER = '2019-11-11';
 
 # History information:
 #
@@ -47,6 +47,8 @@ my $DATEVER = '2019-02-19';
 #      Code improvements
 #      Removed log->trace
 #      Corrected: -error_popup is an eref
+# 2.10  2019-11-11  Roland Vallgren
+#       Code impreovements
 #
 
 #----------------------------------------------------------------------------
@@ -95,7 +97,7 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 #############################################################################
 #
@@ -781,6 +783,8 @@ sub copyBackup($) {
   my $file = $self->{erefs}{-cfg}->filename('dir', $self->{-name});
 
   # Stat both files to determine date, size
+  # TODO Consider using a digest (sha checksum) to verify backup
+  #      => Read both files => Slower
   my ($fmTime, $fSize) = $self->_statFile($file);
   my ($bmTime, $bSize) = $self->_statFile($bak);
 
@@ -792,6 +796,9 @@ sub copyBackup($) {
     $self->{erefs}{-log}->log('Copy:', $file, $bak)
         if ($self->{erefs}{-log});
   } else {
+  # TODO Backup should in most cases not be copied from
+  #      Define cases when
+  #      Handle multiple Tidbox:s on one backup/sync directory
     copy($bak, $file);
     $self->{erefs}{-log}->log('Copy:', $bak, $file)
         if ($self->{erefs}{-log});

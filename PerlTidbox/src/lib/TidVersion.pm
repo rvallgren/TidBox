@@ -1,7 +1,7 @@
 #
 package TidVersion;
 #
-#   Version:  1.9   Created: 2019-08-13
+#   Version:  1.9   Created: 2020-01-29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package TidVersion;
 #
 
 my $VERSION = '1.9';
-my $DATEVER = '2019-08-13';
+my $DATEVER = '2020-01-29';
 
 # Register version information
 {
@@ -81,9 +81,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2019-08-13',
+    date      => '2020-01-29',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.15',
+    VERSION   => '4.16',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -118,17 +118,6 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Tid och Datum: Pil upp eller ner räknar upp eller ner beroende på position.
-Shift pil upp eller ner räknar en timme eller en vecka upp eller ner.
-Ctrl pil upp eller ner räknar tio minuter upp eller ner.
-Lika med "=" räknar ut uttryck. T.ex: 10:33+4 räknas om till 10:37.
-Ctrl+w i datum öppnar Veckan.
-<Return> på en tid i Veckan öpnar Redigera för den dagen
-<Return> i datum registrerar händelse eller visar redigera om händelse är tom.
-Redigera: Kopiera och klistra in en hel dag.
-Förbättrat beteende på sök för att undvika att ändra en händelse av misstag
-Pågående händelse markeras med ljusgrönt i listan i huvudfönstret.
-En nyligen redigerad eller tillagd händelse markeras med ljusblått.
 Kodförbättringar
 '
 ,
@@ -136,8 +125,10 @@ Kodförbättringar
 #--------------- Felrättningar ---------------
 'Felrättningar i denna version:
 
-Rättat samla i veckan så att mest samlade fungerar
- och sista fältet kan vara annat än fritext
+Justera dag justerade inte övrig tid korrekt när en kort händelse togs bort.
+Justera skall inte ändra följdhändelser med noll minuter.
+Skapa ny Tidbox-katalog fungerade inte.
+År gick inte att starta när det inte fanns några registreringar.
 '
 ,
 

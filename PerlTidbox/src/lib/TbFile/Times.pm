@@ -2,15 +2,15 @@
 package TbFile::Times;
 #
 #   Document: Times data
-#   Version:  1.13   Created: 2019-05-20 11:43
+#   Version:  1.14   Created: 2019-10-07 12:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Times.pmx
 #
 
-my $VERSION = '1.13';
-my $DATEVER = '2019-05-20';
+my $VERSION = '1.14';
+my $DATEVER = '2019-10-07';
 
 # History information:
 #
@@ -51,6 +51,10 @@ my $DATEVER = '2019-05-20';
 #       Removed log->trace
 # 1.13  2019-05-17  Roland Vallgren
 #       Handle copy/paste date in undo set
+# 1.14  2019-08-29  Roland Vallgren
+#       Code improvements: TODO ExcoWord Included from TidBase
+#       Copy/Paste, search should be performed by TbFile::Times
+#       Weeks moved from Year
 #
 
 #----------------------------------------------------------------------------
@@ -92,24 +96,28 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 # Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
+# Actions are choosen to be sorted alphabetically, sort 1, 2, 3, 4, 5, 6
+# This only applies to actions registered on the same time and
+# normally it is only when it is meaningful as time it is OK to do so
+# Like this:
+#   BEGINWORK should be befor any other action
+#   ENDPAUS or ENDEVENT should be before EVENT or PAUS
+#   WORKEND should be after any other
 my $WORKDAYDESC         = 'Arbetsdagen';
 my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
+my $BEGINWORKDAY        = 'BEGINWORK';      # Sort 1
+my $ENDWORKDAY          = 'WORKEND';        # Sort 6
 
 my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
+my $BEGINPAUS           = 'PAUS';           # Sort 5
+my $ENDPAUS             = 'ENDPAUS';        # Sort 3
 
 my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
+my $BEGINEVENT          = 'EVENT';          # Sort 4
+my $ENDEVENT            = 'ENDEVENT';       # Sort 2
 
 # Hash to store common texts
 my %TEXT = (
@@ -316,6 +324,91 @@ sub _append($$$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:      _getRecordCount
+#
+# Description: Return number of recorded events
+#
+# Arguments:
+#  - Object reference
+# Returns:
+#  Number of records
+
+sub _getRecordCount($) {
+  my $self = shift;
+  return scalar(@{$self->{times}});
+} # Method _getRecordCount
+
+#----------------------------------------------------------------------------
+#
+# Method:      _getSortedRefs
+#
+# Description: Return references to events for the regexp
+#
+# Arguments:
+#  - Object reference
+# Optional Arguments:
+#  date, time, event type, string  Arguments are joined by comma ','
+#    ... Expression to match, Only return matching events
+# Returns:
+#  A list with references to to events in the times array
+
+sub _getSortedRefs($;@) {
+  my $self = shift;
+
+  return map(\$_, sort grep( defined($_) , @{$self->{times}}))
+      unless(defined($_[0]));
+  my $match = join(',', @_);
+  return map(\$_, sort grep( $_ ? /^$match/ : 0 , @{$self->{times}}));
+} # Method _getSortedRefs
+
+#----------------------------------------------------------------------------
+#
+# Method:      getSortedRegistrationsForDate
+#
+# Description: Return references to events for the regexp
+#
+# Arguments:
+#  - Object reference
+#  - Date of events to return
+# Returns:
+#  Events data for the requested date
+#    - Time
+#    - Type
+#    - Event text
+#    - Reference to registration
+
+sub getSortedRegistrationsForDate($;@) {
+  my $self = shift;
+  my ($date) = @_;
+
+  my $refs = [];
+  for my $ref ($self->_getSortedRefs($date)) {
+    # TODO Is it more effective to use a regexp to split the event?
+    my $eventType;
+    my $eventText;
+
+    if (substr($$ref, 17, 5) eq $BEGINEVENT) {
+      $eventType = $BEGINEVENT;
+      $eventText = substr($$ref, 23);
+    } else {
+      $eventType = substr($$ref, 17, -1);
+      $eventText = '';
+    } # if #
+
+    push @$refs,
+      {
+        time => substr($$ref, 11,  5),
+        type => $eventType,
+        text => $eventText,
+        ref  => $ref,
+      };
+  } # for #
+
+  return $refs;
+} # Method getSortedRegistrationsForDate
+
+#----------------------------------------------------------------------------
+#
 # Method:      move
 #
 # Description: Move times data from this to another Times object
@@ -338,7 +431,7 @@ sub move($$;$$) {
   my ($target, $last_date, $first_date) = @_;
 
 
-  for my $ref ($self->getSortedRefs()) {
+  for my $ref ($self->_getSortedRefs()) {
     my $d = substr($$ref, 0, 10);
     last
         if (defined($last_date) and
@@ -383,11 +476,11 @@ sub _mergeData($$$$;$) {
   my ($source, $startDate, $endDate, $progress_ref) = @_;
 
 
-  my @trefs = $self->getSortedRefs();
+  my @trefs = $self->_getSortedRefs();
   my $ti = 0;
   my $tend = $#trefs;
 
-  my $sNum = $source->getRecordNumber();
+  my $sNum = $source->_getRecordCount();
   my $si = 0;
 
   # Progress bar handling
@@ -403,7 +496,7 @@ sub _mergeData($$$$;$) {
   } # if #
 
 
-  for my $sref ($source->getSortedRefs()) {
+  for my $sref ($source->_getSortedRefs()) {
 
     $si++;
 
@@ -712,43 +805,6 @@ sub change($$;$) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      getSortedRefs
-#
-# Description: Return references to events for the regexp
-#
-# Arguments:
-#  - Object reference
-# Optional Arguments:
-#  ... Expression to match, Only return matching events
-# Returns:
-#  A reference to the times array
-
-sub getSortedRefs($;@) {
-  my $self = shift;
-  return map(\$_, sort grep( defined($_) , @{$self->{times}}))
-      unless(defined($_[0]));
-  my $match = join(',', @_);
-  return map(\$_, sort grep( $_ ? /^$match/ : 0 , @{$self->{times}}));
-} # Method getSortedRefs
-
-#----------------------------------------------------------------------------
-#
-# Method:      getRecordNumber
-#
-# Description: Return number of recorded events
-#
-# Arguments:
-#  - Object reference
-# Returns:
-#  Number of records
-
-sub getRecordNumber($) {
-  my $self = shift;
-  return scalar(@{$self->{times}});
-} # Method getRecordNumber
-
-#----------------------------------------------------------------------------
-#
 # Method:      undoAddLock
 #
 # Description: Add an undo lock event
@@ -1027,7 +1083,7 @@ sub undo($@) {
       $self->callback([$ref->{win}{confirm}, $popup],
                  -title  => 'bekräfta',
                  -text   => ['Vill du ångra registrering:'],
-                 -data   => 
+                 -data   =>
                      [$self->{erefs}{-calculate}->format($self->{times}[$l])],
                  -action => [$self, '_undoAction'],
                 );
@@ -1036,6 +1092,395 @@ sub undo($@) {
 
   return 0;
 } # Method undo
+
+#----------------------------------------------------------------------------
+#
+# Method:      copyPaste
+#
+# Description: Copy all events from date to date
+#              The complete copy is registered as an undo set
+#
+# Arguments:
+#  - Object reference
+#  - From date
+#  - To date
+# Returns:
+#  -
+
+sub copyPaste($$$) {
+  # parameters
+  my $self = shift;
+  my ($fromDate, $toDate) = @_;
+
+
+  return undef
+      unless ($fromDate and $toDate);
+
+  # TODO Do not append to file as more than one append will be done in a very
+  #      short time. Preferred way would be to have append wait short time,
+  #      lets say about 30 seconds. Every append resets the timer.
+  # Set dirty to avoid append to file for every single copied event
+  $self->dirty();
+
+  $self->undoSetBegin();
+
+  my $cnt = 0;
+  for my $ref ($self->_getSortedRefs($fromDate)) {
+    $self->joinAdd($toDate, substr($$ref, 11));
+    $cnt++;
+  } # for #
+
+  my $str = 'Kopierade från ' . $fromDate . ' till ' . $toDate;
+  $str   .= "\nKlistrade in " . $cnt . ' händelser'
+      if $cnt;
+
+  $self->undoSetEnd('klistra in:,' . $str);
+
+  return $cnt
+      unless ($cnt);
+
+  return 'Klistrade in ' . $cnt . ' händelser från ' . $fromDate;
+} # Method copyPaste
+
+#----------------------------------------------------------------------------
+#
+# Method:      findLastEvent
+#
+# Description: Find event on specifed date and on from time or earlier
+#              Also find event text before last event
+#              TODO Should it say event or action???
+#
+# Arguments:
+#  - Object reference
+#  - Date
+#  - Time
+# Returns:
+#  Text of event
+#  Presentation text of event
+#  State of workday or not work
+#  $last_event, $prev_event,
+#  $last_time
+
+sub findLastEvent($$$) {
+  # parameters
+  my $self = shift;
+  my ($date, $from_time) = @_;
+
+  my $show_data_text = '';
+  my $last_state = '';
+  my $last_event;
+  my $last_time = '';
+  my $prev_event;
+
+  for my $ref (reverse($self->_getSortedRefs($date))) {
+
+    next unless (substr($$ref, 17) =~ /^($TYPE),(.*)$/);
+    my ($state, $text) = ($1, $2);
+    my $time = substr($$ref, 11, 5);
+
+    next
+        if ($from_time lt $time);
+
+    if (not defined($last_event)) {
+      if ($self->{erefs}{-cfg}->get('show_reg_date')) {
+        $show_data_text = $self->{erefs}{-calculate}
+               -> format($date, $time, $state, $text);
+      } else {
+        $show_data_text = $self->{erefs}{-calculate}
+                -> format(undef, $time, $state, $text);
+      } # if #
+
+      if ($state eq $BEGINEVENT or
+          $state eq $ENDEVENT or
+          $state eq $BEGINWORKDAY or
+          $state eq $ENDPAUS)
+      {
+        $last_state = $WORKDAY;
+      } else {
+        $last_state = $state;
+      } # if #
+      $last_time = $time;
+      $last_event = $text;
+
+    } elsif ($state eq $BEGINEVENT and $last_event ne $text) {
+      $prev_event = $text;
+      last;
+    } # if #
+
+  } # for #
+  return ($show_data_text, $last_state, $last_event, $prev_event, $last_time);
+} # Method findLastEvent
+
+#----------------------------------------------------------------------------
+#
+# Method:      searchEvent
+#
+# Description: Search for an event
+#
+# Arguments:
+#  - Object reference
+#  - Backward, search backwards if true
+#  - Start date
+#  - Start time
+#  - Search expression
+# Returns:
+#  - Date
+#  - Time
+#  - Event
+#  - Reference to found event
+
+sub searchEvent($$$$$) {
+  # parameters
+  my $self = shift;
+  my ($back, $start_date, $start_time, $expr) = @_;
+
+  my $start_date_time = $start_date . ',' . $start_time;
+  my $fnd;
+  if ($back) {
+    for my $ref (reverse($self->_getSortedRefs($DATE, $TIME, $BEGINEVENT, $expr)
+                ))
+    {
+      next
+          if ($start_date_time le substr($$ref, 0, 16));
+      $fnd = $ref;
+      last;
+    } # for #
+
+  } else {
+    for my $ref ($self->_getSortedRefs($DATE, $TIME, $BEGINEVENT, $expr)
+                )
+    {
+      next
+          if ($start_date_time ge substr($$ref, 0, 16));
+      $fnd = $ref;
+      last;
+    } # for #
+
+  } # if #
+
+  return (undef, undef, undef)
+      unless ($fnd);
+
+  my $found_date  = substr($$fnd,  0, 10);
+  my $found_time  = substr($$fnd, 11,  5);
+  my $found_event = substr($$fnd, 23);
+  return ($found_date, $found_time, $found_event, $fnd);
+} # Method searchEvent
+
+#----------------------------------------------------------------------------
+#
+# Method:      getEventDates
+#
+# Description: Find dates were event is registered
+#
+# Arguments:
+#  - Object reference
+#  - Event to find
+#  - Start date to search from
+# Returns:
+#  - Reference to sorted array with dates
+
+sub getEventDates($$$) {
+  # parameters
+  my $self = shift;
+  my ($event, $start) = @_;
+
+  # Work from yesterday back until start date
+  my $today   = $self->{erefs}{-clock}->getDate();
+  my $checked = 0;
+  my $dates   = [];
+
+  for my $ref (reverse(
+       $self->_getSortedRefs($DATE, $TIME, $BEGINEVENT, $event)
+    ))
+  {
+    my $date = substr($$ref, 0, 10);
+
+    next if $date eq $checked;
+    next if $date ge $today;
+    last if $date lt $start;
+
+    $checked = $date;
+
+    unshift @$dates, $date;
+
+  } # for #
+  return $dates;
+} # Method getEventDates
+
+#----------------------------------------------------------------------------
+#
+# Method:      getPreviousEvents
+#
+# Description: Get last events texts. Number of events specified at call
+#
+# Arguments:
+#  - Object reference
+#  - Number of events
+# Returns:
+#  Reference to hash with:
+#    Key   = Event Text
+#    Value = Number increasing for older event
+
+sub getPreviousEvents($$) {
+  # parameters
+  my $self = shift;
+  my ($number) = @_;
+
+  my $previous_cnt = 0;
+  my $previous = {};
+  for my $ref (reverse(
+               $self->_getSortedRefs($DATE, $TIME, $BEGINEVENT)
+              )) {
+    if ($$ref =~ /^$DATE,$TIME,$BEGINEVENT,(.+)$/o) {
+      next
+          if exists($previous->{$1});
+      $previous->{$1} = $previous_cnt;
+      $previous_cnt++;
+      last
+          if ($previous_cnt >= $number);
+    } # if #
+  } # for #
+  return $previous;
+} # Method getPreviousEvents
+
+#----------------------------------------------------------------------------
+#
+# Method:      yearsWeeks
+#
+# Description: Update all years and all weeks
+#              Search through dates to find all years and all weeks
+#              Year and week number
+#              First date and last date with registrations in each week is
+#              recorded. Date of Sunday in the week is registered and wether
+#              the week is locked.
+#
+# Arguments:
+#  - Object reference
+#  - Reference to year and weeks hash
+#  - Reference to hash with constants for UNLOCKED, LOCKED and ARCHIVED
+# Returns:
+#  True if there are changes
+
+sub yearsWeeks($$) {
+  # parameters
+  my $self = shift;
+  my ($wref, $CONST) = @_;
+
+
+  # Get constants
+  my $UNLOCKED = $CONST->{UNLOCKED};
+  my $LOCKED   = $CONST->{LOCKED}  ;
+  my $ARCHIVED = $CONST->{ARCHIVED};
+
+  my $calc = $self->{erefs}{-calculate};
+  my $c = 0;
+
+  my ($date, $t_y, $t_w, $t_yw, $t_d, $wr);
+  my ($p_date, $p_yw)= ('', '');
+
+  my $arch = $self->{erefs}{-cfg}->get('archive_date');
+  my $lock = $self->{erefs}{-cfg}->get('lock_date');
+
+  for my $ref ($self->_getSortedRefs()) {
+
+    $date = substr($$ref, 0, 10);
+
+    next
+        if ($p_date eq $date);
+
+    $p_date = $date;
+
+    $t_d = substr($date, 5, 5);
+
+    ($t_y, $t_w) = $calc->weekNumber($date);
+    $t_yw = $t_y . 'v' . $t_w;
+
+    if ($p_yw eq $t_yw) {
+
+      if ($wr->{last} lt $t_d) {
+        $wr->{last} = $t_d;
+        $c = 1;
+      } # if #
+
+    } else {
+
+      unless (exists($wref->{$t_y}{$t_w})) {
+        $wref->{$t_y}{$t_w} =
+              {
+               first  => $t_d,
+               last   => $t_d,
+               sunday => $calc->dayInWeek($t_y, $t_w, 7),
+               lock   => 0,
+              };
+        my $yr = $wref->{$t_y};
+        $wr = $yr->{$t_w};
+
+        unless (exists($yr->{last})) {
+          $yr->{first} = $calc->dayInWeek($t_y, 1, 1);
+          $yr->{last}  = $calc->stepDate(
+                                         $calc->dayInWeek($t_y + 1, 1, 7),
+                                         -7
+                                        );
+        } # unless #
+
+        $c = 1;
+
+      } else {
+
+        $wr = $wref->{$t_y}{$t_w};
+
+        if ($wr->{first} gt $t_d) {
+          $wr->{first} = $t_d;
+          $c = 1;
+        } # if #
+
+        if ($wr->{last} lt $t_d) {
+          $wr->{last} = $t_d;
+          $c = 1;
+        } # if #
+
+      } # unless #
+
+      $p_yw = $t_yw;
+
+    } # if #
+
+    $self->{dirty}{$t_y} = 1
+        if ($c);
+  } # for #
+
+  for $t_y (keys(%{$wref})) {
+    next
+        unless(ref($wref->{$t_y}));
+    for $t_w (keys(%{$wref->{$t_y}})) {
+      $wr = $wref->{$t_y}{$t_w};
+      next
+          unless(ref($wr));
+      my $status;
+      if ($wr->{sunday} le $arch) {
+        $status = $ARCHIVED;
+
+      } elsif ($wr->{sunday} le $lock) {
+        $status = $LOCKED;
+
+      } else {
+        $status = $UNLOCKED;
+
+      } # if #
+
+      if ($status != $wr->{lock}) {
+        $wr->{lock} = $status;
+        $self->{dirty}{$t_y} = 1;
+        $c = 1;
+      } # if #
+    } # for #
+    $self->{dirty}{$t_y} = 1
+        if ($c);
+  } # for #
+
+  return $c;
+} # Method yearsWeeks
 
 #----------------------------------------------------------------------------
 #
@@ -1065,7 +1510,7 @@ sub _addFixedStartResume($$$$) {
   if ($op == 1) {
     my $notfound = 1;
 
-    for my $ref (reverse($self->getSortedRefs($date))) {
+    for my $ref (reverse($self->_getSortedRefs($date))) {
       next
           unless (substr($$ref, 11, 5) le $time);
       $notfound = 0;
@@ -1155,7 +1600,7 @@ sub midnight($) {
   my $yesterday = $self->{erefs}{-calculate}->stepDate($today, -1);
 
   # Search yesterday backward to find ongoing activity
-  for my $ref (reverse($self->getSortedRefs($yesterday))) {
+  for my $ref (reverse($self->_getSortedRefs($yesterday))) {
 
     next unless (substr($$ref, 17) =~ /^($TYPE),(.*)$/);
     my ($state, $text) = ($1, $2);
@@ -1164,7 +1609,7 @@ sub midnight($) {
     last
         if ($state eq $ENDWORKDAY or
             $state eq $BEGINPAUS);
-    
+
     # Register end workday yesterday 23:59 unless yesterday is locked
     $self->joinAdd($yesterday, '23:59', $ENDWORKDAY, '')
         unless ($self->{erefs}{-cfg}->isLocked($yesterday));
@@ -1191,7 +1636,7 @@ sub midnight($) {
 #
 # Description: Register start of session
 #              Defined by configuration 'start_operation'
-#              Add resume timer
+#              Add resume and midnight timer
 #
 # Arguments:
 #  0 - Object reference

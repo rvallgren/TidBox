@@ -2,7 +2,7 @@
 package MigrateVersion;
 #
 #   Document: Migrate data between tidbox versions
-#   Version:  1.1   Created: 2019-01-17 11:07
+#   Version:  1.1   Created: 2019-10-10 10:53
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package MigrateVersion;
 #
 
 my $VERSION = '1.1';
-my $DATEVER = '2019-01-17';
+my $DATEVER = '2019-10-10';
 
 # History information:
 #
@@ -73,7 +73,7 @@ sub Configuration($$$) {
   } # if #
 
   # Setting terp_template moved to Plugin
-  # TODO How should it be moved to Plugin.dat for Tieto users / other users
+  # TODO How should it be moved to Plugin.dat for company users / other users
   if ($cfg->Exists('terp_template')) {
     my $tmp = $cfg->get('terp_template');
     $cfg->delete('terp_template');

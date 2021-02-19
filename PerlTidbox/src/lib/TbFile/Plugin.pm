@@ -2,7 +2,7 @@
 package TbFile::Plugin;
 #
 #   Document: Tidbox Plugin manager
-#   Version:  1.4   Created: 2019-02-21 11:51
+#   Version:  1.4   Created: 2019-10-04 13:18
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package TbFile::Plugin;
 #
 
 my $VERSION = '1.4';
-my $DATEVER = '2019-02-21';
+my $DATEVER = '2019-10-04';
 
 # History information:
 #

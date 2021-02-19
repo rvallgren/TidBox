@@ -2,18 +2,20 @@
 package Update::Github;
 #
 #   Document: Get Tidbox from GitHub
-#   Version:  1.1   Created: 2019-08-15 13:39
+#   Version:  1.2   Created: 2020-01-29 14:24
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Github.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2019-08-15';
+my $VERSION = '1.2';
+my $DATEVER = '2020-01-29';
 
 # History information:
 #
+# 1.2  2020-01-29  Roland Vallgren
+#      Improved error handling
 # 1.1  2019-05-14  Roland Vallgren
 #      Improved error message
 # 1.0  2019-01-25  Roland Vallgren
@@ -29,6 +31,8 @@ use strict;
 use warnings;
 use integer;
 
+# TODO Why do we have this Debug?
+use LWP::DebugFile qw(+);
 use HTTP::Request;
 use LWP::UserAgent;
 use JSON ();
@@ -172,7 +176,9 @@ sub _getFromGitHub($$) {
     # TODO: Improve error handling
     warn "Error from Github:\n",
           $res->decoded_content, "\n",
-          $res->{_msg}, "\n";
+         "Error while getting ", $res->request->uri, "\n",
+         " -- ", $res->status_line, "\n",
+         "Aborting!\n";
     return undef;
   }
 

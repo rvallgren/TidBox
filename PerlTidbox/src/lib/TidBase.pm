@@ -2,15 +2,15 @@
 package TidBase;
 #
 #   Document: Base class for Tidbox classes
-#   Version:  1.8   Created: 2019-08-09 16:54
+#   Version:  1.9   Created: 2019-10-04 09:35
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TidBase.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2019-08-09';
+my $VERSION = '1.9';
+my $DATEVER = '2019-10-04';
 
 # History information:
 #
@@ -32,6 +32,8 @@ my $DATEVER = '2019-08-09';
 #      References to other objects in own hash
 # 1.8  2019-08-09  Roland Vallgren
 #      Added more argument check for callback and improved error message
+# 1.9  2019-08-29  Roland Vallgren
+#      Code improvements
 #
 
 #----------------------------------------------------------------------------

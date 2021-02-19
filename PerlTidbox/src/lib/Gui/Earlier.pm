@@ -2,15 +2,15 @@
 package Gui::Earlier;
 #
 #   Document: Gui::Earlier
-#   Version:  1.4   Created: 2019-01-17 11:07
+#   Version:  1.5   Created: 2019-09-12 14:34
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Earlier.pmx
 #
 
-my $VERSION = '1.4';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.5';
+my $DATEVER = '2019-09-12';
 
 # History information:
 #
@@ -24,7 +24,9 @@ my $DATEVER = '2019-01-17';
 #      getSortedRefs joins expression
 # 1.4  2017-10-16  Roland Vallgren
 #      References to other objects in own hash
-#      
+# 1.5  2019-08-29  Roland Vallgren
+#      Code improvements
+#      Get last unique events from Times for previous data
 #
 
 #----------------------------------------------------------------------------
@@ -64,24 +66,28 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 # Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
+# Actions are choosen to be sorted alphabetically, sort 1, 2, 3, 4, 5, 6
+# This only applies to actions registered on the same time and
+# normally it is only when it is meaningful as time it is OK to do so
+# Like this:
+#   BEGINWORK should be befor any other action
+#   ENDPAUS or ENDEVENT should be before EVENT or PAUS
+#   WORKEND should be after any other
 my $WORKDAYDESC         = 'Arbetsdagen';
 my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
+my $BEGINWORKDAY        = 'BEGINWORK';      # Sort 1
+my $ENDWORKDAY          = 'WORKEND';        # Sort 6
 
 my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
+my $BEGINPAUS           = 'PAUS';           # Sort 5
+my $ENDPAUS             = 'ENDPAUS';        # Sort 3
 
 my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
+my $BEGINEVENT          = 'EVENT';          # Sort 4
+my $ENDEVENT            = 'ENDEVENT';       # Sort 2
 
 # Hash to store common texts
 my %TEXT = (
@@ -275,7 +281,7 @@ sub _build($$) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      build
+# Method:      buildData
 #
 # Description: Build previous data from times data
 #
@@ -285,32 +291,16 @@ sub _build($$) {
 # Returns:
 #  -
 
-sub build($$) {
+sub buildData($$) {
   # parameters
   my $self = shift;
   my ($times) = @_;
 
-  my $previous_c = 0;
-  %{$self->{previous}} = ();
-  for my $ref (reverse(
-               $times->getSortedRefs($DATE, $TIME, $BEGINEVENT)
-              )) {
-    if ($$ref =~ /^$DATE,$TIME,$BEGINEVENT,(.+)$/o) {
-      next
-          if exists($self->{previous}{$1});
-      $self->{previous}{$1} = $previous_c;
-      $previous_c++;
-      last
-          if $previous_c >= $self->{erefs}{-cfg}->get('earlier_menu_size');
-    } # if #
-  } # for #
+  my $size = $self->{erefs}{-cfg}->get('earlier_menu_size');
+  $self->{previous} = $times->getPreviousEvents($size);
 
-  # Add menubuttons to created menus
-  for my $menu (@{$self->{menus}}) {
-    $self->_build($menu) if Exists($menu->{menu});
-  } # for #
   return 0;
-} # Method build
+} # Method buildData
 
 #----------------------------------------------------------------------------
 #

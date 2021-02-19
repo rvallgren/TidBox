@@ -2,7 +2,7 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.20   Created: 2019-08-09 17:01
+#   Version:  1.20   Created: 2019-10-04 13:18
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -10,7 +10,7 @@ package Gui::Week;
 #
 
 my $VERSION = '1.20';
-my $DATEVER = '2019-08-09';
+my $DATEVER = '2019-10-04';
 
 # History information:
 #

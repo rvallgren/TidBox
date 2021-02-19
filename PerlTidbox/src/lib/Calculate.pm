@@ -2,29 +2,18 @@
 package Calculate;
 #
 #   Document: Calculator for TidBox
-#   Version:  1.10   Created: 2019-01-17 13:32
+#   Version:  1.11   Created: 2019-09-27 17:46
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Calculate.pmx
 #
 
-my $VERSION = '1.10';
-my $DATEVER = '2019-01-17';
+my $VERSION = '1.11';
+my $DATEVER = '2019-09-27';
 
 # History information:
 #
-# PA1  2006-10-27  Roland Vallgren
-#      First issue.
-# PA2  2007-02-01  Roland Vallgren
-#      Corrected call to get week number
-#      Use Times class
-#      stepDate defaults to one day if no step is defined
-#      Improved calculation of work times needed by adjust worktime
-#      Added adjust worktime methods
-# PA3  2007-03-12  Roland Vallgren
-#      Use provided callback to report worktime calculation problems
-#      Corrected analysis of time when one digit minute is entered
 # 1.4  2007-03-25  Roland Vallgren
 #      Numerical versions, Local module information added
 #      Corrected removal of short event after paus in _adjustOneDay
@@ -40,6 +29,9 @@ my $DATEVER = '2019-01-17';
 #      Impacted handled ranges wrong
 # 1.10  2017-10-16  Roland Vallgren
 #       References to other objects in own hash
+# 1.11  2019-08-29  Roland Vallgren
+#       Code improvements: Do not use event from times directly
+#       Correction of remove short events when workday is adjusted
 #
 
 #----------------------------------------------------------------------------
@@ -82,24 +74,28 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 # Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
+# Actions are choosen to be sorted alphabetically, sort 1, 2, 3, 4, 5, 6
+# This only applies to actions registered on the same time and
+# normally it is only when it is meaningful as time it is OK to do so
+# Like this:
+#   BEGINWORK should be befor any other action
+#   ENDPAUS or ENDEVENT should be before EVENT or PAUS
+#   WORKEND should be after any other
 my $WORKDAYDESC         = 'Arbetsdagen';
 my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
+my $BEGINWORKDAY        = 'BEGINWORK';      # Sort 1
+my $ENDWORKDAY          = 'WORKEND';        # Sort 6
 
 my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
+my $BEGINPAUS           = 'PAUS';           # Sort 5
+my $ENDPAUS             = 'ENDPAUS';        # Sort 3
 
 my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
+my $BEGINEVENT          = 'EVENT';          # Sort 4
+my $ENDEVENT            = 'ENDEVENT';       # Sort 2
 
 # Hash to store common texts
 my %TEXT = (
@@ -112,6 +108,10 @@ my %TEXT = (
              $BEGINEVENT   => 'Börja händelse',
              $ENDEVENT     => 'Sluta händelse',
            );
+
+# Event formatting
+my $TXT_BEGIN       = ' började';
+my $TXT_END         = ' slutade';
 
 # Month weekday strings
 my @WEEKDAYS = qw/Söndag Måndag Tisdag Onsdag Torsdag Fredag Lördag/;
@@ -226,26 +226,26 @@ sub yyyyMmDd($$$$) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      deltaMinutes
+# Method:      _deltaMinutes
 #
 # Description: Calculate delta time in minutes between two times
 #
 # Arguments:
-#  0 - Object reference
-#  1 - Start time hour
-#  2 - Start time minute
-#  3 - End time hour
-#  4 - End time minute
+#  - Object reference
+#  - Start time
+#  - End time
 # Returns:
-#  Total time in minutes
+#  Time between start and end in minutes
 
-sub deltaMinutes($$$$$) {
+sub _deltaMinutes($$$) {
   # parameters
   my $self = shift;
-  my ($start_hour, $start_minute, $end_hour, $end_minute) = @_;
+  my ($start_time, $end_time) = @_;
 
+  my ($end_hour,   $end_minute  ) = split(':', $end_time  );
+  my ($start_hour, $start_minute) = split(':', $start_time);
   return ($end_hour - $start_hour) * 60 + $end_minute - $start_minute;
-} # Method deltaMinutes
+} # Method _deltaMinutes
 
 #----------------------------------------------------------------------------
 #
@@ -474,6 +474,28 @@ sub hours($$;$) {
   $frac  = '0' . $frac if (length($frac) < 2);
   return $hour . $separator . $frac;
 } # Method hours
+
+#----------------------------------------------------------------------------
+#
+# Method:      deltaHours
+#
+# Description: Calculate delta time in hours and hundreths between two times
+#
+# Arguments:
+#  - Object reference
+#  - Start time
+#  - End time
+# Returns:
+#  Time between start and end in hours and hundreths
+
+sub deltaHours($$$) {
+  # parameters
+  my $self = shift;
+  my ($start_time, $end_time) = @_;
+
+  return 
+    $self->hours($self->_deltaMinutes($start_time, $end_time));
+} # Method deltaHours
 
 #----------------------------------------------------------------------------
 #
@@ -846,7 +868,7 @@ sub evalTimeDate($;$$$) {
 #
 # Arguments:
 #  0 - Object reference
-#  1 - The record to format
+#  1 - The record to format or date or undef
 # Optional arguments:
 #  2 - Time
 #  3 - Type
@@ -948,9 +970,6 @@ sub dayWorkTimes($$$;$$$$) {
   use constant AFTERWORK    => 4;
 
 
-  # Find out system time for day to calculate
-  my ($year, $month, $day) = split('-', $date);
-
   # Initiate data for the day
   my $day_r = {
                event_number   => 1,    # Event and activity handling
@@ -974,30 +993,31 @@ sub dayWorkTimes($$$;$$$$) {
 
   # Intialize calculations
   my $state = BEFOREWORK;
-  my ($begin_hour, $begin_minu) = (0, 0);
-  my ($end_hour, $end_minu) = (0, 0);
-  my ($hour, $minut, $typ, $txt);
-  my ($paus_begin_hour, $paus_begin_minu, $paus_time);
-  my ($event_begin_hour, $event_begin_minu, $event_time, $event_text);
+  my $begin_time;
+  my $end_time;
+  my ($time, $typ, $txt);
+  my ($paus_begin_time, $paus_time);
+  my ($event_begin_time, $event_time, $event_text);
 
   # Get time artifacts from registered time
-  for my $ref ($self->{erefs}{-times}->getSortedRefs($date)) {
-    next
-       unless ($$ref =~ /^$date,($HOUR):($MINUTE),($TYPE),(.*)$/);
-    ($hour, $minut, $typ, $txt) = ($1, $2, $3, $4);
+  my $times = $self->{erefs}{-times}->getSortedRegistrationsForDate($date);
+  for my $ref (@$times) {
+    $time = $ref->{time};
+    $typ  = $ref->{type};
+    $txt  = $ref->{text};
 
     if ($state == BEFOREWORK) {
 
       # Probably start of workday
-      ($begin_hour, $begin_minu) = ($hour, $minut);
+      $begin_time = $time;
       if ($typ eq $BEGINWORKDAY or
           $typ eq $ENDPAUS) {
         $state = WORK;
       } elsif ($typ eq $BEGINPAUS) {
-        ($paus_begin_hour, $paus_begin_minu) = ($hour, $minut);
+        $paus_begin_time = $time;
         $state = PAUS;
       } elsif ($typ eq $BEGINEVENT) {
-        ($event_begin_hour, $event_begin_minu) = ($hour, $minut);
+        $event_begin_time = $time;
         if ($txt) {
           $event_text = $txt;
         } else {
@@ -1008,11 +1028,11 @@ sub dayWorkTimes($$$;$$$$) {
       } elsif ($typ eq $ENDEVENT) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Händelse slutar utom arbetstid.");
+               "$date $time Händelse slutar utom arbetstid.");
       } elsif ($typ eq $ENDWORKDAY) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Arbetsdagen slutar utan att ha börjat.");
+               "$date $time Arbetsdagen slutar utan att ha börjat.");
       } # if #
 
     } elsif ($state == WORK) {
@@ -1021,16 +1041,16 @@ sub dayWorkTimes($$$;$$$$) {
       if ($typ eq $BEGINWORKDAY) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Arbetsdagen börjar igen.");
+               "$date $time Arbetsdagen börjar igen.");
       } elsif ($typ eq $BEGINPAUS) {
-        ($paus_begin_hour, $paus_begin_minu) = ($hour, $minut);
+        $paus_begin_time = $time;
         $state = PAUS;
       } elsif ($typ eq $ENDPAUS) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Paus slutar utan början.");
+               "$date $time Paus slutar utan början.");
       } elsif ($typ eq $BEGINEVENT) {
-        ($event_begin_hour, $event_begin_minu) = ($hour, $minut);
+         $event_begin_time = $time;
         if ($txt) {
           $event_text = $txt;
         } else {
@@ -1041,10 +1061,10 @@ sub dayWorkTimes($$$;$$$$) {
       } elsif ($typ eq $ENDEVENT) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Händelse slutar utan början.");
+               "$date $time Händelse slutar utan början.");
       } elsif ($typ eq $ENDWORKDAY) {
         $state = AFTERWORK;
-        ($end_hour, $end_minu) = ($hour, $minut);
+        $end_time = $time;
       } # if #
 
     } elsif ($state == EVENT) {
@@ -1053,14 +1073,12 @@ sub dayWorkTimes($$$;$$$$) {
       if ($typ eq $BEGINWORKDAY) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Arbetsdagen börjar under en händelse.");
+               "$date $time Arbetsdagen börjar under en händelse.");
       } elsif (($typ eq $BEGINPAUS)  or
                ($typ eq $BEGINEVENT) or
                ($typ eq $ENDEVENT)   or
                ($typ eq $ENDWORKDAY)) {
-        $event_time =
-          $self->deltaMinutes($event_begin_hour, $event_begin_minu,
-                              $hour, $minut);
+        $event_time = $self->_deltaMinutes($event_begin_time, $time);
         $day_r->{events}{$event_text} += $event_time;
         if ($event_text =~ /$match_string/) {
           $day_r->{activities}{$1} += $event_time;
@@ -1086,10 +1104,10 @@ sub dayWorkTimes($$$;$$$$) {
         $day_r->{event_time} += $event_time;
 
         if ($typ eq $BEGINPAUS) {
-          ($paus_begin_hour, $paus_begin_minu) = ($hour, $minut);
+          $paus_begin_time = $time;
           $state = PAUS;
         } elsif ($typ eq $BEGINEVENT) {
-          ($event_begin_hour, $event_begin_minu) = ($hour, $minut);
+          $event_begin_time = $time;
           if ($txt) {
             $event_text = $txt;
           } else {
@@ -1101,13 +1119,13 @@ sub dayWorkTimes($$$;$$$$) {
           $state = WORK;
         } elsif ($typ eq $ENDWORKDAY) {
           $state = AFTERWORK;
-          ($end_hour, $end_minu) = ($hour, $minut);
+          $end_time = $time;
         } # if #
 
       } elsif ($typ eq $ENDPAUS) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Händelse slutar med slut på paus.");
+               "$date $time Händelse slutar med slut på paus.");
       } # if #
 
 
@@ -1117,21 +1135,17 @@ sub dayWorkTimes($$$;$$$$) {
       if ($typ eq $BEGINWORKDAY) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Arbetsdagen börjar under en paus.");
+               "$date $time Arbetsdagen börjar under en paus.");
       } elsif ($typ eq $BEGINPAUS) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Paus börjar igen.");
+               "$date $time Paus börjar igen.");
       } elsif ($typ eq $ENDPAUS) {
-        $day_r->{paus_time} +=
-            $self->deltaMinutes($paus_begin_hour, $paus_begin_minu,
-                                $hour, $minut);
+        $day_r->{paus_time} += $self->_deltaMinutes($paus_begin_time, $time);
         $state = WORK;
       } elsif ($typ eq $BEGINEVENT) {
-        $day_r->{paus_time} +=
-          $self->deltaMinutes($paus_begin_hour, $paus_begin_minu,
-                              $hour, $minut);
-        ($event_begin_hour, $event_begin_minu) = ($hour, $minut);
+        $day_r->{paus_time} += $self->_deltaMinutes($paus_begin_time, $time);
+        $event_begin_time = $time;
         if ($txt) {
           $event_text = $txt;
         } else {
@@ -1142,13 +1156,11 @@ sub dayWorkTimes($$$;$$$$) {
       } elsif ($typ eq $ENDEVENT) {
         $day_r->{ERROR}++;
         $self->callback($problem,
-               "$date $hour:$minut Paus slutar med slut på händelse.");
+               "$date $time Paus slutar med slut på händelse.");
       } elsif ($typ eq $ENDWORKDAY) {
-        $day_r->{paus_time} +=
-            $self->deltaMinutes($paus_begin_hour, $paus_begin_minu,
-                                $hour, $minut);
+        $day_r->{paus_time} += $self->_deltaMinutes($paus_begin_time, $time);
         $state = AFTERWORK;
-        ($end_hour, $end_minu) = ($hour, $minut);
+        $end_time = $time;
       } # if #
 
     } elsif ($state == AFTERWORK) {
@@ -1164,12 +1176,11 @@ sub dayWorkTimes($$$;$$$$) {
 
   if ($state != BEFOREWORK) {
     # If end of day not is set and today, set end of day now
-    unless ($end_hour and $end_minu) {
+    unless ($end_time) {
       if ($date eq $self->{erefs}{-clock}->getDate()) {
-        $end_hour = $self->{erefs}{-clock}->getHour();
-        $end_minu = $self->{erefs}{-clock}->getMinute();
+        $end_time = $self->{erefs}{-clock}->getTime();
       } else {
-        ($end_hour, $end_minu) = ($hour, $minut);
+        $end_time = $time;
         # Consider last event to be end of workday
         # This does not work on today
         $state = AFTERWORK;
@@ -1179,15 +1190,11 @@ sub dayWorkTimes($$$;$$$$) {
     # Calculate worktime
     if ($state == PAUS) {
 
-      $day_r->{paus_time} +=
-          $self->deltaMinutes($paus_begin_hour, $paus_begin_minu,
-                              $end_hour, $end_minu);
+      $day_r->{paus_time} += $self->_deltaMinutes($paus_begin_time, $time);
 
     } elsif ($state == EVENT) {
 
-      $event_time =
-          $self->deltaMinutes($event_begin_hour, $event_begin_minu,
-                              $end_hour, $end_minu);
+      $event_time = $self->_deltaMinutes($event_begin_time, $end_time);
       $day_r->{events}{$event_text} += $event_time;
       if ($event_text =~ /$match_string/) {
         $day_r->{activities}{$1} += $event_time;
@@ -1217,9 +1224,7 @@ sub dayWorkTimes($$$;$$$$) {
 
     } # if #
 
-    $day_r->{whole_time} =
-        $self->deltaMinutes($begin_hour, $begin_minu,
-                            $end_hour, $end_minu);
+    $day_r->{whole_time} = $self->_deltaMinutes($begin_time, $end_time);
 
     $day_r->{work_time} = $day_r->{whole_time} - $day_r->{paus_time};
     $day_r->{not_event_time} = $day_r->{work_time} - $day_r->{event_time};
@@ -1355,12 +1360,13 @@ sub _adjustEvent($$$;$) {
 #              ADJUST_LEV : Number of minutes to adjust to (CFG?)
 #              TO_SHORT   : Remove events with shorter worktime
 #
+# TODO
 # Improvement ideas: - It should be possible to adjust the worktime on the
 #                      fly. When an event is adjusted, the number of minutes
 #                      is known, and can be added or removed from the
 #                      impacted work time on next event
 #                    - We should actually find out removal candidates before
-#                      any changes are made, to avoid shorting on event and
+#                      any changes are made, to avoid shorting one event and
 #                      then removing it
 #
 # Arguments:
@@ -1382,14 +1388,15 @@ sub _adjustOneDay($$$;$) {
   my ($date, $adjust, $problem) = @_;
 
   # Get references to all events, sorted by time, this day
-  my @refs = reverse($self->{erefs}{-times}->getSortedRefs($date));
+  my $times = $self->{erefs}{-times}->getSortedRegistrationsForDate($date);
 
   # Skip end of the workday
-  if (@refs == 1) {
+  if (@$times == 1) {
     $self->callback($problem,
            "Endast en händelse för $date, kan inte justera");
     return (1, 0, 0);
   } # if #
+  my @refs = reverse(@$times);
   shift @refs;
 
   # Initialize
@@ -1409,8 +1416,7 @@ sub _adjustOneDay($$$;$) {
   # From end of day, adjust work times that have fraction
   while (@refs) {
     my $r = shift(@refs);
-    next unless $$r;
-    # Recalculate worktime
+    # Recalculate worktime if something was changed in last loop
     if ($changed) {
       $day_r = $self->dayWorkTimes($date, $condensed, $problem);
 
@@ -1444,56 +1450,49 @@ sub _adjustOneDay($$$;$) {
       $changed = 0;
     } # if #
 
-    next
-        unless ($$r =~ /^$date,($TIME),($TYPE),(.*)$/);
 
     # Skip paus not impacting worktime
-    next if ($2 eq $BEGINPAUS);
+    next if ($r->{type} eq $BEGINPAUS);
 
     # Find worktime for the event
-    if ($3) {
-      $time = $day_r->{events}{$3};
+    if ($r->{text}) {
+      $time = $day_r->{events}{$r->{text}};
     } else {
       next
           unless ($day_r->{not_event_time});
       $time = $day_r->{not_event_time};
     } # if #
 
+
     # If negative time detected, end this try as something fishy is going on
     if ($time < 0) {
-      $self->callback($problem, "Negativ tid för $date $3");
+      $self->callback($problem, "Negativ tid för $date $r->{text}");
       return (2, $chgd, $rmvd);
     } # if #
 
-    # If event time is to short, remove it
-    if (($3 and exists($short{$3})) or      # Known to short event
-        (not $3 and ($time < $to_short))    # Other, and not beginning of day
-       )
-    {
-      # Remove only if this is not the first event of the day
-      if (@refs) {
-        $self->{erefs}{-times}->change($r);
+    # Remove If not first event of the day and event time is to short
+    if (@refs) {
+      if (($r->{text} and exists($short{$r->{text}})) or      # Known to short event
+          (not $r->{text} and ($time < $to_short))    # Other, and not beginning of day
+         )
+      {
+        $self->{erefs}{-times}->change($r->{ref});
         $rmvd++;
-      } # if #
+        $changed = 1;
 
-      # If previous is pause or begin workday,
-      # move the beginning of the pause or workday as well
-      if ($time and @refs and (${$refs[0]} =~ /^$date,$TIME,($TYPE),/)) {
-        if (($1 eq $BEGINWORKDAY) or
-            ($1 eq $BEGINPAUS)    or
-            ($1 eq $ENDPAUS)
-           )
-        {
-          $step = ($1 eq $BEGINPAUS) ? $time : $time - $to_short;
-          $new_time = $self->_adjustEvent($refs[0], $step, $problem);
+        # If previous is pause move the beginning of the pause
+        # to include the removed time
+        if ($time and
+            ($refs[0]{type} eq $BEGINPAUS)
+           ) {
+          $step = ($refs[0]{type} eq $BEGINPAUS) ? $time : $time - $to_short;
+          $new_time = $self->_adjustEvent($refs[0]->{ref}, $step, $problem);
           return (2, $chgd, $rmvd) unless $new_time;
           shift(@refs);
           $chgd++;
         } # if #
+        next;
       } # if #
-
-      $changed = 1;
-      next;
     } # if #
 
     # Find out fraction and skip if no fraction
@@ -1505,14 +1504,15 @@ sub _adjustOneDay($$$;$) {
     $step = $frac - $adjust;
 
     # Adjust the worktime
-    $new_time = $self->_adjustEvent($r, $step, $problem);
+    $new_time = $self->_adjustEvent($r->{ref}, $step, $problem);
     return (2, $chgd, $rmvd) unless $new_time;
     $chgd++;
     $changed = 1;
-    $adjusted{$3} = 1 if $3;
+    $adjusted{$r->{text}} = 1
+        if $r->{text};
 
     # Adjust any events that might have been overtaken by this change
-    $prev_time = $1;
+    $prev_time = $r->{time};
 
     # Here take actions if a change caused one event to step onto
     # or over another event
@@ -1521,18 +1521,16 @@ sub _adjustOneDay($$$;$) {
     # Events on the same time as last changed will be moved with it
 
     for $r (@refs) {
-      next unless $$r;
-      next unless ($$r =~ /^$date,($TIME),($TYPE),(.*)$/);
       # If paus or already adjusted or on same time,
       #    Adjust as much as last adjust
       # Paus should be adjusted to avoid that the length of the workday is
       #   increased
-      if (($2 eq $BEGINPAUS) or
-          ($3 and $adjusted{$3}) or
-          ($prev_time eq $1))
+      if (($r->{type} eq $BEGINPAUS) or
+          ($r->{text} and $adjusted{$r->{text}}) or
+          ($prev_time eq $r->{time}))
       {
-        $prev_time = $1;
-        $new_time = $self->_adjustEvent($r, $step, $problem);
+        $prev_time = $r->{time};
+        $new_time = $self->_adjustEvent($r->{ref}, $step, $problem);
         return (2, $chgd, $rmvd) unless $new_time;
         $chgd++;
         $changed = 1;
@@ -1540,20 +1538,20 @@ sub _adjustOneDay($$$;$) {
       } # if #
 
       # We are done if time is before the last adjusted time
-      last if $1 lt $new_time;
-
-      # If event time is to short, remove it
-      if ($3 and exists($short{$3})) {
-        $self->{erefs}{-times}->change($r);
-        $rmvd++;
-        $changed = 1;
-        next;
-      } # if #
+      last if $r->{time} lt $new_time;
 
       # Adjust as much as needed to keep order
-      $step = -$self->deltaMinutes(split(':', $new_time), split(':', $1));
-      $step-- if $3;
-      $new_time = $self->_adjustEvent($r, $step, $problem);
+      $step = -$self->_deltaMinutes($new_time, $r->{time});
+
+      # Keep events separated in time to make sure the order not is changed
+      $step--
+          if ($r->{type} eq $BEGINEVENT);
+
+      # 0 minutes is no change
+      next
+          unless ($step);
+
+      $new_time = $self->_adjustEvent($r->{ref}, $step, $problem);
       return (2, $chgd, $rmvd) unless $new_time;
       $chgd++;
       $changed = 1;

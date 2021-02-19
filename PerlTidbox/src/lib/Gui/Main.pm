@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.14   Created: 2019-08-15 13:49
+#   Version:  2.15   Created: 2020-01-21 13:56
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.14';
-my $DATEVER = '2019-08-15';
+my $VERSION = '2.15';
+my $DATEVER = '2020-01-21';
 
 # History information:
 #
@@ -59,6 +59,10 @@ my $DATEVER = '2019-08-15';
 #       Control+w in date field starts week
 #       Improved comments
 #       Adapt to changed DayList change see to seeTime
+# 2.15  2019-08-29  Roland Vallgren
+#       Code improvements: TODO ExcoWord Included from TidBase
+#       Code improvements: Reduce knowledge about Times data
+#       Get ongoing event from Times
 #
 
 #----------------------------------------------------------------------------
@@ -101,24 +105,28 @@ my $HOUR   = '\d{2}';
 my $MINUTE = '\d{2}';
 my $TIME   = $HOUR . ':' . $MINUTE;
 
-my $TYPE = '[A-Z]+';
+my $TYPE = qr/[BEPW][AENOV][DEGRU][EIKNPS][ADEKNORSTUVW]*/;
 
 # Event analysis constants
-my $TXT_BEGIN       = ' började';
-my $TXT_END         = ' slutade';
-
+# Actions are choosen to be sorted alphabetically, sort 1, 2, 3, 4, 5, 6
+# This only applies to actions registered on the same time and
+# normally it is only when it is meaningful as time it is OK to do so
+# Like this:
+#   BEGINWORK should be befor any other action
+#   ENDPAUS or ENDEVENT should be before EVENT or PAUS
+#   WORKEND should be after any other
 my $WORKDAYDESC         = 'Arbetsdagen';
 my $WORKDAY             = 'WORK';
-my $BEGINWORKDAY        = 'BEGINWORK';
-my $ENDWORKDAY          = 'WORKEND';
+my $BEGINWORKDAY        = 'BEGINWORK';      # Sort 1
+my $ENDWORKDAY          = 'WORKEND';        # Sort 6
 
 my $PAUSDESC            = 'Paus';
-my $BEGINPAUS           = 'PAUS';
-my $ENDPAUS             = 'ENDPAUS';
+my $BEGINPAUS           = 'PAUS';           # Sort 5
+my $ENDPAUS             = 'ENDPAUS';        # Sort 3
 
 my $EVENTDESC           = 'Händelse';
-my $BEGINEVENT          = 'EVENT';
-my $ENDEVENT            = 'ENDEVENT';
+my $BEGINEVENT          = 'EVENT';          # Sort 4
+my $ENDEVENT            = 'ENDEVENT';       # Sort 2
 
 # Hash to store common texts
 my %TEXT = (
@@ -191,7 +199,9 @@ sub showWarn($%) {
 #
 # Method:      _status
 #
-# Description: Show status
+# Description: Show status as selected in settings
+#              Also finds out previous event for previous button
+#              
 #
 # Arguments:
 #  0 - Object reference
@@ -210,8 +220,7 @@ sub _status($;$) {
       if ($update);
 
   my $now_date = $self->{erefs}{-clock}->getDate();
-  my $now_hour = $self->{erefs}{-clock}->getHour();
-  my $now_minu = $self->{erefs}{-clock}->getMinute();
+  my $now_time = $self->{erefs}{-clock}->getTime();
 
   my $win_r = $self->{win};
 
@@ -220,52 +229,13 @@ sub _status($;$) {
 
   $win_r->{day_list}->seeOngoing();
 
-  my $entry_text;
-  my $show_data_text = '';
-  my $last_state = '';
-  my $last_event = '';
-  my ($last_hour, $last_minu) = (0, 0);
-
   # Find out ongoing activity
-  for my $ref (reverse($self->{erefs}{-times}->getSortedRefs($now_date))) {
+  my ($show_data_text, $last_state, $last_event, $prev_event,
+      $last_time) =
+          $self->{erefs}{-times}->findLastEvent($now_date, $now_time);
 
-    next unless (substr($$ref, 17) =~ /^($TYPE),(.*)$/);
-    my ($state, $text) = ($1, $2);
-    my $hour = substr($$ref, 11, 2);
-    my $minu = substr($$ref, 14, 2);
-
-    next if ((($now_hour == $hour) and ($now_minu < $minu)) or
-             ($now_hour < $hour));
-
-    if (not defined($entry_text)) {
-      if ($self->{erefs}{-cfg}->get('show_reg_date')) {
-        $show_data_text = $self->{erefs}{-calculate}
-               -> format($now_date, $hour.':'.$minu, $state, $text);
-      } else {
-        $show_data_text = $self->{erefs}{-calculate}
-                -> format(undef, $hour.':'.$minu, $state, $text);
-      } # if #
-
-      if ($state eq $BEGINEVENT or
-          $state eq $ENDEVENT or
-          $state eq $BEGINWORKDAY or
-          $state eq $ENDPAUS)
-      {
-        $last_state = $WORKDAY;
-        $last_event = $text
-            if $state eq $BEGINEVENT;
-      } else {
-        $last_state = $state;
-      } # if #
-      ($last_hour, $last_minu) = ($hour, $minu);
-      $entry_text = $text;
-
-    } elsif ($state eq $BEGINEVENT and $entry_text ne $text) {
-      $self->{erefs}{-earlier}->setPrev($text);
-      last;
-    } # if #
-
-  } # for #
+  $self->{erefs}{-earlier}->setPrev($prev_event)
+      if ($prev_event);
 
 
   my $show_data = $self->{erefs}{-cfg}->get('show_data');
@@ -274,10 +244,8 @@ sub _status($;$) {
     # Show paus time
     $win_r->{show_data}
         -> configure(-text=> 'Paus : ' .
-        $self->{erefs}{-calculate}->hours(
-               $self->{erefs}{-calculate}->deltaMinutes($last_hour, $last_minu,
-                                                 $now_hour , $now_minu )
-                         ) . ' timmar');
+               $self->{erefs}{-calculate}->deltaHours($last_time, $now_time)
+                     . ' timmar');
 
   } elsif ($last_state eq $WORKDAY and
            $self->{erefs}{-supervision}->is($last_event))
@@ -317,14 +285,11 @@ sub _status($;$) {
 
     } elsif ($show_data == 3) {
       # Show time for current activity
-      $entry_text = 'Arbete' unless $entry_text;
+      $last_event = 'Arbete' unless $last_event;
       $win_r->{show_data}
-          -> configure(-text=> $entry_text . ' : ' .
-          $self->{erefs}{-calculate}->hours(
-                 $self->{erefs}{-calculate}
-                      -> deltaMinutes($last_hour, $last_minu,
-                                      $now_hour , $now_minu )
-                                           ) . ' timmar');
+          -> configure(-text=> $last_event . ' : ' .
+                 $self->{erefs}{-calculate}-> deltaHours($last_time, $now_time )
+                       . ' timmar');
 
     } # if #
 
@@ -837,7 +802,7 @@ sub _validate($$$$$$) {
   if (defined($proposed)) {
 
     # Handle text entry
-    # ??? Handle strange version of Tk
+    # TODO Handle strange version of Tk
     $insert -= 7 if $insert > 1;
     unless ($insert == 1 or
             ($insert == 0 and $len > 1))
