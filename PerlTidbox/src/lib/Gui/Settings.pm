@@ -2,15 +2,15 @@
 package Gui::Settings;
 #
 #   Document: Gui::Settings
-#   Version:  2.6   Created: 2019-08-15 14:54
+#   Version:  2.7   Created: 2026-02-05 21:06
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Settings.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2019-08-15';
+my $VERSION = '2.7';
+my $DATEVER = '2026-02-05';
 
 # History information:
 #
@@ -37,6 +37,9 @@ my $DATEVER = '2019-08-15';
 # 2.6  2019-05-07  Roland Vallgren
 #      Backup moved from TbFile to TbFile::Backup
 #      Select backup directory starts in home directory
+# 2.7  2021-12-22  Roland Vallgren
+#      Allow decimal in ordinary_week_work_time
+#      Added Schedule, week work time moved to Schedule
 #
 
 #----------------------------------------------------------------------------
@@ -58,6 +61,7 @@ use Gui::Confirm;
 use Gui::Event;
 use Gui::EventConfig;
 use Gui::SupervisionConfig;
+use Gui::ScheduleConfig;
 use Gui::PluginConfig;
 
 # Register version information
@@ -102,7 +106,6 @@ use Gui::PluginConfig;
 #   show_message_timeout    Tid för visa status information:
 #   $^O.'_do_backup'        Spara säkerhetskopia {OS}
 #   $^O.'_backup_directory' Katalog för säkerhetskopia {OS}
-#   ordinary_week_work_time  Ordinarie veckoarbetstid
 #   check_new_version       Control how Update should behave
 #                             0: Look for and download updates
 #                             6: No search for updates
@@ -139,7 +142,6 @@ use constant SETTABLE_CFGS =>
         show_data
         show_reg_date
         show_message_timeout
-        ordinary_week_work_time
         check_new_version
       );
 
@@ -304,6 +306,8 @@ sub _restore($) {
 
   $self->{-event_cfg_setup}->showEdit();
 
+  $self->{-schedule_setup}->showEdit();
+
   $self->{-supervision_cfg_setup}->showEdit();
 
   $self->{-plugin_cfg_setup}->showEdit();
@@ -377,7 +381,7 @@ sub _apply($) {
     return 1;
 
   } # if #
-  
+
 
   # Check entries
   $self->{errors} = [];
@@ -413,6 +417,17 @@ sub _apply($) {
       } # if #
 
       $self->{mod}{event_cfg} = 0;
+
+    } # if #
+
+    # Handle schedule configuration
+    if ($self->{mod}{schedule_cfg}) {
+
+      if ($self->{-schedule_setup}->apply()) {
+        $self->{erefs}{-schedule}->save(1);
+      } # if #
+
+      $self->{mod}{schedule_cfg} = 0;
 
     } # if #
 
@@ -550,7 +565,7 @@ sub _number_entry_key() {
   my $self = shift;
   my ($proposed, $change, $current, $index, $insert) = @_;
 
-  return 0 if ($proposed !~ /^\d*$/ or (length($proposed) > 2));
+  return 0 if ($proposed !~ /^(?:[1-9]\d?)?$/ or (length($proposed) > 2));
   $self->_modified();
   return 1;
 } # Method _number_entry_key
@@ -1019,21 +1034,8 @@ sub _setup($) {
       -> Frame(-bd => '2', -relief => 'raised')
       -> pack(-side => 'top', -expand => '0', -fill => 'x');
 
-  $win_r->{ordinary_worktime_lb} = $win_r->{ordinary_worktime_area}
-      -> Label(-text => 'Ordinarie veckoarbetstid: ')
-      -> pack(-side => 'left');
-
-  $win_r->{ordinary_worktime_entry} = $win_r->{ordinary_worktime_area}
-      -> Entry(-width    => 3,
-               -validate => 'key',
-               -justify  => 'center',
-               -textvariable    => \$self->{cfg}{ordinary_week_work_time},
-               -validatecommand => [$self => '_number_entry_key'],
-              )
-      -> pack(-side => 'left');
-
   $win_r->{ordinary_worktime_note} = $win_r->{ordinary_worktime_area}
-      -> Label(-text => ' (kan komma att ersättas med schema i senare versioner)')
+      -> Label(-text => 'Ordinarie veckoarbetstid: Ersatt med Schema, se flik Schema')
       -> pack(-side => 'left');
 
   # Adjust precision
@@ -1232,6 +1234,22 @@ sub _setup($) {
                            -modified  => [ $self => '_modified', 'event_cfg'],
                            erefs => {
                              -event_cfg => $self->{erefs}{-event_cfg},
+                             -calculate => $self->{erefs}{-calculate},
+                             -clock     => $self->{erefs}{-clock},
+                             -cfg       => $self->{erefs}{-cfg},
+                           },
+                           -invalid   => [$self => '_not_allowed'],
+                          );
+
+  ### TAB: Schedule configuration settings ###
+  $win_r->{schedule_tab} = $win_r->{notebook}
+      -> add('sched_tab', -label => 'Schema');
+  $self->{-schedule_setup} =
+     Gui::ScheduleConfig->new(-area      => $win_r->{schedule_tab},
+                           -win_r     => $win_r,
+                           -modified  => [ $self => '_modified', 'schedule_cfg'],
+                           erefs => {
+                             -schedule => $self->{erefs}{-schedule},
                              -calculate => $self->{erefs}{-calculate},
                              -clock     => $self->{erefs}{-clock},
                              -cfg       => $self->{erefs}{-cfg},

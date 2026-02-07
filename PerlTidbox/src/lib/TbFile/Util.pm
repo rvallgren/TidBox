@@ -2,18 +2,20 @@
 package TbFile::Util;
 #
 #   Document: File utilities
-#   Version:  1.1   Created: 2019-08-13 16:05
+#   Version:  1.2   Created: 2026-02-07 17:47
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileUtil.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2019-08-13';
+my $VERSION = '1.2';
+my $DATEVER = '2026-02-07';
 
 # History information:
 #
+# 1.2  2026-02-07  Roland Vallgren
+#      "if (-w $dirname)" does not work on Windows
 # 1.1  2019-08-03  Roland Vallgren
 #      New method checkTidboxDirectory
 # 1.0  2019-01-25  Roland Vallgren
@@ -106,7 +108,7 @@ sub readDir($$;$) {
 #              - Does it contain not Tidbox files?
 #
 # Arguments:
-#  - Class 
+#  - Class
 #  - Directory name
 # Optional Arguments:
 #  - Reference to log, when provided status is logged
@@ -118,8 +120,8 @@ sub readDir($$;$) {
 #  - 'notWriteAccess'           We do not have write access to the directory
 #  - 'failedOpenDir'            Directory can not be opened for reading
 #  - 'dirIsEmpty'               Directory is empty
-#  
- 
+#
+
 sub checkTidBoxDirectory($$;$) {
   # parameters
   my $class = shift;
@@ -146,14 +148,6 @@ sub checkTidBoxDirectory($$;$) {
     return 'notADirectory';
   } # unless #
 
-  unless (-w $d) {
-    # No write access to the directory
-    # TODO Write protected does not work on Windows.
-    #      We do not check result of write
-    $log->log('FileUtil::checkTidBoxDirectory:', $d, 'is read only')
-        if ($log);
-    return 'notWriteAccess';
-  } # unless #
 
   # Check if there are any files in the directory
   my $dirFiles = TbFile::Util->readDir($d);
@@ -176,7 +170,6 @@ sub checkTidBoxDirectory($$;$) {
         if ($log);
     return 'dirIsEmpty';
   } # if #
-
 
   return 'OK';
 } # Method checkTidBoxDirectory

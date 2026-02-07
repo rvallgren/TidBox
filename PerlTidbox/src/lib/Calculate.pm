@@ -2,15 +2,15 @@
 package Calculate;
 #
 #   Document: Calculator for TidBox
-#   Version:  1.11   Created: 2019-09-27 17:46
+#   Version:  1.12   Created: 2026-02-01 18:24
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Calculate.pmx
 #
 
-my $VERSION = '1.11';
-my $DATEVER = '2019-09-27';
+my $VERSION = '1.12';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -32,6 +32,8 @@ my $DATEVER = '2019-09-27';
 # 1.11  2019-08-29  Roland Vallgren
 #       Code improvements: Do not use event from times directly
 #       Correction of remove short events when workday is adjusted
+# 1.12  2023-12-22  Roland Vallgren
+#       Added formatTime from plugins and getWeekScheduledTime
 #
 
 #----------------------------------------------------------------------------
@@ -327,6 +329,8 @@ sub stepDate($$;$) {
   my $self = shift;
   my ($date, $days) = @_;
 
+  return $date
+    if $date eq '0000-00-00';
   $days = 1 unless defined($days);
   # Use stepTimeDate for the extended exception handling
   (undef, $date) =
@@ -493,7 +497,7 @@ sub deltaHours($$$) {
   my $self = shift;
   my ($start_time, $end_time) = @_;
 
-  return 
+  return
     $self->hours($self->_deltaMinutes($start_time, $end_time));
 } # Method deltaHours
 
@@ -862,6 +866,30 @@ sub evalTimeDate($;$$$) {
 
 #----------------------------------------------------------------------------
 #
+# Method:    formatTime
+#
+# Description: Format time for MinTid hour.tenth. Like '1,5'
+#              Zero length string if time is 0 (zero)
+#              Return time if not digits, it is probably not a time
+#
+# Arguments:
+#  - Object reference
+#  - Decimal char, for example ","
+#  - Time to format in minutes
+# Returns:
+#  Formatted time
+
+sub formatTime($$$) {
+  # parameters
+  my ($self, $decimal_char, $v) = @_;
+
+  return '' unless $v;
+  return $v unless ($v =~ /^\d+$/o);
+  return $self->hours($v, $decimal_char);
+} # sub formatTime
+
+#----------------------------------------------------------------------------
+#
 # Method:      format
 #
 # Description: Formats a registration record for presentation
@@ -918,6 +946,47 @@ sub format($$;$$$) {
 
   return $line;
 } # Method format
+
+#----------------------------------------------------------------------------
+#
+# Method:      getWeekScheduledTime
+#
+# Description: Returns scheduled work hours, in number of minutes, for the week
+#
+# Arguments:
+#  0 - Object reference
+#  1 - Date in week
+# Returns:
+#  Scheduled work time in minutes for the week
+
+sub getWeekScheduledTime($$) {
+  # parameters
+  my $self = shift;
+  my ($date) = @_;
+
+  # TODO Settings should store time in minutes and present as hours and tenths or hours and minutes
+  my $normal = $self->{erefs}{-schedule}->getWeekScheduledTime($date);
+  if ($normal =~ /^([1-9]\d?)(?:([:,.])(\d{0,2}))?$/) {
+    return $1 * 60
+      unless (defined($2) and $3);
+
+    my $tre = $3;
+    $tre .= '0'
+        if (length($tre) < 2);
+
+    # Work time specified in hours:minutes?
+    return $1 * 60 + $tre
+      if ($2 eq ':');
+
+    # Work time specified in hours and decimals
+    return $1 * 60 + $tre * 6 / 10;
+
+  } # if #
+
+  # Invalid or empty ordinary_week_work_time, assume 40 hours
+  return 2400;
+
+} # Method getWeekScheduledTime
 
 #----------------------------------------------------------------------------
 #

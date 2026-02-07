@@ -2,15 +2,15 @@
 #
 #   Arbetstid verktyg
 #
-#   Version:  4.12   Created: 2019-09-06
+#   Version:  4.13   Created: 2024-08-29
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: tidbox.plx
 #
 
-my $VERSION = '4.12';
-my $DATEVER = '2019-09-06';
+my $VERSION = '4.13';
+my $DATEVER = '2024-08-29';
 
 #----------------------------------------------------------------------------
 #
@@ -48,6 +48,9 @@ my $DATEVER = '2019-09-06';
 #       Handle new backup module
 # 4.12  2019-09-06  Roland Vallgren
 #       Earlier menu data is built before any menu is created
+# 4.13  2023-12-22  Roland Vallgren
+#       Use Modern::Perl
+#       Added schedule
 #
 
 #----------------------------------------------------------------------------
@@ -56,8 +59,7 @@ my $DATEVER = '2019-09-06';
 #
 
 # Use Pragma
-use strict;
-use warnings;
+use Modern::Perl '2019';   # Perl 5.30
 use bytes;
 use locale;
 
@@ -456,7 +458,7 @@ my $week_win =
                    -title => $tool_info{icontitle},
                   );
 
-# Create 
+# Create Year
 my $year_win =
    Gui::Year->new(
                   -title => $tool_info{icontitle},
@@ -473,8 +475,10 @@ my $settings =
 $calculate ->
     configure(
               -clock       => $clock,
+              -cfg         => $tbFile->getRef('-cfg'),
               -event_cfg   => $tbFile->getRef('-event_cfg'),
               -times       => $tbFile->getRef('-times'),
+              -schedule    => $tbFile->getRef('-schedule'),
              );
 
 $clock ->
@@ -568,24 +572,25 @@ $year_win ->
 
 $settings ->
     configure(
-              -clock       => $clock,
-              -calculate   => $calculate,
-              -cfg         => $tbFile->getRef('-cfg'),
-              -session     => $tbFile->getRef('-session'),
-              -times       => $tbFile->getRef('-times'),
-              -event_cfg   => $tbFile->getRef('-event_cfg'),
-              -supervision => $tbFile->getRef('-supervision'),
-              -log         => $tbFile->getRef('-log'),
-              -plugin      => $tbFile->getRef('-plugin'),
-              -backup      => $tbFile->getRef('backup'),
-              -earlier     => $earlier,
-              -parent_win  => $main_win->getWin(),
-              -week_win    => $week_win,
+              -clock        => $clock,
+              -calculate    => $calculate,
+              -cfg          => $tbFile->getRef('-cfg'),
+              -session      => $tbFile->getRef('-session'),
+              -times        => $tbFile->getRef('-times'),
+              -event_cfg    => $tbFile->getRef('-event_cfg'),
+              -supervision  => $tbFile->getRef('-supervision'),
+              -schedule     => $tbFile->getRef('-schedule'),
+              -log          => $tbFile->getRef('-log'),
+              -plugin       => $tbFile->getRef('-plugin'),
+              -backup       => $tbFile->getRef('backup'),
+              -earlier      => $earlier,
+              -parent_win   => $main_win->getWin(),
+              -week_win     => $week_win,
 # TODO Temporary. Main and Edit should subscribe on Cfg status
-              -edit_update => [$edit_win => 'update'],
-              -main_status => [$main_win => '_status'],
-              -week_update => [$week_win => 'update'],
-              -about_popup => \&about_popup,
+              -edit_update  => [$edit_win => 'update'],
+              -main_status  => [$main_win => '_status'],
+              -week_update  => [$week_win => 'update'],
+              -about_popup  => \&about_popup,
              );
 
 

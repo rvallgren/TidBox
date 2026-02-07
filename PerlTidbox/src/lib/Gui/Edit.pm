@@ -2,15 +2,15 @@
 package Gui::Edit;
 #
 #   Document: Edit day
-#   Version:  2.10   Created: 2019-09-13 08:40
+#   Version:  2.11   Created: 2026-02-01 18:36
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Edit.pmx
 #
 
-my $VERSION = '2.10';
-my $DATEVER = '2019-09-13';
+my $VERSION = '2.11';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -48,6 +48,8 @@ my $DATEVER = '2019-09-13';
 #       Code improvements: TODO ExcoWord Included from TidBase
 #       Code improvements: Reduce knowledge about Times data
 #       Copy/Paste and search should be performed by TbFile::Times
+# 2.11  2023-12-22  Roland Vallgren
+#       <shift - return> adds event
 #
 
 #----------------------------------------------------------------------------
@@ -673,7 +675,7 @@ sub pasteDate($) {
   return undef
       unless ($self->{copy_from});
 
-  my $res = 
+  my $res =
       $self->{erefs}{-times}->copyPaste($self->{copy_from}, $self->{date});
 
   $self->update();
@@ -684,7 +686,7 @@ sub pasteDate($) {
   } else {
     $self->_message($res)
   } # if #
-      
+
   return 0;
 } # Method pasteDate
 
@@ -823,20 +825,23 @@ sub _doChange($@) {
 # Description:
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
+# Optional Arguments:
+#  - 2 => Shift + Return pressed add new event
 # Returns:
 #  -
 
-sub _change($) {
+sub _change($;$) {
   # parameters
   my $self = shift;
+  my ($return) = @_;
 
 
   my $win_r = $self->{win};
 
   my $event_ref = $win_r->{day_list}->curselection();
 
-  if (ref($event_ref)) {
+  if (ref($event_ref) and not $return) {
 
     my ($line, $action_text, $date) = $self->_get([$self, '_message']);
 
@@ -1188,6 +1193,7 @@ sub _setup($) {
                     -calculate => $self->{erefs}{-calculate},
                            },
                   -time      => [$self, '_change'],
+                  -timeadd   => [$self, '_change', 2],
                   -date      => [$self, '_dateReturn'],
                   -week      => [$self, '_week'],
                   -invalid   => [$self => '_message'],
@@ -1271,6 +1277,8 @@ sub _setup($) {
                     -validate  => [$self => '_validate'],
                     -buttons   => [$self => '_earlierAdd'],
                     -return    => [$self => '_change'],
+                    -shiftreturn => [$self => '_change', 2],
+                    -escape     => [$self, '_clear'],
                     -parentName => $win_r->{name},
                    );
 

@@ -2,18 +2,20 @@
 package Plugin::MyTimeXlsX;
 #
 #   Document: Plugin MyTimeXlsX
-#   Version:  1.1   Created: 2019-04-12 17:53
+#   Version:  1.2   Created: 2026-02-01 19:12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: MyTimeXlsX.pmx
 #
 
-my $VERSION = '1.1';
-my $DATEVER = '2019-04-12';
+my $VERSION = '1.2';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
+# 1.2  2024-01-03  Roland Vallgren
+#      Get week schedule from Calculate and _formatTime moved to Calculate
 # 1.1  2019-04-12  Roland Vallgren
 #      "Doctor visit -SE" is not a valid Type in MyTime
 # 1.0  2019-02-16  Roland Vallgren
@@ -57,6 +59,8 @@ use constant
 
   PLUGIN_INFORMATION =>
  'Plugin för att exportera tid registrerad i Tidbox till Tieto MyTime Excel X.',
+
+  CSV_DECIMAL_KOMMA    => '.',
 
 #  XLSX_HEADER_TEMPLATE =>
 # Format used 2018 week 46 and 47
@@ -168,36 +172,13 @@ my $EVENT_CFG = {
                   'Occupational Injury -SE'        . ';' .
                   'Study Leave /unpaid /v -SE'     . ';' .
                   'Compensation for Overtime -SE'  . ';' .
-                  'Comp for daily/weekly rest -SE' . ';' 
+                  'Comp for daily/weekly rest -SE' . ';'
                                                            ,
                 'Details:.:24',
               ],
                 };
 
 # Subroutines
-#----------------------------------------------------------------------------
-#
-# Function:    _formatTime
-#
-# Description: Format time for MyTime hour.tenth. Like '1.5'
-#              Zero length string if time is 0 (zero)
-#              Return time if not digits, it is probably not a time
-#
-# Arguments:
-#  0 - Time to format in minutes
-#  1 - Calculator
-# Returns:
-#  Formatted time
-
-sub _formatTime($$) {
-  # parameters
-  my ($v, $calc) = @_;
-
-  return '' unless $v;
-  return $v unless ($v =~ /^\d+$/o);
-  return $calc->hours($v, '.');
-} # sub _formatTime
-
 
 #############################################################################
 #
@@ -437,7 +418,7 @@ sub selectDirButton($) {
 
   $self->{win}->{dir_button}->
       configure(
-                -text => $self->{cfg}{mytimexlsx_directory} || 
+                -text => $self->{cfg}{mytimexlsx_directory} ||
                          'Välj katalog',
 # TODO The button is not correctly initiated
                )
@@ -781,7 +762,7 @@ sub _doExport($$) {
   for my $event (sort(keys(%{$week_events_r}))) {
 
     push @doubtfull , $event
-        unless ($event =~ 
+        unless ($event =~
                   /^(?:\d+),(?:[-+\d\. a-zA-Z]+),(?:[A-Z][\w \.\/]+-[A-Z]{2}(?:-Overtime)?),/);
 # TODO Task and Type might look different
 
@@ -858,7 +839,7 @@ sub _doExport($$) {
 
 
       for my $day_r (@$weekdays_r) {
-        $time = _formatTime($day_r->{activities}{$activity}, $calc);
+        $time = $calc->formatTime(CSV_DECIMAL_KOMMA, $day_r->{activities}{$activity});
         # Weekday time, Comment, Time from, Time to
         push @$row, $time, '', '', '';
         $fractions++
@@ -870,7 +851,7 @@ sub _doExport($$) {
       $row = [ $1, '', '', '', '' ];
 
       for my $day_r (@$weekdays_r) {
-        $time = _formatTime($day_r->{events}{$event}, $calc);
+        $time = $calc->formatTime(CSV_DECIMAL_KOMMA, $day_r->{events}{$event});
         # Weekday time, Comment, Time from, Time to
         push @$row, $time, '', '', '';
         $not_understood += $day_r->{events}{$event}
@@ -891,7 +872,7 @@ sub _doExport($$) {
   $row = [ 'Other', '', '', '', '' ];
   for my $day_r (@$weekdays_r) {
     if ($day_r->{not_event_time}) {
-      $time = _formatTime($day_r->{not_event_time}, $calc);
+      $time = $calc->formatTime(CSV_DECIMAL_KOMMA, $day_r->{not_event_time});
       # Weekday time, Comment, Time from, Time to
       push @$row, $time, '', '', '';
       $other += $day_r->{not_event_time};
@@ -935,7 +916,7 @@ sub _doExport($$) {
   #----------------------------------------------------------------------
 
   # Close
-  
+
   $workbook->close() or
      $confirm
        -> popup(
@@ -961,14 +942,14 @@ sub _doExport($$) {
 
     if ($not_understood) {
       push @$t, ('Tid för ej formaterbara händelser registrerade: '.
-                  _formatTime($not_understood, $calc) . ' timmar',
+                  $calc->formatTime(CSV_DECIMAL_KOMMA, $not_understood) . ' timmar',
                  undef,
                  );
     } # if #
 
     if ($other) {
       push @$t, ('Arbetstid utan händelse: '.
-                  _formatTime($other, $calc) . ' timmar',
+                  $calc->formatTime(CSV_DECIMAL_KOMMA, $other) . ' timmar',
                  undef,
                 );
     } # if #
@@ -997,11 +978,10 @@ sub _doExport($$) {
   # Check week work time and hint for flex
   my $total_time = 0;
 
-  my $week_work_minutes =
-            60 * $self->{erefs}{-cfg}->get('ordinary_week_work_time');
+  my $week_work_minutes = $self->{erefs}{-calculate}->getWeekScheduledTime($date);
 
   for my $day_r (@$weekdays_r) {
-    $total_time += $day_r->{work_time} 
+    $total_time += $day_r->{work_time}
         if ($day_r->{work_time});
   } # for #
 
@@ -1011,11 +991,11 @@ sub _doExport($$) {
               -title => 'MyTimeXlsX : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
-                         _formatTime($total_time, $calc) . ' timmar.',
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $total_time) . ' timmar.',
                          'Det är ' .
-                         _formatTime($total_time - $week_work_minutes, $calc) .
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $total_time - $week_work_minutes) .
                          ' timmar mer än normaltid ' .
-                         _formatTime($week_work_minutes, $calc),
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $week_work_minutes),
                          'Skrev veckoarbetstid till:',
                          $self->{outfile},
                         ],
@@ -1032,11 +1012,11 @@ sub _doExport($$) {
               -title => 'MyTimeXlsX : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
-                         _formatTime($total_time, $calc) . ' timmar.',
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $total_time) . ' timmar.',
                          'Det är ' .
-                         _formatTime($week_work_minutes - $total_time, $calc) .
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $week_work_minutes - $total_time) .
                          ' timmar mindre än normaltid ' .
-                         _formatTime($week_work_minutes, $calc),
+                         $calc->formatTime(CSV_DECIMAL_KOMMA, $week_work_minutes),
                          'Skrev veckoarbetstid till:',
                          $self->{outfile},
                         ],

@@ -1,7 +1,7 @@
 #
 package TidVersion;
 #
-#   Version:  1.9   Created: 2020-01-29
+#   Version:  1.9   Created: 2026-02-04
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
@@ -9,7 +9,7 @@ package TidVersion;
 #
 
 my $VERSION = '1.9';
-my $DATEVER = '2020-01-29';
+my $DATEVER = '2026-02-04';
 
 # Register version information
 {
@@ -81,9 +81,9 @@ my %plugins;
 %tool_info = (
     title     => 'Arbetstid verktyg',
     icontitle => 'TidBox',
-    date      => '2020-01-29',
+    date      => '2026-02-04',
     prepared  => 'Roland Vallgren',
-    VERSION   => '4.16',
+    VERSION   => '5.0',
 );
 $tool_info{version} =
    "$tool_info{icontitle} Version: $tool_info{VERSION} $tool_info{title}";
@@ -118,7 +118,14 @@ $tool_info{title} . "  :  " . $tool_info{icontitle} .
 #  >>>>>>>>>> Nyheter i denna version: <<<<<<<<<
 'Nyheter i denna version:
 
-Kodförbättringar
+Ny inställning: Schema där normal veckorbetstid och veckoarbetstid för
+  förkortade veckor anges. Endast innevarande och framtida veckor kan anges
+Veckoarbetstid kan anges med delar "timmar,decimaler" eller "timmar:minuter"
+MyTime plugin kan skapa en mall-fil
+Ny plugin MinTid
+<Shift> + <Retur>: Lägg till händelse i stället för ändra händelse
+<Escape>: Töm händelse fälten eller tid
+Utseende ändrat något på delar i inställningar
 '
 ,
 
@@ -129,6 +136,8 @@ Justera dag justerade inte övrig tid korrekt när en kort händelse togs bort.
 Justera skall inte ändra följdhändelser med noll minuter.
 Skapa ny Tidbox-katalog fungerade inte.
 År gick inte att starta när det inte fanns några registreringar.
+Tillåt inte radbryt i inklistrad text, även radslut
+Arkivera fungerade inte när arkiv inte fanns
 '
 ,
 
@@ -164,7 +173,9 @@ Skapa ny Tidbox-katalog fungerade inte.
 # Returns:
 #  -
 
-sub register_version(%) {
+# Avoid warnings: No arguments in prototype
+#sub register_version(%) {
+sub register_version {
   # parameters
   my (%i) = @_;
 

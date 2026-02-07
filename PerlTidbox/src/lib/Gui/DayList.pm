@@ -2,15 +2,15 @@
 package Gui::DayList;
 #
 #   Document: Gui::DayList
-#   Version:  1.8   Created: 2019-11-11 09:43
+#   Version:  1.9   Created: 2026-02-01 18:28
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: DayList.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2019-11-11';
+my $VERSION = '1.9';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -40,6 +40,8 @@ my $DATEVER = '2019-11-11';
 #      selecting it
 # 1.8  2019-11-11  Roland Vallgren
 #      Code improvement: Object orientation
+# 1.9  2025-02-12  Roland Vallgren
+#      Attempt to show ongoing event
 #
 
 #----------------------------------------------------------------------------
@@ -441,6 +443,7 @@ sub highlite($;$) {
     $win_r->{list_box}->see($index);
   } else {
     $self->{highlited} = -1;
+    $self->ongoing();
   } # if #
 
   return 0;

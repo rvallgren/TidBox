@@ -2,28 +2,18 @@
 package Gui::Time;
 #
 #   Document: Time entry area
-#   Version:  1.8   Created: 2019-08-02 16:22
+#   Version:  1.9   Created: 2026-02-01 19:08
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Time.pmx
 #
 
-my $VERSION = '1.8';
-my $DATEVER = '2019-08-02';
+my $VERSION = '1.9';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
-# PA1  2006-11-19  Roland Vallgren
-#      First issue, extracted from tidbox.plx
-# PA2  2007-03-17  Roland Vallgren
-#      Removed not needed code
-# 1.3  2007-03-25  Roland Vallgren
-#      Numerical versions, Local module information added
-#      Week entry type added
-#      Handling of allowed date range added
-# 1.4  2008-12-06  Roland Vallgren
-#      Use Exco %+ to use same source to register version
 # 1.5  2011-03-31  Roland Vallgren
 #      New method quit
 # 1.6  2016-01-27  Roland Vallgren
@@ -32,6 +22,8 @@ my $DATEVER = '2019-08-02';
 #      References to other objects in own hash
 # 1.8  2019-05-14  Roland Vallgren
 #      Keys bound to actions in entries
+# 1.9  2023-12-22  Roland Vallgren
+#      <shift - return> adds event, <Escape> clears time
 #
 
 #----------------------------------------------------------------------------
@@ -83,6 +75,7 @@ use constant ONEYEAR         => 365 * TWENTYFOURHOURS;
 # Arguments:
 #  0 - Object prototype
 #  -area       Reference to parent frame
+#  -pack_side  Side to pack, default top
 #  -calculate  Reference calculator
 #  -time       Create time if exists, return callback if reference
 #  -date       Create date if exists, return callback if reference
@@ -104,7 +97,8 @@ sub new($%) {
 
   $win_r->{time_area} = $win_r->{area}
       -> Frame()
-      -> pack(-side => 'top', -fill => 'both');
+      -> pack(-side => $opt{-pack_side} || 'top',
+              -fill => 'both');
 
   my $self = {
               win        => $win_r,
@@ -125,6 +119,7 @@ sub new($%) {
         -> Entry(-width => '11')
         -> pack(-side => 'left');
     $win_r->{date_data}->bind('<Return>' => [$self => '_date']);
+    $win_r->{date_data}->bind('<Escape>' => [$self => 'clear']);
     if ($opt{-week}) {
       $win_r->{date_data}->bind('<Control-w>' => [$self => '_week']);
       $self->{-week} = $opt{-week};
@@ -150,6 +145,7 @@ sub new($%) {
         -> Entry(-width => '10')
         -> pack(-side => 'left');
     $win_r->{week_data}->bind('<Return>' => [$self => '_week']);
+    $win_r->{week_data}->bind('<Escape>' => [$self => 'clear']);
     $win_r->{week_data}->bind('<Up>'   => [$self => '_step', ONEWEEK]);
     $win_r->{week_data}->bind('<Down>' => [$self => '_step', -ONEWEEK]);
     $win_r->{week_data}->bind('<Control-n>' => [$self => '_step', ONEWEEK]);
@@ -169,8 +165,10 @@ sub new($%) {
         -> Entry(-width => '10')
         -> pack(-side => 'left');
     $win_r->{time_data}->bind('<Return>'  => [$self => '_time']);
-    $win_r->{time_data}->bind('<Shift-=>' => [$self => '_step', 0]);
-    $win_r->{time_data}->bind('<=>'       => [$self => '_step', 0]);
+    $win_r->{time_data}->bind('<Shift-Return>'  => [$self => '_time', 2]);
+    $win_r->{time_data}->bind('<Escape>' => [$self => 'clear']);
+    $win_r->{time_data}->bind('<Shift-equal>' => [$self => '_step', 0]);
+    $win_r->{time_data}->bind('<equal>'       => [$self => '_step', 0]);
     $win_r->{time_data}->bind('<Up>'   =>[$self=>'_posStep', 'T']);
     $win_r->{time_data}->bind('<Down>' =>[$self=>'_posStep', 't']);
     $win_r->{time_data}->bind('<Control-n>' => [$self => '_step', ONEMINUTE]);
@@ -263,7 +261,7 @@ sub clear($;$) {
 #  1 - Only get date
 # Returns:
 #  time and date. undef if format is not valid
-#  
+#
 
 sub get($;$) {
   # parameters
@@ -448,16 +446,22 @@ sub _date($) {
 # Description: Return callback for time field
 #
 # Arguments:
-#  0 - Object reference
+#  - Object reference
+# Optional Arguments:
+#  - Do add
 # Returns:
 #  -
 
-sub _time($) {
+sub _time($;$) {
   # parameters
   my $self = shift;
+  my ($add) = @_;
 
 
-  return 0 unless($self->{-time});
+  return 0 unless($self->{-time} or $self->{-timeadd});
+
+  return $self->callback($self->{-timeadd})
+      if ($add and ref($self->{-timeadd}));
 
   return $self->callback($self->{-time})
       if (ref($self->{-time}));
@@ -540,7 +544,7 @@ sub _step($$) {
 
   my ($time, $date) = $self->get();
   return 0 unless $date;
-  ($time, $date) = 
+  ($time, $date) =
               $self->{erefs}{-calculate}->stepTimeDate($seconds, $time, $date);
   return 0 unless $date;
 
@@ -563,7 +567,7 @@ sub _step($$) {
   if (exists($self->{-max_date}) and $date gt $self->{-max_date}) {
     if ($self->{-week}) {
       $self->callback($self->{-invalid},
-                      'Vecka efter ' . 
+                      'Vecka efter ' .
                       join('v',
                               $self->{erefs}{-calculate}->
                                   weekNumber($self->{-max_date})) .
@@ -664,7 +668,7 @@ sub _incr($) {
   # parameters
   my $self = shift;
 
-  
+
   if (exists($self->{win}{time_data})) {
     $self->_step(ONEMINUTE);
   } elsif (exists($self->{win}{date_data})) {
@@ -691,7 +695,7 @@ sub _decr($) {
   # parameters
   my $self = shift;
 
-  
+
   if (exists($self->{win}{time_data})) {
     $self->_step(-(ONEMINUTE));
   } elsif (exists($self->{win}{date_data})) {

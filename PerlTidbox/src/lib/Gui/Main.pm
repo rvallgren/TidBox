@@ -2,15 +2,15 @@
 package Gui::Main;
 #
 #   Document: Main window
-#   Version:  2.15   Created: 2020-01-21 13:56
+#   Version:  2.16   Created: 2026-02-01 18:53
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Main.pmx
 #
 
-my $VERSION = '2.15';
-my $DATEVER = '2020-01-21';
+my $VERSION = '2.16';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -63,6 +63,8 @@ my $DATEVER = '2020-01-21';
 #       Code improvements: TODO ExcoWord Included from TidBase
 #       Code improvements: Reduce knowledge about Times data
 #       Get ongoing event from Times
+# 2.16  2023-12-22  Roland Vallgren
+#       <shift - return> adds event
 #
 
 #----------------------------------------------------------------------------
@@ -201,7 +203,7 @@ sub showWarn($%) {
 #
 # Description: Show status as selected in settings
 #              Also finds out previous event for previous button
-#              
+#
 #
 # Arguments:
 #  0 - Object reference
@@ -625,6 +627,8 @@ sub _add($$;$) {
 #  - Object reference
 # Optional Arguments:
 #  - True => Return pressed
+#  - 1 => Return pressed, modify or add event
+#    2 => Shift Return pressed, add new event
 # Returns:
 #  -
 
@@ -634,8 +638,11 @@ sub _modify($;$) {
   my ($return) = @_;
 
 
-  return $self->_add($BEGINEVENT)
-      if ($return and not $self->{edit_event_ref});
+  if ($return) {
+      return $self->_add($BEGINEVENT)
+          if ($return == 1 and not $self->{edit_event_ref} or
+              $return == 2);
+  } # if #
 
   return $self->_message('Inget markerat att ändra')
       unless (ref($self->{edit_event_ref}));
@@ -1500,6 +1507,7 @@ sub _setup($) {
                       -calculate => $self->{erefs}{-calculate},
                              },
                     -time      => [$self, '_modify', 1],
+                    -timeadd   => [$self, '_modify', 2],
                     -date      => [$self, '_dateReturn'],
                     -week      => [$self, '_dated', $self->{erefs}{-week_win}],
                     -invalid   => [$self, '_message'],
@@ -1548,6 +1556,8 @@ sub _setup($) {
                     -validate  => [$self, '_validate'],
                     -buttons   => [$self, '_buttons'],
                     -return    => [$self, '_modify', 1],
+                    -shiftreturn => [$self, '_modify', 2],
+                    -escape    => [$self, '_clear'],
                     -parentName => $win_r->{name},
                    );
 

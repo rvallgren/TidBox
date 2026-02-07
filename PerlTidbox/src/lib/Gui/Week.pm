@@ -2,15 +2,15 @@
 package Gui::Week;
 #
 #   Document: Display week
-#   Version:  1.20   Created: 2019-10-04 13:18
+#   Version:  1.21   Created: 2026-02-01 19:10
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Week.pmx
 #
 
-my $VERSION = '1.20';
-my $DATEVER = '2019-10-04';
+my $VERSION = '1.21';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -56,6 +56,9 @@ my $DATEVER = '2019-10-04';
 # 1.20  2019-05-16  Roland Vallgren
 #       Press return in view to go to edit
 #       Added "Redigera" in right click menu in time area
+# 1.21  2023-12-22  Roland Vallgren
+#       Get week schedule from calculate
+#       Week work time can be specified with hours and hundreths or minutes
 #
 
 #----------------------------------------------------------------------------
@@ -124,7 +127,7 @@ sub new($%) {
 
 #----------------------------------------------------------------------------
 #
-# Method:      _formatTime
+# Method:      _formatTimeColumn
 #
 # Description: Format input to at least 9 char to get even columns
 #              Time is formatted to hours and hundreths
@@ -138,7 +141,7 @@ sub new($%) {
 # Returns:
 #  Fomatted string
 
-sub _formatTime($$;$) {
+sub _formatTimeColumn($$;$) {
   # parameters
   my $self = shift;
   my ($v, $z) = @_;
@@ -155,7 +158,7 @@ sub _formatTime($$;$) {
   } # if #
         #'   Måndag'
   return sprintf('%9s', $v);
-} # Method _formatTime
+} # Method _formatTimeColumn
 
 #----------------------------------------------------------------------------
 #
@@ -171,7 +174,8 @@ sub _formatTime($$;$) {
 #  - Reference to weekdays array
 #  - Key to get for each weekday
 # Returns:
-#  Accumulated time for the whole week
+#  - Accumulated time for the whole week
+#  - Flex time plus or minus
 
 sub _formatWeekRow($$$$$) {
   # parameters
@@ -185,14 +189,14 @@ sub _formatWeekRow($$$$$) {
 
   for my $day_r (@$weekdays_r) {
 
-    $insertBox->Insert($self->_formatTime($day_r->{$key}));
+    $insertBox->Insert($self->_formatTimeColumn($day_r->{$key}));
 
     $row_time += $day_r->{$key}
         if $day_r->{$key};
 
   } # for #
 
-  $insertBox->Insert($self->_formatTime($row_time))
+  $insertBox->Insert($self->_formatTimeColumn($row_time))
       if ($self->{rowsum});
 
   unless (wantarray()) {
@@ -202,8 +206,8 @@ sub _formatWeekRow($$$$$) {
     return $self->{erefs}{-calculate}->hours($row_time);
   } # unless #
 
-  # Caller need work time and flex time
-  my $normal = $self->{erefs}{-cfg}->get('ordinary_week_work_time') * 60;
+  # TODO Get normal time for the week once
+  my $normal = $self->{erefs}{-calculate}->getWeekScheduledTime($self->{first_date});
   my ($flex, $sign);
   if ($row_time > $normal) {
     $flex = $row_time - $normal;
@@ -242,7 +246,7 @@ sub _insertEventTime($$$) {
   my ($insertBox, $minutes) = @_;
 
 
-  my $hours = $self->_formatTime($minutes, 1);
+  my $hours = $self->_formatTimeColumn($minutes, 1);
   $insertBox->Insert($hours);
 
   return 0
@@ -306,7 +310,7 @@ sub _insertEventLine($$$%) {
 
   } # if #
 
-  $insertBox->Insert($self->_formatTime($row_time))
+  $insertBox->Insert($self->_formatTimeColumn($row_time))
       if ($self->{rowsum});
 
   if (exists($arg{week_comments})) {
@@ -347,6 +351,7 @@ sub _showHead($) {
 
   if ($lock) {
     if ($lock == 2) {
+      $win_r->{lock_week} -> configure(-text => 'Tidbox låst');
       $win_r->{lock_week} -> configure(-state => 'disabled');
     } else {
       $win_r->{lock_week} -> configure(-state => 'normal');
@@ -359,6 +364,7 @@ sub _showHead($) {
     $win_r->{worktime}  -> configure(-background => 'lightgrey');
     $win_r->{wholeweek} -> configure(-background => 'lightgrey');
     $win_r->{flex}      -> configure(-background => 'lightgrey');
+    $win_r->{weekworktime}  -> configure(-background => 'lightgrey');
   } else {
     $win_r->{lock_week} -> configure(-state => 'normal');
     $win_r->{lock_week} -> configure(-text => 'Lås vecka');
@@ -369,6 +375,7 @@ sub _showHead($) {
     $win_r->{worktime}  -> configure(-background => 'white');
     $win_r->{wholeweek} -> configure(-background => 'white');
     $win_r->{flex}      -> configure(-background => 'white');
+    $win_r->{weekworktime}  -> configure(-background => 'white');
   } # if #
 
   $win_r->{title} -> configure(-text => $text);
@@ -468,10 +475,19 @@ sub _setup($) {
       -> LabFrame(-labelside => 'left',
                   -label => 'Plus/minus-tid: ',
                   -relief => 'flat')
-      -> pack(-side => 'left');
+      -> pack(-side => 'right');
   $win_r->{flex} = $win_r->{flex_label}
       -> Label()
       -> pack(-side => 'right');
+
+  $win_r->{worktime_label} = $win_r->{wholeweek_area}
+      -> LabFrame(-labelside => 'left',
+                  -label => 'Planerad arbetstid: ',
+                  -relief => 'flat')
+      -> pack(-side => 'left');
+  $win_r->{weekworktime} = $win_r->{worktime_label}
+      -> Label()
+      -> pack(-side => 'left');
 
   ### Button area ###
 
@@ -599,7 +615,6 @@ sub _condenseButtons($) {
 sub _selection($) {
   # parameters
   my $self = shift;
-  my () = @_;
 
   my $win_r = $self->{win};
   my @selectPos = $win_r->{times}->tagRanges('sel');
@@ -712,7 +727,7 @@ sub _display($;$) {
 
     for my $wday (1..6,0) {
        $win_r->{weekdays} ->
-          Insert($self->_formatTime($self->{erefs}{-calculate}->dayStr($wday)));
+          Insert($self->_formatTimeColumn($self->{erefs}{-calculate}->dayStr($wday)));
 
       # Add tag to weekday
       my $day = 'day' . $wday;
@@ -789,7 +804,7 @@ sub _display($;$) {
 
         $activity = "\n";
 
-        $self->_insertEventLine($weekdays_r, $event_text_max_length, 
+        $self->_insertEventLine($weekdays_r, $event_text_max_length,
                                 event => $event);
 
       } # if #
@@ -830,6 +845,11 @@ sub _display($;$) {
   # Insert work time for whole week
   $win_r->{wholeweek}->configure(-text => $week_work_time);
   $win_r->{flex}->configure(-text => $week_flex_time);
+  $win_r->{weekworktime}->configure(-text =>
+       $self->{erefs}{-calculate}->hours(
+          $self->{erefs}{-calculate}->getWeekScheduledTime($self->{first_date})
+                                        )
+                                   );
 
   # Set scroll, insert and selection position same as before update
   $win_r->{times}->yviewMoveto($scroll_pos)

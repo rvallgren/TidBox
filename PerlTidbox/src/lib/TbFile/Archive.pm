@@ -2,15 +2,15 @@
 package TbFile::Archive;
 #
 #   Document: Archive data
-#   Version:  1.5   Created: 2019-02-19 17:37
+#   Version:  1.6   Created: 2026-01-06 17:23
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Archive.pmx
 #
 
-my $VERSION = '1.5';
-my $DATEVER = '2019-02-19';
+my $VERSION = '1.6';
+my $DATEVER = '2026-01-06';
 
 # History information:
 #
@@ -31,6 +31,8 @@ my $DATEVER = '2019-02-19';
 #      Code improvement
 #      Removed log->trace
 #      Corrected: -error_popup is an eref
+# 1.6  2025-02-16  Roland Vallgren
+#      Added schedule
 #
 
 # TODO What do we do with duplicated archive sets in archive file
@@ -58,6 +60,7 @@ use Carp;
 use integer;
 
 use TbFile::EventCfg;
+use TbFile::Schedule;
 use TbFile::Times;
 
 # Register version information
@@ -89,11 +92,15 @@ use constant ARCHIVE_INFO      => 'ARCHIVE INFORMATION';
 #       start_date    : Date of first registration in the archive set
 #       end_date      : Date of the last registration in the archive set
 #       event_cfg     : Reference to set EventCfg
+#       schedule      : Reference to set Schedule
 #       times         : Reference to set Times
 
-use constant ARCHIVE_EVENT_CFG => 'EVENT CONFIGURATION';
-use constant ARCHIVE_TIMES     => 'REGISTERED TIME EVENTS';
-
+use constant
+{
+  ARCHIVE_EVENT_CFG => 'EVENT CONFIGURATION',
+  ARCHIVE_SCHEDULE  => 'SCHEDULE CONFIGURATION',
+  ARCHIVE_TIMES     => 'REGISTERED TIME EVENTS',
+};
 
 #############################################################################
 #
@@ -202,6 +209,11 @@ sub _load($$) {
         $set->{event_cfg} = $self->{erefs}{-event_cfg}->clone();
         $set->{event_cfg}->_load($fh);
 
+      } elsif ($1 eq ARCHIVE_SCHEDULE) {
+        # Load Schedule data
+        $set->{schedule} = $self->{erefs}{-schedule}->clone();
+        $set->{schedule}->_load($fh);
+
       } elsif ($1 eq ARCHIVE_TIMES) {
         # Load times data
         $set->{times} = $self->{erefs}{-times}->clone();
@@ -250,6 +262,11 @@ sub _append($$$) {
   $fh->print("\n" .
              '['. ARCHIVE_EVENT_CFG. ']' . "\n");
   $set->{event_cfg}->_save($fh);
+
+  # Add schedule data
+  $fh->print("\n" .
+             '['. ARCHIVE_SCHEDULE. ']' . "\n");
+  $set->{schedule}->_save($fh);
 
   # Add times data
   $fh->print("\n" .
@@ -356,6 +373,7 @@ sub joinSets($$) {
 
   # Move data to the target set
   $prev->{event_cfg} -> move($set->{event_cfg});
+  $prev->{schedule}  -> move($set->{schedule});
   $prev->{times}     -> move($set->{times});
 
   # Update information about the joined set
@@ -420,16 +438,17 @@ sub addSet($$) {
 #  - Start date, end date of previous set, archive date before this set
 #  - End date
 #  - Event Cfg
+#  - Schedule
 #  - Times
 # Optional Arguments:
 #  - Set date time
 # Returns:
 #  - New archive set
 
-sub createSet($$$$$;$) {
+sub createSet($$$$$$;$) {
   # parameters
   my $self = shift;
-  my ($start_date, $end_date, $event_cfg, $times, $date_time) = @_;
+  my ($start_date, $end_date, $event_cfg, $schedule, $times, $date_time) = @_;
 
 
   # TODO This is strange, we need a better way to move a set between archives
@@ -452,6 +471,10 @@ sub createSet($$$$$;$) {
   # Add event cfg data for archive set
   $set->{event_cfg} = $self->{erefs}{-event_cfg}->clone();
   $event_cfg->move($set->{event_cfg}, $end_date, $start_date);
+
+  # Add schedule for archive set
+  $set->{schedule} = $self->{erefs}{-schedule}->clone();
+  $schedule->move($set->{schedule}, $end_date, $start_date);
 
   # Add times data for archive set
   $set->{times} = $self->{erefs}{-times}->clone();
@@ -532,6 +555,11 @@ sub _mergeSets($$$) {
                               -endDate   => $trgEndDate,
                               -noLoad    => 1,
                               );
+  $target->{schedule}->merge(-fromInst  => $source->{schedule},
+                             -startDate => $trgStartDate,
+                             -endDate   => $trgEndDate,
+                             -noLoad    => 1,
+                             );
   $target->{times}->merge(-fromInst   => $source->{times},
                           -startDate => $trgStartDate,
                           -endDate   => $trgEndDate,
@@ -563,9 +591,15 @@ sub _mergeFromMain($) {
     my $setEnd      = $set->{end_date};
     my $setTimes    = $set->{times};
     my $setEventCfg = $set->{event_cfg};
+    my $setSchedule = $set->{schedule};
 
     # Merge data from main to the archive set
     $setEventCfg->merge(-fromInst  => $self->{erefs}{-event_cfg},
+                        -startDate => $setStart,
+                        -endDate   => $setEnd,
+                        -noLoad    => 1,
+                        );
+    $setSchedule->merge(-fromInst  => $self->{erefs}{-schedule},
                         -startDate => $setStart,
                         -endDate   => $setEnd,
                         -noLoad    => 1,
@@ -633,6 +667,7 @@ sub _mergeData($$$$;$) {
 
     $self->{erefs}{-times}     -> save();
     $self->{erefs}{-event_cfg} -> save();
+    $self->{erefs}{-schedule}  -> save();
     $self -> save();
     return 0
   } # unless #
@@ -642,6 +677,7 @@ sub _mergeData($$$$;$) {
 # start_date    : Date of first registration in the archive
 # end_date      : Date of the last registration in the archive
 # event_cfg     : Reference to EventCfg data
+# schedule      : Reference to Schedule data
 # times         : Reference to Times data
 
   my $archiveDate = $self->{erefs}{-cfg}->get('archive_date');
@@ -678,6 +714,7 @@ sub _mergeData($$$$;$) {
     my $srcSetEnd   = $source->getSets($srcSetDate, 'end_date'  );
     my $srcTimes    = $source->getSets($srcSetDate, 'times'     );
     my $srcEventCfg = $source->getSets($srcSetDate, 'event_cfg' );
+    my $srcSchedule = $source->getSets($srcSetDate, 'schedule'  );
     next
         if ($srcSetEnd lt $startDate);
 
@@ -732,6 +769,7 @@ sub _mergeData($$$$;$) {
       my $setEnd      = $self->getSets($setDate, 'end_date'  );
       my $setTimes    = $self->getSets($setDate, 'times'     );
       my $setEventCfg = $self->getSets($setDate, 'event_cfg' );
+      my $setSchedule = $self->getSets($setDate, 'schedule'  );
 
       if ($setEnd ge $startDate) {
 
@@ -796,6 +834,7 @@ sub _mergeData($$$$;$) {
 
   $self->{erefs}{-times}     -> save();
   $self->{erefs}{-event_cfg} -> save();
+  $self->{erefs}{-schedule}  -> save();
   $self->save();
 
   return 0;
@@ -827,6 +866,7 @@ sub importSet($$) {
 
   # Move data to the active data
   $set->{event_cfg} -> move($self->{erefs}{-event_cfg});
+  $set->{schedule}  -> move($self->{erefs}{-schedule});
   $set->{times}     -> move($self->{erefs}{-times});
 
   $self->{erefs}{-event_cfg}->strings();
@@ -840,6 +880,7 @@ sub importSet($$) {
 
   $self->{erefs}{-times}     -> save();
   $self->{erefs}{-event_cfg} -> save();
+  $self->{erefs}{-schedule}  -> save();
   $self->{erefs}{-cfg}       -> save();
   $self->save(1);
 
@@ -903,20 +944,26 @@ sub archive($$) {
   my ($end_date) = @_;
 
 
+  # If the archive file not exists, use load to create the file
+  $self->load()
+    unless $self->fileExists();
+
   # Create an archive set
   my $start_date = $self->{erefs}{-cfg}->get('archive_date');
 
   my $set = $self->createSet($start_date,
                              $end_date,
                              $self->{erefs}{-event_cfg},
+                             $self->{erefs}{-schedule},
                              $self->{erefs}{-times});
 
   $self->addSet($set);
 
   # And finally save the active data
-  $self -> save();
+  $self-> save(1);
   $self->{erefs}{-times}     -> save();
   $self->{erefs}{-event_cfg} -> save();
+  $self->{erefs}{-schedule}  -> save();
   $self->{erefs}{-cfg}       -> save();
 
   return 0;

@@ -1,41 +1,30 @@
 #
-package Plugin::MyTime;
+package Plugin::MinTid;
 #
-#   Document: Plugin MyTime
-#   Version:  1.4   Created: 2026-02-01 19:12
+#   Document: Plugin MinTid
+#   Version:  1.0   Created: 2026-02-01 19:12
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
-#         Exco file: MyTime.pmx
+#         Exco file: MinTid.pmx
 #
 
-my $VERSION = '1.4';
+my $VERSION = '1.0';
 my $DATEVER = '2026-02-01';
 
 # History information:
 #
-# 1.4  2024-01-03  Roland Vallgren
-#      Get week schedule from Calculate and _formatTime moved to Calculate
-#      Added: Create week template file
-# 1.3  2019-04-12  Roland Vallgren
-#      "Doctor visit -SE" is not a valid Type in MyTime
-# 1.2  2019-01-25  Roland Vallgren
-#      Code improvements
-# 1.1  2017-10-16  Roland Vallgren
-#      References to other objects in own hash
-#      Allow events to have more or less than four fields
-# 1.0  2017-04-04  Roland Vallgren
-#      First issue based on Terp.pm.
+# 1.0  2024-01-04  Roland Vallgren
+#      First issue based on MyTime.pm.
 #
 
 #----------------------------------------------------------------------------
 #
 # Setup
 #
-use base TidBase;
+use Modern::Perl '2019';
 
-use strict;
-use warnings;
+use base 'TidBase';
 use Carp;
 use integer;
 
@@ -63,116 +52,45 @@ use constant
 {
 
   PLUGIN_INFORMATION =>
-     'Plugin för att exportera tid registrerad i Tidbox till Tieto MyTime.' ,
+     'Plugin för att exportera tid registrerad i Tidbox till MinTid csv.' ,
 
-  EXPORT_CSV_FILENAME => 'export.csv',
+  # Define CSV file properties
+  EXPORT_CSV_FILENAME  => 'export.csv',
+  CSV_COLUMN_SEPARATOR => ';',
+  CSV_DECIMAL_KOMMA    => ',',
+# TODO Does constant work here? Start tag (START_MINTID) and end tag (END_MINTID) in template should be defined here
+  REGEX_START_TAG      => qr/^START_MINTID\s*$/,
+  REGEX_END_TAG        => qr/^END_MINTID\s*$/,
 
-  CSV_DECIMAL_KOMMA    => '.',
-
+# TODO Ordna möjlighet att redigera mallen
+# TODO Start och sluttaggar skall kunna tas bort av pluginen
   CSV_TEMPLATE =>
-'START_HEADER
-Overriding Approver,,,,,,,,,,,,,,,,,
-Comments,,,,,,,,,,,,,,,,,
-STOP_HEADER
-,,,,,,,,,,,,,,,,,
-START_TEMPLATE
-Project,Task,Type,Mon,Comment,Tue,Comment,Wed,Comment,Thu,Comment,Fri,Comment,Sat,Comment,Sun,Comment,END_COLUMN
-74151,01,Normal,1,testtxt1,,,,,,,,,,,,,
-74151,02,Normal,,,2,testtxt2,,,,,,,,,,,
-74151,03,Normal,,,,,3,testtxt3,,,,,,,,,
-74151,04,Normal,,,,,,,4,testtxt4,,,,,,,
- , , ,,,,,,,,,,,,,,,
-STOP_TEMPLATE
+'START_MINTID
+Aktivitet;Måndag;Kommentar;Tisdag;Kommentar;Onsdag;Kommentar;Torsdag;Kommentar;Fredag;Kommentar;Lördag;Kommentar;Söndag;Kommentar
+Aktivitet1;1;testtxt1;;;;;;;;;;;;;
+Aktivitet2;;;2;testtxt2;;;;;;;;;;;
+Aktivitet3;;;;;3;testtxt3;;;;;;;;;
+Aktivitet4;;;;;;;4;testtxt4;;;;;;;
+ ; ; ;;;;;;;;;;;;;;;
+END_MINTID
 End of file
 ' ,
 };
 
-# MyTime configuration settings
+# MinTid configuration settings
 my $PLUGIN_CFG = {
-                  mytime_template => '',
+                  mintid_template => '',
                  };
 
-# MyTime event cfg example of event configurations
+# MinTid event cfg example of event configurations
 my $EVENT_CFG = {
-    MyTime => [ 'Project:d:6',
-                'Task:D:6',
-                'Type:R:' .
-                  'N'  . '=>'. 'Normal -SE'                          . ';' .
-                  'F+' . '=>'. 'Normal /flex -SE'                    . ';' .
-                  'Ö+' . '=>'. 'Overtime Single /saved -SE-Overtime' . ';' .
-                  'Res'. '=>'. 'Travelling I /paid -SE-Overtime'     . ';' .
-                  'F-' . '=>'. 'Normal /used flex timi -SE'          . ';' .
-                  'Ö-' . '=>'. 'Compensation for Overtime -SE'       . ';' .
-                  'Sem'. '=>'. 'Vacation -SE'                                ,
-                'Details:.:24',
-              ],
-    MyTimeRadio => [ 'Project:R:' .
-                  '?'        . '=>'. '?'                             . ';' .
-                  'Projekt'  . '=>'. '12345'                         . ';' .
-                  'Frånvaro' . '=>'. '172158'                                ,
-                'Task:R:' .
-                  'Projektarbete '. '=>'. '01.01'                    . ';' .
-                  'Projektledning'. '=>'. '01.02'                    . ';' .
-                  'Frånvaro-Sem  '. '=>'. '1'                        . ';' .
-                  'Frånvaro-Sjuk '. '=>'. '2'                        . ';' .
-                  'Frånvaro-Övrig'. '=>'. '3'                        . ';' .
-                  'Ledig-Nordic  '. '=>'. '01.1'                            ,
-                'Type:R:' .
-                  'N'  . '=>'. 'Normal -SE'                          . ';' .
-                  'F+' . '=>'. 'Normal /flex -SE'                    . ';' .
-                  'Ö+' . '=>'. 'Overtime Single /saved -SE-Overtime' . ';' .
-                  'Res'. '=>'. 'Travelling I /paid -SE-Overtime'     . ';' .
-                  'F-' . '=>'. 'Normal /used flex timi -SE'          . ';' .
-                  'Ö-' . '=>'. 'Compensation for Overtime -SE'       . ';' .
-                  'Sem'. '=>'. 'Vacation -SE'                                ,
-                'Details:.:24',
-              ],
-    MyTimeAllaTyper =>
-              [ 'Project:d:6',
-                'Task:D:6',
-                'Type:r:' .
-                  'Normal -SE'                     . ';' .
-                  'Normal / hourly paid -SE'       . ';' .
-                  'Normal /paid -SE'               . ';' .
-                  'Normal /saved -SE'              . ';;' .
-                  'On Call II -SE'                 . ';' .
-                  'On Call Over-1 Single/Paid-SE'  . ';' .
-                  'On Call Over-1 Single/Saved-SE' . ';' .
-                  'On Call Over-2 Double/Paid-SE'  . ';' .
-                  'On Call Over-2 Double/Saved-SE' . ';' .
-                  'On Call Over-3 Double/Paid-SE'  . ';' .
-                  'On call Over-3 Single/Paid-SE'  . ';;' .
-                  'Overtime Double /paid -SE'      . ';' .
-                  'Overtime Double /saved -SE'     . ';' .
-                  'Overtime Double Hourly /p -SE'  . ';' .
-                  'Overtime Single /paid -SE'      . ';' .
-                  'Overtime Single /saved -SE'     . ';' .
-                  'Overtime Single Hourly /p -SE'  . ';;' .
-                  'Shift 1 -SE'                    . ';' .
-                  'Shift 2 -SE'                    . ';' .
-                  'Shift 3 -SE'                    . ';' .
-                  'Shift 4 -SE'                    . ';;' .
-                  'Travelling I /not paid -SE'     . ';' .
-                  'Travelling I /paid -SE'         . ';' .
-                  'Travelling II /not paid -SE'    . ';' .
-                  'Travelling II /paid -SE'        . ';;' .
-                  'Sick Leave -SE'                 . ';' .
-                  'Care of child Leave -SE'        . ';' .
-                  'Care of close relat. Leave -SE' . ';' .
-                  'Short Notice Compensation-SE'   . ';' .
-                  'Parental Leave -SE'             . ';' .
-                  'Father Leave -SE'               . ';;' .
-                  'Vacation -SE'                   . ';' .
-                  'Leave of Absence /paid -SE'     . ';' .
-                  'Leave of Absence /unpaid -SE'   . ';' .
-                  'Military Refresher -SE'         . ';' .
-                  'Military Service -SE'           . ';;' .
-                  'Occupational Injury -SE'        . ';' .
-                  'Study Leave /unpaid /v -SE'     . ';' .
-                  'Compensation for Overtime -SE'  . ';' .
-                  'Comp for daily/weekly rest -SE' . ';'
-                                                           ,
-                'Details:.:24',
+       MinTid => [ 'Aktivitet:r:' .
+                   join(';',
+                        'Projekt'   ,
+                        'Kompetens' ,
+                        'Linje'     ,
+                        'Friksvård'  ),
+                'Kommentar:.:24',
               ],
                 };
 
@@ -188,7 +106,7 @@ my $EVENT_CFG = {
 #
 # Method:      new
 #
-# Description: Create Plugin::MyTime object
+# Description: Create Plugin::MinTid object
 #
 # Arguments:
 #  - Object prototype
@@ -269,7 +187,7 @@ sub getPluginCfg($) {
 # Arguments:
 #  0 - Object reference
 # Returns:
-#  - Reference to MyTime Plugin Object
+#  - Reference to MinTid Plugin Object
 
 sub registerPlugin($) {
   # parameters
@@ -277,33 +195,33 @@ sub registerPlugin($) {
 
 
   $self->{erefs}{-sett_win} ->addPlugin($self->{name},
-                                 -area    => [$self => 'addMyTimeSettings'],
+                                 -area    => [$self => 'addMinTidSettings'],
                                  -apply   => [$self => 'apply'],
                                  -restore => [$self => 'restore'],
                                 );
   $self->{erefs}{-event_cfg}->addPlugin($self->{name},
-                                 -template => [$self => 'addMyTimeTemplate']
+                                 -template => [$self => 'addMinTidTemplate']
                                 );
   $self->{erefs}{-week_win} ->addPlugin($self->{name},
-                                 -button => [$self => 'addMyTimeExport'  ]
+                                 -button => [$self => 'addMinTidExport'  ]
                                 );
   return 0;
 } # Method registerPlugin
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeSettings
+# Method:      addMinTidSettings
 #
-# Description: Add MyTime plugin settings gui in Settings
+# Description: Add MinTid plugin settings gui in Settings
 #              Expected to use a tab
 #
 # Arguments:
 #  - Object reference
-#  - Area to add into, exclusively used by MyTime
+#  - Area to add into, exclusively used by MinTid
 # Returns:
 #  -
 
-sub addMyTimeSettings($$) {
+sub addMinTidSettings($$) {
   # parameters
   my $self = shift;
   my ($area) = @_;
@@ -315,13 +233,13 @@ sub addMyTimeSettings($$) {
   my $win_r = $self->{win};
   $win_r->{area} = $area;
 
-  # MyTime template file
+  # MinTid template file
   $win_r->{template_area} = $area
       -> Frame(-bd => '2', -relief => 'raised')
       -> pack(-side => 'top', -expand => '0', -fill => 'both');
 
   $win_r->{template_label} = $win_r->{template_area}
-      -> Label(-text => 'Fil med MyTime-mall:' )
+      -> Label(-text => 'Fil med MinTid-mall:' )
       -> pack(-side => 'left');
 
   $win_r->{file_button} = $win_r->{template_area}
@@ -340,36 +258,36 @@ sub addMyTimeSettings($$) {
       -> pack(-side => 'left');
 
   $win_r->{template_note} = $win_r->{template_area}
-      -> Label(-text => ' (Genererade MyTime-filer sparas i samma katalog)')
+      -> Label(-text => ' (Genererade MinTid-filer sparas i samma katalog)')
       -> pack(-side => 'left');
 
 
   return 0;
-} # Method addMyTimeSettings
+} # Method addMinTidSettings
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeTemplate
+# Method:      addMinTidTemplate
 #
-# Description: Add template for MyTime in Event Configuration
+# Description: Add template for MinTid in Event Configuration
 #
 # Arguments:
 #  0 - Object reference
 # Returns:
 #  -
 
-sub addMyTimeTemplate($) {
+sub addMinTidTemplate($) {
   # parameters
   my $self = shift;
 
   return $EVENT_CFG;
-} # Method addMyTimeTemplate
+} # Method addMinTidTemplate
 
 #----------------------------------------------------------------------------
 #
-# Method:      addMyTimeExport
+# Method:      addMinTidExport
 #
-# Description: Return MyTime export label and callback
+# Description: Return MinTid export label and callback
 #
 # Arguments:
 #  - Object reference
@@ -377,12 +295,12 @@ sub addMyTimeTemplate($) {
 #  - Button label
 #  - Callback to perform the export
 
-sub addMyTimeExport($) {
+sub addMinTidExport($) {
   # parameters
   my $self = shift;
 
-  return ('Till MyTime-mall', [$self, 'exportSetup']);
-} # Method addMyTimeExportButton
+  return ('Till MinTid-mall', [$self, 'exportSetup']);
+} # Method addMinTidExportButton
 
 #----------------------------------------------------------------------------
 #
@@ -402,7 +320,7 @@ sub selectFileButton($) {
 
   $self->{win}->{file_button}->
       configure(
-                -text => $self->{cfg}{mytime_template} ||
+                -text => $self->{cfg}{mintid_template} ||
                          'Välj fil (export.csv)',
                )
       if (exists($self->{win}->{file_button}));
@@ -482,7 +400,7 @@ sub _modified($) {
 #
 # Method:      _chooseTemplateFile
 #
-# Description: Choose MyTime template file
+# Description: Choose MinTid template file
 #
 # Arguments:
 #  - Object reference
@@ -495,7 +413,7 @@ sub _chooseTemplateFile($) {
 
   my $win_r = $self->{win};
 
-  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mytime_template');
+  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mintid_template');
 
   my $initialdir ;
   my $initialfile;
@@ -521,13 +439,13 @@ sub _chooseTemplateFile($) {
                                      ],
                        -initialdir  => $initialdir ,
                        -initialfile => $initialfile,
-                       -title => $self->{name} . ': MyTime mall',
+                       -title => $self->{name} . ': MinTid mall',
                       );
 
   return 0
       unless ($file and -r $file and (not $tpt or $tpt and ($file ne $tpt)));
 
-  $self->{cfg}{mytime_template} = $file;
+  $self->{cfg}{mintid_template} = $file;
   $self->_modified();
   $self->selectFileButton();
 
@@ -538,7 +456,7 @@ sub _chooseTemplateFile($) {
 #
 # Method:      _createTemplateFile
 #
-# Description: Create MyTime template file
+# Description: Create MinTid template file
 #
 # Arguments:
 #  - Object reference
@@ -551,7 +469,7 @@ sub _createTemplateFile($) {
 
   my $win_r = $self->{win};
 
-  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mytime_template');
+  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mintid_template');
 
   my $initialdir ;
   my $initialfile;
@@ -577,13 +495,13 @@ sub _createTemplateFile($) {
                                      ],
                        -initialdir  => $initialdir ,
                        -initialfile => $initialfile,
-                       -title => $self->{name} . ': MyTime mall',
+                       -title => $self->{name} . ': MinTid mall',
                       );
 
   return 0
       unless ($file and (not $tpt or $tpt and ($file ne $tpt)));
 
-  $self->{cfg}{mytime_template} = $file;
+  $self->{cfg}{mintid_template} = $file;
   $self->_saveTemplate($file);
   $self->_modified();
   $self->selectFileButton();
@@ -615,7 +533,7 @@ sub problem($@) {
 #
 # Method:      exportSetup
 #
-# Description: Setup export time data to MyTime template
+# Description: Setup export time data to MinTid template
 #
 # Arguments:
 #  0 - Object reference
@@ -629,13 +547,13 @@ sub exportSetup($) {
 
   my $win_r = $self->{win};
   my $confirm = $self->{erefs}{-week_win}->get('confirm'),
-  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mytime_template');
+  my $tpt = $self->{erefs}{-plugin}->get($self->{name}, 'mintid_template');
 
   unless ($tpt) {
     $confirm
        ->popup(
                -title => ': Fel',
-               -text  => ['Ingen MyTime mall angiven!',
+               -text  => ['Ingen MinTid mall angiven!',
                           'Välj en mall i Inställningar'
                          ],
               );
@@ -646,7 +564,7 @@ sub exportSetup($) {
     $confirm
        -> popup(
                 -title => ': Fel',
-                -text  => ['Kan inte hitta MyTime mall: '.
+                -text  => ['Kan inte hitta MinTid mall: '.
                            $tpt,
                           'Välj en mall i Inställningar'
                           ],
@@ -666,8 +584,8 @@ sub exportSetup($) {
 #
 # Method:      _doExport
 #
-# Description: Calculate work time for week and export to MyTime template file
-#              MyTime_<week start date>_<week end date>.csv
+# Description: Calculate work time for week and export to MinTid template file
+#              MinTid_<week start date>_<week end date>.csv
 #
 # Format for template file
 #
@@ -684,8 +602,8 @@ sub exportSetup($) {
 #  - Object reference
 #  - Template file name
 # Returns:
-#  undef : The MyTime-template was not possible to use
-#  0 : No MyTime file created due to problems
+#  undef : The MinTid-template was not possible to use
+#  0 : No MinTid file created due to problems
 #  1 : Results exported to file
 
 sub _doExport($$) {
@@ -711,7 +629,7 @@ sub _doExport($$) {
   if (@{$self->{problem}}) {
     $confirm
        -> popup(
-                -title => 'MyTime : Problem',
+                -title => 'MinTid : Problem',
                 -text  => ['Problem under beräkningen av av arbetstid',
                            'Ingen fil sparades'],
                 -data  => [join("\n", @{$self->{problem}})],
@@ -724,12 +642,12 @@ sub _doExport($$) {
   $self->{first_date} = $weekdays_r->[0]{date};
   $self->{last_date}  = $weekdays_r->[6]{date};
 
-  # Find out filename to create: MyTime_<first-date>_<last-date>.csv
+  # Find out filename to create: MinTid_<first-date>_<last-date>.csv
   my ($filename, $directories) = fileparse($template);
   $self->{outfile} =
       File::Spec->catfile
         ($directories ,
-         'MyTime_' . $self->{first_date} . '_' . $self->{last_date} . '.csv'
+         'MinTid_' . $self->{first_date} . '_' . $self->{last_date} . '.csv'
          );
 
   # Open files and copy to area were to insert times
@@ -738,8 +656,8 @@ sub _doExport($$) {
   unless (defined($tp)) {
     $confirm
        -> popup(
-                -title => 'avbröt MyTime',
-                -text  => ['Det gick inte att läsa MyTime-mallen:',
+                -title => 'avbröt MinTid',
+                -text  => ['Det gick inte att läsa MinTid-mallen:',
                            $template,
                            $!],
                );
@@ -750,7 +668,7 @@ sub _doExport($$) {
   unless (defined($fh)) {
     $confirm
        -> popup(
-                -title => 'avbröt MyTime',
+                -title => 'avbröt MinTid',
                 -text  => ['Det gick inte att öppna fil:',
                            $self->{outfile},
                            $!],
@@ -768,8 +686,8 @@ sub _doExport($$) {
   unless (defined($line)) {
     $confirm
        -> popup(
-                -title => 'avbröt MyTime',
-                -text  => ['Kunde inte hitta start märket i MyTime-mallen:',
+                -title => 'avbröt MinTid',
+                -text  => ['Kunde inte hitta start märket i MinTid-mallen:',
                            $template],
                );
     return undef;
@@ -864,7 +782,7 @@ sub _doExport($$) {
   $fh->close() or
      $confirm
        -> popup(
-                -title => 'avbröt MyTime',
+                -title => 'avbröt MinTid',
                 -text  => ['FEL: Det gick inte att skriva till fil:',
                            $self->{outfile},
                            $!],
@@ -877,7 +795,7 @@ sub _doExport($$) {
     my $d = [];
 
     if (@doubtfull) {
-      push @$t, ('Ett antal händelser verkar inte vara för MyTime.'."\n".
+      push @$t, ('Ett antal händelser verkar inte vara för MinTid.'."\n".
                    'Kontrollera att följande registreringar är riktiga:',
                   undef,
                  );
@@ -911,7 +829,7 @@ sub _doExport($$) {
 
     $confirm
        -> popup(
-                -title => 'MyTime : VARNING',
+                -title => 'MinTid : VARNING',
                 -text  => $t,
                 -data  => $d,
                );
@@ -932,7 +850,7 @@ sub _doExport($$) {
   if ($total_time > $week_work_minutes) {
     $confirm ->
         popup(
-              -title => 'MyTime : Tips',
+              -title => 'MinTid : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
                          $calc->formatTime(CSV_DECIMAL_KOMMA, $total_time) . ' timmar.',
@@ -953,7 +871,7 @@ sub _doExport($$) {
   } elsif ($total_time < $week_work_minutes) {
     $confirm ->
         popup(
-              -title => 'MyTime : Tips',
+              -title => 'MinTid : Tips',
               -text  => ['Tips:',
                          'Veckoarbetstiden blev ' .
                          $calc->formatTime(CSV_DECIMAL_KOMMA, $total_time) . ' timmar.',
@@ -975,7 +893,7 @@ sub _doExport($$) {
   # Nothing strange, success message
   $confirm
      -> popup(
-              -title => 'MyTime resultat',
+              -title => 'MinTid resultat',
               -text  => ['Skrev veckoarbetstid till:',
                          $self->{outfile}],
              );
@@ -994,7 +912,7 @@ sub _doExport($$) {
 #  - Object reference
 #  - Template file name
 # Returns:
-#  undef : The MyTime-template was not possible to create
+#  undef : The MinTid-template was not possible to create
 #  0 : No template file created due to problems
 #  1 : Template saved successfully to file
 
@@ -1009,7 +927,7 @@ sub _saveTemplate($$) {
   unless (defined($fh)) {
     $confirm
        -> popup(
-                -title => 'avbröt MyTime',
+                -title => 'avbröt MinTid',
                 -text  => ['Det gick inte att skapa fil:',
                            $template,
                            $!],
@@ -1022,7 +940,7 @@ sub _saveTemplate($$) {
   $fh->close() or
      $confirm
        -> popup(
-                -title => 'avbröt MyTime',
+                -title => 'avbröt MinTid',
                 -text  => ['FEL: Det gick inte att skriva till fil:',
                            $template,
                            $!],
@@ -1030,7 +948,7 @@ sub _saveTemplate($$) {
 
   $confirm
      -> popup(
-              -title => 'MyTime resultat',
+              -title => 'MinTid resultat',
               -text  => ['Filen sparades:',
                          $template],
              );

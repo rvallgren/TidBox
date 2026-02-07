@@ -2,38 +2,18 @@
 package TbFile::Base;
 #
 #   Document: Base class for Tidbox Files
-#   Version:  2.10   Created: 2019-11-11 09:37
+#   Version:  2.11   Created: 2026-02-01 20:49
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: FileBase.pmx
 #
 
-my $VERSION = '2.10';
-my $DATEVER = '2019-11-11';
+my $VERSION = '2.11';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
-# 1.0  2007-03-19  Roland Vallgren
-#      First issue.
-# 1.1  2008-06-18  Roland Vallgren
-#      "loaded" should only be set when loaded, not dirty
-# 2.0  2008-09-14  Roland Vallgren
-#      Added support for general file handling
-#      Use Exco %+ to use same source to register version
-# 2.1  2011-03-12  Roland Vallgren
-#      Use FileHandle for file handling
-#      Added logging if log is defined
-# 2.2  2012-09-25  Roland Vallgren
-#      Added method remove to delete a file
-# 2.3  2012-12-12  Roland Vallgren
-#      Perl 5.16
-# 2.4  2013-05-19  Roland Vallgren
-#      If session is locked, do not write to disk
-# 2.5  2015-08-04  Roland Vallgren
-#      Append should generate log entry
-#      Minor error corrections
-#      Improved handling of backup
 # 2.6  2015-12-09  Roland Vallgren
 #      Load the newest of file and backup restored, lost in previous version
 # 2.7  2017-09-08  Roland Vallgren
@@ -48,7 +28,9 @@ my $DATEVER = '2019-11-11';
 #      Removed log->trace
 #      Corrected: -error_popup is an eref
 # 2.10  2019-11-11  Roland Vallgren
-#       Code impreovements
+#       Code improvements
+# 2.11  2024-01-23  Roland Vallgren
+#       Added handling of schedule sets
 #
 
 #----------------------------------------------------------------------------
@@ -349,6 +331,10 @@ sub addSet($$$;$) {
 # Method:      loadDatedSets
 #
 # Description: Load dated sets of settings
+#              - Configuration
+#              - Dated sets
+#                - EventCfg
+#                - Schedule
 #
 # Arguments:
 #  - Object reference
@@ -385,12 +371,15 @@ sub loadDatedSets($$$) {
       $set->{$1} = $2
           if (length($2) > 0);
 
+    } elsif ($line =~ /^($DATE)=([0-9,]{1,5}):(.*?)\s*$/o) {
+      $set->{$1} = [ $2, $3 ];
+
     } elsif ($line =~ /^[^:]+:.:/o) {
       push @{$set}, $line;
 
     } else {
       # Faulty format
-      return 0;
+      return undef;
 
     } # if #
 
@@ -436,10 +425,16 @@ sub saveSet($$$;$) {
     } # for #
 
   } elsif (ref($set) eq 'HASH') {
-    while (my ($k, $v) = each(%$set)) {
-      $fh->print($k, '=', $v, "\n")
-          if (defined($v) and length($v) > 0);
-    } # while #
+    for my $k (sort(keys(%$set))) {
+      my $v = $set->{$k};
+      if (ref($v) eq 'ARRAY') {
+        $fh->print($k, '=', join(':', @$v), "\n")
+            if (defined($v) and @$v > 0);
+      } else {
+        $fh->print($k, '=', $v, "\n")
+            if (defined($v) and length($v) > 0);
+      } # if #
+    } # for #
 
   } elsif ($set) {
     $fh->print($set, "\n");
@@ -982,7 +977,7 @@ sub append($@) {
 
   for my $typ ('bak', 'dir') {
 
-    # Do not append if dirty, could cause inconsistency in file
+    # Do not append to file if dirty, could cause inconsistency in file
     next
         if ($self->{$typ.'_dirty'});
 
@@ -1008,7 +1003,7 @@ sub append($@) {
         if ($self->{erefs}{-log} and $self ne $self->{erefs}{-log});
 
     unless ($fh->close()) {
-      $self->callback($self->{erefs}{-error_popup}, 
+      $self->callback($self->{erefs}{-error_popup},
                       'Kan inte skriva: "' . $file . '"' , $! );
       next;
     } # unless #

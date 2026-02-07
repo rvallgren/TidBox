@@ -2,18 +2,21 @@
 package Gui::Event;
 #
 #   Document: Event entry area
-#   Version:  1.3   Created: 2019-08-15 13:52
+#   Version:  1.4   Created: 2026-02-01 18:39
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: Event.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2019-08-15';
+my $VERSION = '1.4';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
+# 1.4  2023-12-22  Roland Vallgren
+#      <shift - return> adds event
+#      Return not allowed in pasted text
 # 1.3  2019-02-07  Roland Vallgren
 #      Removed log->trace
 # 1.2  2017-10-16  Roland Vallgren
@@ -115,6 +118,12 @@ sub _replace_area($$$) {
       $win_r->{$ev_r->{-cfgev_data}} -> bind('<Return>' => $self->{return})
           if ($self->{return});
 
+      $win_r->{$ev_r->{-cfgev_data}} -> bind('<Shift-Return>' => $self->{shiftreturn})
+          if ($self->{shiftreturn});
+
+      $win_r->{$ev_r->{-cfgev_data}} -> bind('<Escape>' => $self->{escape})
+          if ($self->{escape});
+
     } else {
 
       $win_r->{$ev_r->{-cfgev_data}} = [];
@@ -185,6 +194,8 @@ sub _replace_area($$$) {
 #  -validate    Routine to call to validate input ?
 #  -buttons     Routine to call to add buttons to the area
 #  -return      Routine to call when return is entered
+#  -shiftreturn Routine to call when shift-return is entered
+#  -escape      Routine to call when escape is entered
 #  -date        Optional date  for event entry other than today
 # Returns:
 #  Object reference
@@ -203,6 +214,8 @@ sub new($%) {
               validate   => $opt{-validate},
               buttons    => $opt{-buttons},
               return     => $opt{-return},
+              shiftreturn => $opt{-shiftreturn},
+              escape     => $opt{-escape},
               erefs      => $opt{erefs},
               date       => $opt{-date},
              };
@@ -225,7 +238,7 @@ sub new($%) {
 #
 # Method:      modifyArea
 #
-# Description: Modify layout of existing event entry area to 
+# Description: Modify layout of existing event entry area to
 #              event configuration for specified date
 #
 # Arguments:
@@ -331,7 +344,7 @@ sub clear($;$) {
 #  Array:
 #   - Lenght of text in event data
 #   - Event data string
-#  
+#
 
 sub get($;$) {
   # parameters
@@ -350,19 +363,18 @@ sub get($;$) {
 
       $value = $win_r->{$ev_r->{-cfgev_data}}->get();
 
-      if (($type ne '.') and
-           defined($show_message_sub_r) and
-           ($value !~ /^$self->{types_def}{$type}[0]*$/)
-         )
-      {
+      if (defined($show_message_sub_r)) {
+        if ($value =~ /^($self->{types_def}{$type}[0]*?)\s*$/) {
+          $value = $1;
+        } else {
           $self->callback($show_message_sub_r,
                           'Ej tillåtet: ' . $ev_r->{-text} . ': ' . $value);
           return undef;
+        } # if #
       } # if #
       $len += length($value);
 
     } else {
-
       $value = $win_r->{$ev_r->{-cfgev_radio}};
       if (defined($show_message_sub_r) and
           ($value eq '')
@@ -482,7 +494,7 @@ sub set($$;$) {
 #  - Object reference
 # Return:
 #  - Area
-#  
+#
 
 sub getLastArea($) {
   # parameters

@@ -2,15 +2,15 @@
 package TbFile;
 #
 #   Document: Handle all files
-#   Version:  2.6   Created: 2019-08-15 14:49
+#   Version:  2.7   Created: 2026-02-01 19:20
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: TbFile.pmx
 #
 
-my $VERSION = '2.6';
-my $DATEVER = '2019-08-15';
+my $VERSION = '2.7';
+my $DATEVER = '2026-02-01';
 
 # History information:
 #
@@ -42,6 +42,8 @@ my $DATEVER = '2019-08-15';
 #      Removed log->trace
 # 2.6  2019-03-14  Roland Vallgren
 #      Moved backup handling and supervision to TbFile::Backup
+# 2.7  2024-08-29  Roland Vallgren
+#      Added schedule file
 #
 
 #----------------------------------------------------------------------------
@@ -64,6 +66,7 @@ use TbFile::Session;
 use TbFile::Times;
 use TbFile::EventCfg;
 use TbFile::Supervision;
+use TbFile::Schedule;
 use TbFile::Plugin;
 use TbFile::Archive;
 use TbFile::Backup;
@@ -106,10 +109,11 @@ sub new($$) {
 
   # Load -cfg first to make sure backup is checked
   my $order = [
-               qw(-cfg -lock -session -event_cfg -supervision -plugin -times)
+               qw(-cfg -lock -session -event_cfg -supervision
+                  -schedule -plugin -times)
               ];
   my $load = [
-               qw(-event_cfg -supervision -plugin -times)
+               qw(-event_cfg -supervision -schedule -plugin -times)
               ];
   my $extra = [ qw(-archive) ];
 
@@ -131,6 +135,8 @@ sub new($$) {
                 -plugin      => TbFile::Plugin->new(),
 
                 -archive     => TbFile::Archive->new(),
+
+                -schedule    => TbFile::Schedule->new(),
 
               };
 
@@ -167,7 +173,7 @@ sub configure($%) {
 
   my $files = $self->{files};
 
-  $files->{-cfg} ->
+  $files->{-cfg}->
       configure(
                 -cfg         => $files->{-cfg},
                 -lock        => $files->{-lock},
@@ -177,7 +183,7 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-event_cfg} ->
+  $files->{-event_cfg}->
       configure(
                 -cfg         => $files->{-cfg},
                 -calculate   => $args{-calculate},
@@ -186,14 +192,14 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-log} ->
+  $files->{-log}->
       configure(
                 -cfg         => $files->{-cfg},
                 -clock       => $args{-clock},
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-lock} ->
+  $files->{-lock}->
       configure(
                 -cfg         => $files->{-cfg},
                 -clock       => $args{-clock},
@@ -201,14 +207,14 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-session} ->
+  $files->{-session}->
       configure(
                 -cfg         => $files->{-cfg},
                 -clock       => $args{-clock},
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-times} ->
+  $files->{-times}->
       configure(
                 -cfg         => $files->{-cfg},
                 -event_cfg   => $files->{-event_cfg},
@@ -219,7 +225,7 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-supervision} ->
+  $files->{-supervision}->
       configure(
                 -cfg         => $files->{-cfg},
                 -times       => $files->{-times},
@@ -230,7 +236,7 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-plugin} ->
+  $files->{-plugin}->
       configure(
                 -cfg         => $files->{-cfg},
                 -session     => $files->{-session},
@@ -243,13 +249,22 @@ sub configure($%) {
                 -error_popup => $args{-error_popup},
                );
 
-  $files->{-archive} ->
+  $files->{-archive}->
       configure(
                 -cfg         => $files->{-cfg},
-                -times       => $files->{-times},
                 -log         => $files->{-log},
+                -times       => $files->{-times},
                 -event_cfg   => $files->{-event_cfg},
+                -schedule    => $files->{-schedule},
                 -calculate   => $args{-calculate},
+                -clock       => $args{-clock},
+                -error_popup => $args{-error_popup},
+               );
+
+  $files->{-schedule}->
+      configure(
+                -cfg         => $files->{-cfg},
+                -log         => $files->{-log},
                 -clock       => $args{-clock},
                 -error_popup => $args{-error_popup},
                );

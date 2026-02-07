@@ -2,15 +2,15 @@
 package Gui::EventConfig;
 #
 #   Document: Event Configuration Gui
-#   Version:  1.3   Created: 2020-01-20 19:31
+#   Version:  1.4   Created: 2026-02-01 18:51
 #   Prepared: Roland Vallgren
 #
 #   NOTE: Source code in Exco R6 format.
 #         Exco file: EventConfig.pmx
 #
 
-my $VERSION = '1.3';
-my $DATEVER = '2020-01-20';
+my $VERSION = '1.4';
+my $DATEVER = '2026-02-01';
 
 # History information:
 
@@ -25,6 +25,8 @@ my $DATEVER = '2020-01-20';
 #      References to other objects in own hash
 # 1.3  2020-01-20  Roland Vallgren
 #      Corrected remove earlier event cfg: earlierRemove()
+# 1.4  2024-08-30  Roland Vallgren
+#      Use Labelframe and Scrolled
 #
 
 #----------------------------------------------------------------------------
@@ -164,36 +166,39 @@ sub new($%) {
   ## Event cfg edit area ##
   $edit_r->{set_area} =
       $args{-area} -> Frame()
-          -> pack(-side=>'top', -expand => '0', -fill=>'x');
+          -> pack(-side=>'top', -expand => '1', -fill=>'both');
 
   ### Listbox ###
   $edit_r->{list_edit_area} = $edit_r->{set_area}
-      -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'top', -expand => '0', -fill => 'x');
+      -> Labelframe(-bd => '2',
+                    -relief => 'ridge',
+                    -text => 'Händelsedelar: ')
+      -> pack(-side => 'top', -expand => '1', -fill => 'both');
 
   $edit_r->{edit_list_box} = $edit_r->{list_edit_area}
-      -> Listbox(-width => 30,
-                 -height => 5,
-                 -exportselection => 0);
+       -> Scrolled('Listbox', -scrollbars => 'oe')
+       -> pack(-side => 'top', -expand => '1', -fill => 'both');
+
   $edit_r->{edit_list_box}
-      -> pack(-side => 'left', -expand => '1', -fill => 'both');
+      -> configure(-width => 30,
+                   -height => 5,
+                   -exportselection => 0);
   $edit_r->{edit_list_box} -> bind('<<ListboxSelect>>' => [$self => 'display']);
-
-  $edit_r->{edit_scrollbar} = $edit_r->{list_edit_area}
-      -> Scrollbar(-command => ['yview', $edit_r->{edit_list_box}])
-      -> pack(-side => 'left', -fill => 'y');
-
-  $edit_r->{edit_list_box}
-      -> configure(-yscrollcommand => ['set', $edit_r->{edit_scrollbar}]);
 
   ### Entry edit ###
   $edit_r->{entry_sec_area} = $edit_r->{set_area}
       -> Frame()
       -> pack(-side => 'top', -expand => '0', -fill => 'x');
 
-  $edit_r->{entry_edit_area} = $edit_r->{entry_sec_area}
+  $edit_r->{frame_edit_area} = $edit_r->{entry_sec_area}
       -> Frame(-bd => '2', -relief => 'raised')
-      -> pack(-side => 'left');
+      -> pack(-side => 'left', -fill => 'y');
+
+  $edit_r->{entry_edit_area} = $edit_r->{frame_edit_area}
+      -> Labelframe(-bd => '2',
+                    -relief => 'sunken',
+                    -text => 'Fält')
+      -> pack(-side => 'top', -fill => 'x');
 
   # Label text
   $edit_r->{label_edit_frame} = $edit_r->{entry_edit_area}
@@ -264,33 +269,22 @@ sub new($%) {
 
   # Right area: Radio button values: Text
   $edit_r->{radio_edit_area} = $edit_r->{entry_sec_area}
-      -> Frame()
+      -> Labelframe(-bd => '2',
+                    -relief => 'sunken',
+                    -text => 'Radioknapp')
       -> pack(-side => 'top', -fill => 'x');
 
-  $edit_r->{radio_edit_label} = $edit_r->{radio_edit_area}
-      -> Label(-text => 'Radioknapp')
-      -> pack(-side => 'top');
-
-  $edit_r->{radio_edit_text_area} = $edit_r->{radio_edit_area}
-      -> Frame(-bd => '2', -relief => 'sunken')
-      -> pack(-side => 'top', -fill => 'x');
-
-  $edit_r->{radio_edit_text} = $edit_r->{radio_edit_text_area}
-      -> TextUndo(
-                -wrap => 'no',
-                -height => 9,
-                -width => 40,
-               )
-      -> pack(-side => 'left', -expand => '1', -fill => 'both');
-  $edit_r->{radio_edit_text} -> tagAdd('syntax', '1.0', 'end');
-  $edit_r->{radio_edit_text} -> bind('<KeyRelease>', [$self => '_syntaxCheck']);
-
-  $edit_r->{radio_edit_scrollbar} = $edit_r->{radio_edit_text_area}
-      -> Scrollbar(-command => [yview => $edit_r->{radio_edit_text}])
-      -> pack(-side => 'left', -fill => 'y');
+  $edit_r->{radio_edit_text} = $edit_r->{radio_edit_area}
+       -> Scrolled('TextUndo', -scrollbars => 'oe')
+       -> pack(-side => 'top', -expand => '1', -fill => 'both');
 
   $edit_r->{radio_edit_text}
-      -> configure(-yscrollcommand => [set => $edit_r->{radio_edit_scrollbar}]);
+      -> configure(-wrap => 'no',
+                   -height => 9,
+                   -width => 40,);
+
+  $edit_r->{radio_edit_text} -> tagAdd('syntax', '1.0', 'end');
+  $edit_r->{radio_edit_text} -> bind('<KeyRelease>', [$self => '_syntaxCheck']);
 
   # Message
   $edit_r->{entry_message_area} = $edit_r->{radio_edit_area}
@@ -368,7 +362,9 @@ sub new($%) {
       -> pack(-side => 'top', -expand => '0', -fill => 'x');
 
   $edit_r->{earlier_area} = $edit_r->{earlier_sec_area}
-      -> Frame(-bd => '2', -relief => 'raised')
+      -> Labelframe(-bd => '2',
+                    -relief => 'sunken',
+                    -text => 'Tidigare händelseinställningar: ')
       -> pack(-side => 'left');
 
   ### Earlier menu button ###
@@ -402,7 +398,7 @@ sub new($%) {
 
   # Change -max_date for Time widget at midnight
   $self->{erefs}{-clock}->repeat(-date => [$self, 'setMaxDate']);
-  
+
 
   return ($self);
 } # Method new
@@ -724,7 +720,7 @@ sub display($;$) {
     $edit_r->{type_edit_type_previous} = $edit_r->{type_edit_type_var};
     $edit_r->{type_edit_menu} ->
         entryconfigure('end',
-            -state => ($cur_selection < 
+            -state => ($cur_selection <
                          $#{$self->{cfg}}) ? 'disabled' : 'normal'
                        );
 
@@ -1149,7 +1145,7 @@ sub _rebuildEarlier($) {
   my $msg = '';
   $cnt = 0;
   for my $date (sort(keys(%{$ref}))) {
-    if ($prev_r and 
+    if ($prev_r and
         $self->{erefs}{-event_cfg}->compareCfg($prev_r, $ref->{$date}) == 0
        )
     {
